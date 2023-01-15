@@ -21,6 +21,8 @@ knitr::opts_chunk$set(
 【編集履歴】
 
 - 2023/01/07：「三角関数の可視化」を追加
+- 2023/01/09：「sin関数の可視化」を追加
+- 2023/01/15：「sin関数の変形の可視化」を追加
 
 ----
 
@@ -99,7 +101,7 @@ curve_df <- tibble::tibble(
 curve_df
 ```
 
-　sin関数$\sin(\theta)$、cos関数$\cos(\theta)$、tan関数$\tan(\theta)$を計算して、$\theta$の値と共に格納します。\
+　sin関数$\sin \theta$、cos関数$\cos \theta$、tan関数$\tan \theta$を計算して、$\theta$の値と共に格納します。\
 
 　単位円のグラフを作成します。
 
@@ -251,9 +253,9 @@ ggplot() +
 ```
 
 　ラベル配置位置の調整用の値を`d`とします。\
-　また、横・縦方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin(\theta), \cos(\theta)$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
+　また、横・縦方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
 
-　角度が$30^{\circ}$変化するとラジアンが$\frac{\pi}{6}$変化するのを確認できます。また、$0^{\circ} = 0 = 2 \pi$です。\
+　角度が$30^{\circ}$変化するとラジアンが$\frac{\pi}{6}$変化するのを確認できます。また、$0^{\circ} = 0, 360^{\circ} = 2 \pi$であり、$\sin 0 = \sin 2 \pi, \cos 0 = \cos 2 \pi$です。\
 \
 
 
@@ -668,7 +670,7 @@ head(alpha_i); head(theta_i)
 
 　順番に値を取り出して作図し、グラフを書き出します。
 
-```{r}
+```{r, eval=FALSE}
 # 一時保存フォルダを指定
 dir_path <- "trigonometric/figure/tmp_folder"
 
@@ -772,14 +774,14 @@ for(i in 1:frame_num) {
     geom_vline(xintercept = 1, linetype = "dotdash") + # x=1の軸線
     geom_segment(data = fnc_df, 
                  mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend, color = fnc), 
-                 size = 1) + # 単位円におけ関数の値
+                 size = 1) + # 単位円における関数の値
     geom_point(data = point_df, 
                mapping = aes(x = cos_theta, y = sin_theta), 
                size = 4) + # 関数曲線上の点
     geom_label(data = fnc_label_df, 
                mapping = aes(x = x, y = y, label = fnc_label), 
                parse = TRUE, hjust = 0, vjust = 1, size = 2.5) + # 関数ラベル
-    scale_color_manual(breaks = c("sin", "cos", "tan"), values = c("pink", "red", "greenyellow")) + # 単位円におけ関数の色
+    scale_color_manual(breaks = c("sin", "cos", "tan"), values = c("pink", "red", "greenyellow")) + # 単位円における関数の色
     theme(legend.position = "none") + # 凡例を非表示
     coord_fixed(ratio = 1, clip = "off", xlim = c(-l, l), c(-l, l)) + # アスペクト比
     labs(title = "sine, cosine and tangent curves", 
@@ -874,13 +876,9 @@ for(i in 1:frame_num) {
 　保存用のフォルダは空である必要があります。また、画像ファイルの読み込み時に、文字列基準で書き出した順番になるようなファイル名である必要があります。\
 　(初回の作図では、`angle_df`が1行しか値を持たないため、`geom_path()`で描画できずメッセージが表示されます。)\
 
-</details>
-
-\ 
-
 　アニメーション(gif画像)を作成します。
 
-```{r}
+```{r, eval=FALSE}
 # ファイル名を取得
 file_name_vec <- list.files(dir_path)
 
@@ -891,17 +889,3477 @@ file_path_vec <- paste0(dir_path, "/", file_name_vec)
 file_path_vec |> 
   magick::image_read() |> 
   magick::image_animate(fps = 1, dispose = "previous") |> 
-  magick::image_write_gif(path = "trigonometric/figure/curve.gif", delay = 0.1) -> tmp_path
+  magick::image_write_gif(path = "trigonometric/figure/curves.gif", delay = 0.1) -> tmp_path
 ```
-
-![](../../figure/curve.gif)
 
 　`list.files()`で`dir_path`フォルダ内のファイル名を取得して、ファイルパスを作成します。\
 　`image_read()`で画像を読み込んで、`image_animate()`でgifファイルに変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
 
+</details>
+
+\ 
+
+![](../../figure/curves/curves.gif)
+
 　描画範囲外の変数(角度)に関しても周期的に推移します。\
 \
 
-　この記事では、三角関数を可視化して確認しました。\
+　この記事では、三角関数を可視化して確認しました。次の記事では、sin関数について可視化します。\
 \
+
+
+# sin関数の可視化
+
+　単位円における角度とsin関数(サイン波・正弦波)の関係をグラフで可視化します。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(patchwork)
+library(magick)
+```
+
+```{r, echo=FALSE}
+### 資料作成用:(チェック用)
+
+# 利用パッケージ
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## グラフの作成
+
+　まずは、角度を固定したグラフで確認します。\
+\
+
+　角度を指定します。
+
+```{r}
+# 角度を指定
+alpha <- -120
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　度数法における角度$\alpha$を指定して、弧度法における角度(ラジアン)$\theta = \alpha \frac{\pi}{180}$に変換します。$\pi$は円周率で`pi`で扱えます。\
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = theta, 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+point_df
+```
+
+　sin関数$\sin \theta$、cos関数$\cos \theta$を計算して、$\theta$と共に格納します。\
+
+　単位円を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, by = 0.04), 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+circle_df
+```
+
+　単位円の作図用のラジアン$0 \leq \theta \leq 2 \pi$を作成して、$\sin \theta, \cos \theta$を計算します。単位円の座標は、x軸の値$x = \cos \theta$、y軸の値$y = \sin \theta$に対応します。\
+
+　単位円上に角度目盛を描画するためのデータフレームを作成します。
+
+```{r}
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+tick_df
+```
+
+　$30^{\circ} = 30 \frac{\pi}{180} = \frac{\pi}{6}$間隔で、$\frac{n}{6} \pi\ (n = 0, \dots, 11)$の形で目盛を表示することにします。\
+　単位円のときと同様に、x軸とy軸の値を計算して、ラベルと合わせて格納します。ラベルとして数式を表示する場合は、`expression()`の記法を使います。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- tibble::tibble(
+  x_from = c(0, 0), 
+  y_from = c(0, 0), 
+  x_to = c(1, cos(theta)), 
+  y_to = c(0, sin(theta))
+)
+
+# 角度マークの描画用
+d <- 0.1
+angle_df <- tibble::tibble(
+  theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+  x = cos(theta) * d, 
+  y = sin(theta) * d
+)
+
+# 角度ラベルの描画用
+d <- 0.2
+angle_label_df <- tibble::tibble(
+  theta = 0.5 * theta, 
+  x = cos(theta) * d, 
+  y = sin(theta) * d, 
+  angle_label = "theta"
+)
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}, \alpha$のそれぞれの角度における半径を描画するために、原点と単位円上の点を結ぶ線分の座標を格納して`radius_df`とします。始点の座標を`x_from, y_from`、終点の座標を`x_to, y_to`列とします。\
+　扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。$\theta$が正の値($\theta > 0$)のときは0から$\theta$、負の値($\theta < 0$)のときは$\theta$から0の値を使います。\
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるsin関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# sin関数の線の描画用
+sin_line_df <- tibble::tibble(
+  x_from = cos(theta), 
+  y_from = 0, 
+  x_to = cos(theta), 
+  y_to = sin(theta)
+)
+
+# sin関数の線ラベルの描画用
+sin_label_df <- sin_line_df |> 
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), 
+    fnc_label = paste0("sin~theta")
+  ) |> 
+  dplyr::select(x, y, fnc_label)
+sin_line_df; sin_label_df
+```
+
+　sin関数の値は、角度$\theta$における単位円上の点$(\cos \theta, \sin \theta)$と、$x = 0$の直線への垂線との交点$(\cos \theta, 0)$を結ぶ線分で表現できます。この2点の座標を格納して`sin_line_df`とします。\
+　sin関数の垂線(線分)の中点に配置するように座標とラベル用の文字列を格納して`sin_label_df`とします。\
+
+　単位円上の点とsin関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 2
+
+# サイン波との対応用
+segment_circle_df <- tibble::tibble(
+  x_from = cos(theta), 
+  y_from = sin(theta), 
+  x_to = -l, 
+  y_to = sin(theta)
+)
+segment_circle_df
+```
+
+　単位円上の点からy軸への垂線を引くように座標を指定します。作図時に、隣のグラフに届かないような長さ`l`を指定します。\
+　また、2つのグラフの描画範囲を固定するために、`axis_size`として値を指定しておきます。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 単位円を作図
+d <- 1.1
+circle_graph <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+  geom_segment(data = sin_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               color = "red", size = 1) + # sin関数
+  geom_text(data = sin_label_df, 
+             mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+             angle = 90, vjust = 1, color = "red") + # sin関数ラベル
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dashed") + # sin波との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 単位円上の点
+  coord_fixed(ratio = 1, clip = "off", xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph
+```
+
+　x軸を$\cos \theta$、y軸を$\sin \theta$として、(`geom_line()`ではなく)`geom_path()`で曲線(円)を描画します。綺麗な円を描画するには`coord_***()`の`ratio`引数を`1`にします。\
+　ラベル配置位置の調整用の値を`d`として、`tick_df`を使って角度ラベルを描画します。また、x軸・y軸方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
+　半径などの線分を`geom_segment()`で描画します。\
+
+　サイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-pi, to = theta+pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、指定した$\theta$を中心に前後$\pi$を範囲とします。範囲(サイズ)を$2 \pi$にすると、1周期分の曲線を描画できます。\
+
+　サイン波の描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+sin_curve_df <- tibble::tibble(
+  theta = theta_vals, 
+  sin_theta = sin(theta_vals)
+)
+sin_curve_df
+```
+
+　作図用の$\theta$の値と$\sin \theta$の値を格納します。\
+
+　先ほどと同様に、sin関数上の点と単位円上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+segment_sin_df <- tibble::tibble(
+  x_from = c(theta, theta), 
+  y_from = c(sin(theta), sin(theta)), 
+  x_to = c(theta, max(theta_vals)+l), 
+  y_to = c(-axis_size*d, sin(theta))
+)
+segment_sin_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+tick_vec
+```
+
+　単位円の目盛と同様に、$30^{\circ} = \frac{\pi}{6}$間隔で目盛を表示することにします。$\frac{n}{6} \pi$の形で目盛を描画するために、作図用の角度$\theta$の最小値を、`floor()`で小数点以下を切り捨てて、$\frac{6}{\pi}$倍して、最小値の$n$を求めて`tick_min`とします。\
+　`theta_vals`のサイズが$2 \pi$の場合は、$n$から$n+13$までの整数を生成して`tick_vec`とします。\
+
+　サイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ")"
+)
+
+# サイン波を作図
+sin_graph <- ggplot() + 
+  geom_line(data = sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta), 
+            color = "red", size = 1) + # sin関数
+  geom_segment(data = segment_sin_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dashed") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = sin_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "sine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(sin(theta)))
+sin_graph
+```
+
+　x軸を$\theta$、y軸を$\sin \theta$として`geom_line()`で曲線を描画します。\
+　`scale_x_continuous()`でx軸目盛を設定します。目盛の表示位置の引数`breaks`に`tick_vec`を$\frac{\pi}{6}$倍した値、目盛ラベルの引数`labels`に$\frac{n}{6} \pi$の形の文字列を指定します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=18, fig.height=6}
+# グラフを並べて描画
+patchwork::wrap_plots(sin_graph, circle_graph)
+```
+
+　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。\
+
+　単位円上の点の高さがサイン波(sin関数)に対応しているのを確認できます。\
+\
+
+
+## アニメーションの作成
+
+　次は、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数と角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 100
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　フレーム数`frame_num`と、角度(ラジアン)$\theta$の最小値`theta_min`・最大値`theta_max`を指定して、`frame_num`個の等間隔の$\theta$の値を作成します。三角関数は$2 \pi$で1周期なので、最小値に$2 \pi$の$n$倍を加えた値を最大値にして、等間隔に切り分け最大値自体を除くと、最後のフレームと最初のフレームの繋がりが良くなります。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します。
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 2.5
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = theta, 
+    sin_theta = sin(theta), 
+    cos_theta = cos(theta)
+  )
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0), 
+    y_from = c(0, 0), 
+    x_to = c(1, cos(theta)), 
+    y_to = c(0, sin(theta))
+  )
+  
+  # 角度マークの描画用
+  d <- 0.1
+  angle_df <- tibble::tibble(
+    theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+    x = cos(theta) * d, 
+    y = sin(theta) * d
+  )
+  
+  # 角度ラベルの描画用
+  d <- 0.2
+  angle_label_df <- tibble::tibble(
+    theta = 0.5 * theta, 
+    x = cos(theta) * d, 
+    y = sin(theta) * d, 
+  angle_label = "theta"
+  )
+  
+  # sin関数の線の描画用
+  sin_line_df <- tibble::tibble(
+    x_from = cos(theta), 
+    y_from = 0, 
+    x_to = cos(theta), 
+    y_to = sin(theta)
+  )
+  
+  # sin関数の線ラベルの描画用
+  sin_label_df <- sin_line_df |> 
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to)), 
+      fnc_label = paste0("sin~theta")
+    ) |> 
+    dplyr::select(x, y, fnc_label)
+  
+  # サイン波との対応用
+  segment_circle_df <- tibble::tibble(
+    x_from = cos(theta), 
+    y_from = sin(theta), 
+    x_to = -l, 
+    y_to = sin(theta)
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 単位円を作図
+  d <- 1.1
+  circle_graph <- ggplot() + 
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+    geom_segment(data = sin_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 color = "red", size = 1) + # sin関数
+    geom_text(data = sin_label_df, 
+               mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+               angle = 90, vjust = 1, color = "red") + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 単位円上の点
+    coord_fixed(ratio = 1, clip = "off", xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+  
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  theta_vals <- seq(from = max(theta_min, theta-theta_size), to = theta, by = 0.01)
+  
+  # サイン波の描画用
+  sin_curve_df <- tibble::tibble(
+    theta = theta_vals, 
+    sin_theta = sin(theta_vals)
+  )
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  segment_sin_df <- tibble::tibble(
+    x_from = c(theta, theta), 
+    y_from = c(sin(theta), sin(theta)), 
+    x_to = c(theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, sin(theta))
+  )
+  
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ")"
+  )
+  
+  # サイン波を作図
+  sin_graph <- ggplot() + 
+    geom_line(data = sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta), 
+              color = "red", size = 1) + # sin関数
+    geom_segment(data = segment_sin_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 単位円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = sin_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(theta-theta_size, theta), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "sine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(sin(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(sin_graph, circle_graph)
+  
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 500, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　変数の値(角度)ごとに「グラフの作成」と同様に処理します。作成したグラフを`ggsave()`で保存します。\
+　保存用のフォルダは空である必要があります。また、画像ファイルの読み込み時に、文字列基準で書き出した順番になるようなファイル名である必要があります。\
+　($\theta = 0$のときの作図では、`angle_df`が1行しか値を持たないため、`geom_path()`で描画できずメッセージが表示されます。)\
+
+　アニメーション(gif画像)を作成します。
+
+```{r, eval=FALSE}
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/sin_curve.gif", delay = 0.1) -> tmp_path
+```
+
+　`list.files()`で`dir_path`フォルダ内のファイル名を取得して、ファイルパスを作成します。\
+　`image_read()`で画像を読み込んで、`image_animate()`でgifファイルに変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
+
+</details>
+
+\ 
+
+![](../../figure/curves/sin_curve.gif)
+
+　sin関数が$2 \pi$間隔で周期的に推移するのを確認できます。\
+\
+
+　この記事では、sin関数を可視化して確認しました。次の記事では、sin関数の値を加工した場合を可視化します。\
+\
+
+
+# sin関数の振幅・周期・並行移動の変形の可視化
+
+　sin関数に関して、関数または変数の係数や定数項による波の振幅・周期・並行移動の変化をグラフで確認します。sin関数の作図については「sin関数の可視化」を参照してください。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(patchwork)
+library(magick)
+```
+
+```{r, echo=FALSE}
+### 資料作成用:(チェック用)
+
+# 利用パッケージ
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## 関数をk倍する場合
+
+　まずは、sin関数$\sin \theta$の係数と振幅の関係を可視化します。\
+\
+
+
+### グラフの作成
+
+　角度$\theta$を固定した$k \sin \theta$をグラフで確認します。\
+\
+
+　関数の係数と角度を指定します。
+
+```{r}
+# 関数の係数を指定
+k <- 3
+
+# 角度を指定
+alpha <- 120
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　sin関数の係数$k$を指定します。\
+　度数法における角度$\alpha$を指定して、弧度法における角度(ラジアン)$\theta = \alpha \frac{\pi}{180}$に変換します。$\pi$は円周率で`pi`で扱えます。\
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = theta, 
+  sin_theta = sin(theta) * c(1, k), 
+  cos_theta = cos(theta) * c(1, k), 
+  fnc = c("sin theta", "k sin theta")
+)
+point_df
+```
+
+　sin関数$\sin \theta$とk倍したsin関数$k \sin \theta$、cos関数$\cos \theta$とk倍したcos関数$k \cos \theta$を計算して、$\theta$と共に格納します。(オブジェクト名と列名が重複するため、エラーにならないように処理しています。)\
+　作図時の色分けなど用に、元の関数とk倍した値を区別するための列`fnc`を作成します。\
+
+　単位円とk倍した円を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+tmp_vals <- seq(from = 0, to = 2*pi, by = 0.05)
+circle_df <- tibble::tibble(
+  theta = c(tmp_vals, tmp_vals), 
+  sin_theta = c(sin(tmp_vals), sin(tmp_vals)*k), 
+  cos_theta = c(cos(tmp_vals), cos(tmp_vals)*k), 
+  fnc = rep(c("sin theta", "k sin theta"), each = length(tmp_vals))
+)
+circle_df
+```
+
+　単位円の作図用のラジアン$0 \leq \theta \leq 2 \pi$を作成して、$\sin \theta, \cos \theta$を計算します。単位円の座標は、x軸の値$x = \cos \theta$、y軸の値$y = \sin \theta$に対応します。\
+　同様に、k倍した値も格納します。こちらは、半径が$k$の円周上の点になります。\
+
+　単位円上に角度目盛を描画するためのデータフレームを作成します。
+
+```{r}
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+tick_df
+```
+
+　$30^{\circ} = 30 \frac{\pi}{180} = \frac{\pi}{6}$間隔で、$\frac{n}{6} \pi\ (n = 0, \dots, 11)$の形で目盛を表示することにします。\
+　単位円のときと同様に、x軸とy軸の値を計算して、ラベルと合わせて格納します。ラベルとして数式を表示する場合は、`expression()`の記法を使います。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- tibble::tibble(
+  x_from = c(0, 0, 0), 
+  y_from = c(0, 0, 0), 
+  x_to = c(1, cos(theta), cos(theta)*k), 
+  y_to = c(0, sin(theta), sin(theta)*k), 
+  fnc = c("r", "sin theta", "k sin theta")
+)
+
+# 角度マークの描画用
+d <- 0.1
+angle_df <- tibble::tibble(
+  theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
+  x = cos(theta) * d, 
+  y = sin(theta) * d
+)
+
+# 角度ラベルの描画用
+d <- 0.2
+angle_label_df <- tibble::tibble(
+  theta = 0.5 * theta, 
+  x = cos(theta) * d, 
+  y = sin(theta) * d, 
+  angle_label = "theta"
+)
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}, \theta$のそれぞれの角度における半径を描画するために、原点と円周上の点を結ぶ線分の座標を格納して`radius_df`とします。始点の座標を`x_from, y_from`、終点の座標を`x_to, y_to`列とします。\
+　扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。$\theta$が正の値($\theta > 0$)のときは$0$から$\theta$、負の値($\theta < 0$)のときは$\theta$から$0$の値となるように処理します。\
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるsin関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# sin関数の線の描画用
+sin_line_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta)*k), 
+  y_from = c(0, 0), 
+  x_to = c(cos(theta), cos(theta)*k), 
+  y_to = c(sin(theta), sin(theta)*k), 
+  fnc = c("sin theta", "k sin theta")
+)
+
+# sin関数の線ラベルの描画用
+sin_label_df <- sin_line_df |> 
+  dplyr::group_by(fnc) |> # 中点の計算用
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to))
+  ) |> 
+  dplyr::ungroup() |> 
+  tibble::add_column(
+    fnc_label = c("sin~theta", "k~sin~theta")
+  ) |> 
+  dplyr::select(x, y, fnc, fnc_label)
+sin_line_df; sin_label_df
+```
+
+　sin関数の値は、角度$\theta$における単位円上の点$(\cos \theta, \sin \theta)$と、$x = 0$の直線への垂線との交点$(\cos \theta, 0)$を結ぶ線分で表現できます。同様に、k倍した値も格納します。それぞれ始点と終点の座標を格納して`sin_line_df`とします。\
+　sin関数の垂線(線分)の中点に配置するように座標とラベル用の文字列を格納して`sin_label_df`とします。\
+
+　単位円上の点とsin関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# 描画領域のサイズを設定
+axis_size <- max(1, abs(k)) + 0.5
+l         <- 1.5
+
+# サイン波との対応用
+segment_circle_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta)*k), 
+  y_from = c(sin(theta), sin(theta)*k), 
+  x_to = c(-axis_size-l, -axis_size-l), 
+  y_to = c(sin(theta), sin(theta)*k), 
+  fnc = c("sin theta", "k sin theta")
+)
+segment_circle_df
+```
+
+　円周上の点からy軸への垂線を引くように座標を指定します。作図時に、隣のグラフに届かないような長さ`l`を指定します。\
+　また、2つのグラフの描画範囲を固定するために、`axis_size`として値を指定しておきます。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", k==", k, 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 単位円を作図
+d <- 1.2
+circle_graph <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta, group = fnc, linetype = fnc), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+  geom_segment(data = sin_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # sin関数
+  geom_text(data = sin_label_df, 
+             mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+             angle = 90, vjust = 1) + # sin関数ラベル
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # sin波との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 円上の点
+  scale_color_manual(breaks = c("sin theta", "k sin theta"), 
+                     values = c("red", "blue")) + # 線の色
+  scale_linetype_manual(breaks = c("sin theta", "k sin theta", "r"), 
+                        values = c("solid", "dashed", "solid")) + # 線の種類
+  theme(legend.position = "none") + # 凡例の非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph
+```
+
+　x軸をcos関数の値、y軸をsin関数の値として、(`geom_line()`ではなく)`geom_path()`で曲線(円)を描画します。綺麗な円を描画するには`coord_***()`の`ratio`引数を`1`にします。\
+　ラベル配置位置の調整用の値を`d`として、`tick_df`を使って角度ラベルを描画します。また、x軸・y軸方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
+　半径などの線分を`geom_segment()`で描画します。\
+
+　サイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-2*pi, to = theta+2*pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、指定した$\theta$を中心に前後$2 \pi$を範囲とします。範囲(サイズ)を$2 \pi$にすると、1周期分の曲線を描画できます。この例は、2周期になります。\
+
+　サイン波の描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+sin_curve_df <- tibble::tibble(
+  theta = c(theta_vals, theta_vals), 
+  sin_theta = c(sin(theta_vals), sin(theta_vals)*k), 
+  fnc = rep(c("sin theta", "k sin theta"), each = length(theta_vals))
+)
+sin_curve_df
+```
+
+　作図用の$\theta$の値と$\sin \theta, k \sin \theta$の値を格納します。\
+
+　先ほどと同様に、sin関数上の点と円周上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+segment_sin_df <- tibble::tibble(
+  x_from = c(theta, theta, theta, theta), 
+  y_from = c(sin(theta), sin(theta), sin(theta)*k, sin(theta)*k), 
+  x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+  y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta)*k), 
+  fnc = rep(c("sin theta", "k sin theta"), each = 2)
+)
+segment_sin_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+25, by = 1)
+tick_vec
+```
+
+　単位円の目盛と同様に、$30^{\circ} = \frac{\pi}{6}$間隔で目盛を表示することにします。$\frac{n}{6} \pi$の形で目盛を描画するために、作図用の角度$\theta$の最小値を、`floor()`で小数点以下を切り捨てて、$\frac{6}{\pi}$倍して、最小値の$n$を求めて`tick_min`とします。\
+　`theta_vals`のサイズが$4 \pi$の場合は、$n$から$n+25$までの整数を生成して`tick_vec`とします。\
+
+　サイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", k==", k, 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", k~sin~theta==", round(sin(theta)*k, digits = 2), 
+  ")"
+)
+
+# サイン波を作図
+sin_graph <- ggplot() + 
+  geom_line(data = sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta, color = fnc), 
+            size = 1) + # sin関数
+  geom_segment(data = segment_sin_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = sin_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  scale_color_manual(breaks = c("sin theta", "k sin theta"), 
+                     values = c("red", "blue"), 
+                     labels = parse(text = c("sin~theta", "k~sin~theta")), 
+                     name = "function") + # 線の色
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "sine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(f(theta)))
+sin_graph
+```
+
+　x軸を$\theta$、y軸をsin関数の値として`geom_line()`で曲線を描画します。\
+　`scale_x_continuous()`でx軸目盛を設定します。目盛の表示位置の引数`breaks`に`tick_vec`を$\frac{\pi}{6}$倍した値、目盛ラベルの引数`labels`に$\frac{n}{6} \pi$の形の文字列を指定します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=18, fig.height=6}
+# グラフを並べて描画
+patchwork::wrap_plots(sin_graph, circle_graph) + 
+  patchwork::plot_layout(guides = "collect")
+```
+
+　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。\
+
+　点$(k \cos \theta, k \sin \theta)$は、半径がkの円(単位円をk倍した円)上の点になります。よって、サイン波の振幅もk倍になるのを確認できます。\
+
+・$\theta^{\circ} = 120^{\circ}, k = -1$のグラフ
+
+![](../../figure/curves/sin_t120_k-1.png)
+
+　$k$が負の値のとき、円周上の点については原点に対して反転し、サイン波については$x = 0$の直線に対して反転したグラフになります。また、「変数をa倍する場合」で確認する$a = -1$のとき、「変数にbを加える場合」で確認する$b = \pi = 180^{\circ}$のときと同じグラフになることから、$-\sin \theta = \sin(-\theta) = \sin(\theta + 180^{\circ})$が成り立つのを確認できます。\
+
+・$\theta^{\circ} = 120^{\circ}, k = \frac{1}{2}$のグラフ
+
+![](../../figure/curves/sin_t120_k0_5.png)
+
+　$k$が1未満のときは、単位円(振幅が-1から1)よりも小さくなります。\
+\
+
+
+### アニメーションの作成
+
+　続いて、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数と角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 100
+
+# 関数の係数を指定
+k <- 3
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　フレーム数`frame_num`と、角度(ラジアン)$\theta$の最小値`theta_min`・最大値`theta_max`を指定して、`frame_num`個の等間隔の$\theta$の値を作成します。三角関数は$2 \pi$で1周期なので、最小値に$2 \pi$の$n$倍を加えた値を最大値にして、等間隔に切り分け最大値自体を除くと、最後のフレームと最初のフレームの繋がりが良くなります。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+axis_size <- max(1, abs(k)) + 0.5
+l         <- 1.5
+
+# 単位円の描画用
+tmp_vals <- seq(from = 0, to = 2*pi, by = 0.05)
+circle_df <- tibble::tibble(
+  theta = c(tmp_vals, tmp_vals), 
+  sin_theta = c(sin(tmp_vals), sin(tmp_vals)*k), 
+  cos_theta = c(cos(tmp_vals), cos(tmp_vals)*k), 
+  fnc = rep(c("sin theta", "k sin theta"), each = length(tmp_vals))
+)
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = theta, 
+    sin_theta = sin(theta) * c(1, k), 
+    cos_theta = cos(theta) * c(1, k), 
+    fnc = c("sin theta", "k sin theta")
+  )
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0, 0), 
+    y_from = c(0, 0, 0), 
+    x_to = c(1, cos(theta), cos(theta)*k), 
+    y_to = c(0, sin(theta), sin(theta)*k), 
+    fnc = c("r", "sin theta", "k sin theta")
+  )
+  
+  # 角度マークの描画用
+  d <- 0.1
+  angle_df <- tibble::tibble(
+    theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
+    x = cos(theta) * d, 
+    y = sin(theta) * d
+  )
+  
+  # 角度ラベルの描画用
+  d <- 0.2
+  angle_label_df <- tibble::tibble(
+    theta = 0.5 * theta, 
+    x = cos(theta) * d, 
+    y = sin(theta) * d, 
+    angle_label = "theta"
+  )
+  
+  # sin関数の線の描画用
+  sin_line_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta)*k), 
+    y_from = c(0, 0), 
+    x_to = c(cos(theta), cos(theta)*k), 
+    y_to = c(sin(theta), sin(theta)*k), 
+    fnc = c("sin theta", "k sin theta")
+  )
+  
+  # sin関数の線ラベルの描画用
+  sin_label_df <- sin_line_df |> 
+    dplyr::group_by(fnc) |> # 中点の計算用
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to))
+    ) |> 
+    dplyr::ungroup() |> 
+    tibble::add_column(
+      fnc_label = c("sin~theta", "k~sin~theta")
+    ) |> 
+    dplyr::select(x, y, fnc, fnc_label)
+  
+  # サイン波との対応用
+  segment_circle_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta)*k), 
+    y_from = c(sin(theta), sin(theta)*k), 
+    x_to = c(-axis_size-l, -axis_size-l), 
+    y_to = c(sin(theta), sin(theta)*k), 
+    fnc = c("sin theta", "k sin theta")
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", k==", k, 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 単位円を作図
+  d <- 1.2
+  circle_graph <- ggplot() + 
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta, group = fnc, linetype = fnc), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+    geom_segment(data = sin_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+                 size = 1) + # sin関数
+    geom_text(data = sin_label_df, 
+               mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+               angle = 90, vjust = 1) + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 円上の点
+    scale_color_manual(breaks = c("sin theta", "k sin theta"), 
+                       values = c("red", "blue")) + # 線の色
+    scale_linetype_manual(breaks = c("sin theta", "k sin theta", "r"), 
+                          values = c("solid", "dashed", "solid")) + # 線の種類
+    theme(legend.position = "none") + # 凡例の非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+  
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  theta_vals <- seq(from = max(theta_min, theta-theta_size), to = theta, by = 0.01)
+  
+  # サイン波の描画用
+  sin_curve_df <- tibble::tibble(
+    theta = c(theta_vals, theta_vals), 
+    sin_theta = c(sin(theta_vals), sin(theta_vals)*k), 
+    fnc = rep(c("sin theta", "k sin theta"), each = length(theta_vals))
+  )
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  segment_sin_df <- tibble::tibble(
+    x_from = c(theta, theta, theta, theta), 
+    y_from = c(sin(theta), sin(theta), sin(theta)*k, sin(theta)*k), 
+    x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta)*k), 
+    fnc = rep(c("sin theta", "k sin theta"), each = 2)
+  )
+  
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", k==", k, 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", k~sin~theta==", round(sin(theta)*k, digits = 2), 
+    ")"
+  )
+  
+  # サイン波を作図
+  sin_graph <- ggplot() + 
+    geom_line(data = sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta, color = fnc), 
+              size = 1) + # sin関数
+    geom_segment(data = segment_sin_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 単位円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = sin_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    scale_color_manual(breaks = c("sin theta", "k sin theta"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = c("sin~theta", "k~sin~theta")), 
+                       name = "function") + # 線の色
+    #theme(legend.position = "none") + # 凡例の非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(theta-theta_size, theta), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "sine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(f(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(sin_graph, circle_graph) + 
+      patchwork::plot_layout(guides = "collect")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 600, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　「グラフの作成」で作成した`tick_df`も使います。\
+　変数の値(角度)ごとに「グラフの作成」と同様に処理して、作成したグラフを`ggsave()`で保存します。\
+　保存用のフォルダは空である必要があります。また、画像ファイルの読み込み時に、文字列基準で書き出した順番になるようなファイル名である必要があります。\
+　($\theta = 0$のときの作図では、`angle_df`が1行しか値を持たないため、`geom_path()`で描画できずメッセージが表示されます。)\
+
+　アニメーション(gif画像)を作成します。
+
+```{r, eval=FALSE}
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/sin_k.gif", delay = 0.1) -> tmp_path
+```
+
+　`list.files()`で`dir_path`フォルダ内のファイル名を取得して、ファイルパスを作成します。\
+　`image_read()`で画像を読み込んで、`image_animate()`でgifファイルに変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
+
+</details>
+
+\ 
+
+・$k = 3$の推移
+
+![](../../figure/curves/sin_k3.gif)
+
+　sin関数をk倍することで振幅がk倍になりますが、$2 \pi$間隔の周期(角速度)に変化がないのを確認できます。\
+
+・$k = -3$の推移
+
+![](../../figure/curves/sin_k-3.gif)
+
+　k倍したsin関数と-k倍sin関数では、常に円周上の点が$180^{\circ} = \pi$変化(進む・戻る)した点を推移するのが分かります。\
+
+・$k = -1$の推移
+
+![](../../figure/curves/sin_k-1.gif)
+
+　後で、$a = -1$や$b = \pi$のグラフと比較します。\
+\
+
+
+## 関数にlを加える場合
+
+　sin関数$\sin \theta$に定数$l$を加えた$\sin \theta + l$のグラフは、$\sin \theta$の曲線がy軸方向に$l$だけ並行移動します。定数項$l$と並行移動の関係は直感的な変化なので、個別の可視化は省略します。最後の「sin関数の変形」で確認することにします。\
+\
+
+
+## 変数をa倍する場合
+
+　次は、sin関数の変数$\theta$の係数と周期(波長)の関係を可視化します。\
+\
+
+
+### グラフの作成
+
+　角度$\theta$を固定した$\sin(a \theta)$をグラフで確認します。\
+\
+
+　変数の係数と角度を指定します。
+
+```{r}
+# 変数の係数を指定
+a <- 4
+
+# 角度を指定
+alpha <- 60
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　sin関数の変数(角度)の係数$a$と、角度(ラジアン)$\theta$を指定します。\
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = c(theta, theta), 
+  sin_theta = sin(theta * c(1, a)), 
+  cos_theta = cos(theta * c(1, a)), 
+  fnc = c("sin theta", "sin(a theta)")
+)
+point_df
+```
+
+　sin関数$\sin \theta$とa倍した変数によるsin関数$\sin (a \theta)$、cos関数$\cos \theta$とa倍した変数によるcos関数$\cos(a \theta)$を計算して、$\theta$と共に格納します。\
+　作図時の色分けなど用に、元の関数とa倍した変数による値を区別するための列`fnc`を作成します。\
+
+　単位円を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, by = 0.04), 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+circle_df; tick_df
+```
+
+　単位円の作図用のラジアン$0 \leq \theta \leq 2 \pi$を作成して、$\sin \theta, \cos \theta$を計算します。\
+　`tick_df`は、「関数をk倍する場合」と同じ処理です。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- tibble::tibble(
+  x_from = c(0, 0, 0), 
+  y_from = c(0, 0, 0), 
+  x_to = c(1, cos(theta), cos(theta*a)), 
+  y_to = c(0, sin(theta), sin(theta*a)), 
+  fnc = c("r", "sin theta", "sin(a theta)")
+)
+
+# 角度マークの描画用
+d1 <- 0.15
+d2 <- 0.2
+tmp_vals  <- seq(from = min(0, theta), to = max(0, theta), length.out = 100)
+angle_df <- tibble::tibble(
+  rad = c(tmp_vals, tmp_vals), 
+  x = c(cos(tmp_vals)*d1, cos(tmp_vals*a)*d2), 
+  y = c(sin(tmp_vals)*d1, sin(tmp_vals*a)*d2), 
+  ang = c(rep(c("theta", "a theta"), each = length(tmp_vals)))
+)
+
+# 角度ラベルの描画用
+d1 <- 0.1
+d2 <- 0.3
+angle_label_df <- tibble::tibble(
+  rad = c(median(c(0, theta)), median(c(0, theta*a))), 
+  x = cos(rad) * c(d1, d2), 
+  y = sin(rad) * c(d1, d2), 
+  angle_label = c("theta", "a*theta"), 
+  ang = c("theta", "a theta")
+)
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}, \theta, a \theta$のそれぞれの角度における半径を描画するために、原点と単位円上の点を結ぶ線分の座標を格納して`radius_df`とします。始点の座標を`x_from, y_from`、終点の座標を`x_to, y_to`列とします。\
+　2つの扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。角度$\theta$として$0$から$\theta$、角度$a \theta$として$0$から$a \theta$の値を使います。\
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるsin関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# sin関数の線の描画用
+sin_line_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta*a)), 
+  y_from = c(0, 0), 
+  x_to = c(cos(theta), cos(theta*a)), 
+  y_to = c(sin(theta), sin(theta*a)), 
+  fnc = c("sin theta", "sin(a theta)")
+)
+
+# sin関数の線ラベルの描画用
+sin_label_df <- sin_line_df |> 
+  dplyr::group_by(fnc) |> # 中点の計算用
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to))
+  ) |> 
+  dplyr::ungroup() |> 
+  tibble::add_column(
+    fnc_label = c("sin~theta", "sin~(a*theta)")
+  ) |> 
+  dplyr::select(x, y, fnc, fnc_label)
+sin_line_df; sin_label_df
+```
+
+　これまでと同様に処理します。\
+
+　単位円上の点とsin関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 0.5
+
+# サイン波との対応用
+segment_circle_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta*a)), 
+  y_from = c(sin(theta), sin(theta*a)), 
+  x_to = c(-axis_size-l, -axis_size-l), 
+  y_to = c(sin(theta), sin(theta*a)), 
+  fnc = c("sin theta", "sin(a theta)")
+)
+segment_circle_df
+```
+
+　これまでと同様に処理します。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", a==", round(a, digits = 2), 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 円を作図
+d <- 1.2
+circle_graph <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y, color = ang)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label, color = ang), parse = TRUE) + # 角度ラベル
+  geom_segment(data = sin_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # sin関数
+  geom_text(data = sin_label_df, 
+             mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+             angle = 90, vjust = 1) + # sin関数ラベル
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # sin波との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 円上の点
+  scale_color_manual(breaks = c("sin theta", "sin(a theta)", "theta", "a theta"), 
+                     values = c("red", "blue", "red", "blue")) + # 線の色
+  scale_linetype_manual(breaks = c("sin theta", "sin(a theta)", "r"), 
+                        values = c("solid", "dashed", "solid")) + 
+  theme(legend.position = "none") + # 凡例の非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph
+```
+
+　これまでと同様に処理します。\
+
+　サイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-2*pi, to = theta+2*pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、2周期分の値を指定します。\
+
+　サイン波の描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+sin_curve_df <- tibble::tibble(
+  theta = c(theta_vals, theta_vals), 
+  sin_theta = c(sin(theta_vals), sin(theta_vals*a)), 
+  fnc = rep(c("sin theta", "sin(a theta)"), each = length(theta_vals))
+)
+sin_curve_df
+```
+
+　作図用の$\theta$の値と$\sin \theta, \sin(a \theta)$の値を格納します。\
+
+　先ほどと同様に、sin関数上の点と円周上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+segment_sin_df <- tibble::tibble(
+  x_from = c(theta, theta, theta, theta), 
+  y_from = c(sin(theta), sin(theta), sin(theta*a), sin(theta*a)), 
+  x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+  y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta*a)), 
+  fnc = rep(c("sin theta", "sin(a theta)"), each = 2)
+)
+segment_sin_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+25, by = 1)
+tick_vec
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+　サイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", a==", round(a, digits = 2), 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", sin~(a*theta)==", round(sin(theta*a), digits = 2), 
+  ")"
+)
+
+# サイン波を作図
+sin_graph <- ggplot() + 
+  geom_line(data = sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta, color = fnc), 
+            size = 1) + # sin関数
+  geom_segment(data = segment_sin_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = sin_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  scale_color_manual(breaks = c("sin theta", "sin(a theta)"), 
+                     values = c("red", "blue"), 
+                     labels = parse(text = c("sin~theta", "sin~(a*theta)")), 
+                     name = "function") + # 線の色
+  theme(legend.text.align = 0) + # 凡例の設定
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "sine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(f(theta)))
+sin_graph
+```
+
+　「関数をk倍する場合」と同様に処理します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=18, fig.height=6}
+# グラフを並べて描画
+patchwork::wrap_plots(sin_graph, circle_graph) + 
+  patchwork::plot_layout(guides = "collect")
+```
+
+　角度$\theta$が$a$倍になることで、角速度(角の変化)も$a$倍になります。よって、波長が$\frac{1}{a}$倍($2 \pi$の範囲での周期の数が$a$倍)になるのを確認できます。\
+
+・$\theta^{\circ} = 120^{\circ}, a = -1$のグラフ
+
+![](../../figure/curves/sin_t120_a-1.png)
+
+　$a$が負の値のとき、$x = 0$の直線に対して反転したグラフになります。\
+　$a = -1$のとき、「関数をk倍する場合」の$k = -1$のときや「変数にbを加える場合」の$b = \pi$のとき、サイン波の形が同じになりますが、単位円の点(単位円における位置関係)が異なるのが分かります。\
+\
+
+
+### アニメーションの作成
+
+　続いて、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数と角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 100
+
+# 変数の定数項を指定
+a <- 2
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 0.6
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = c(theta, theta), 
+    sin_theta = sin(theta * c(1, a)), 
+    cos_theta = cos(theta * c(1, a)), 
+    fnc = c("sin theta", "sin(a theta)")
+  )
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0, 0), 
+    y_from = c(0, 0, 0), 
+    x_to = c(1, cos(theta), cos(theta*a)), 
+    y_to = c(0, sin(theta), sin(theta*a)), 
+    fnc = c("r", "sin theta", "sin(a theta)")
+  )
+  
+  # 角度マークの描画用
+  d1 <- 0.15
+  d2 <- 0.2
+  tmp_vals  <- seq(from = min(0, theta), to = max(0, theta), length.out = 100)
+  angle_df <- tibble::tibble(
+    rad = c(tmp_vals, tmp_vals), 
+    x = c(cos(tmp_vals)*d1, cos(tmp_vals*a)*d2), 
+    y = c(sin(tmp_vals)*d1, sin(tmp_vals*a)*d2), 
+    ang = c(rep(c("theta", "a theta"), each = length(tmp_vals)))
+  )
+  
+  # 角度ラベルの描画用
+  d1 <- 0.1
+  d2 <- 0.3
+  angle_label_df <- tibble::tibble(
+    rad = c(median(c(0, theta)), median(c(0, theta*a))), 
+    x = cos(rad) * c(d1, d2), 
+    y = sin(rad) * c(d1, d2), 
+    angle_label = c("theta", "a*theta"), 
+    ang = c("theta", "a theta")
+  )
+  
+  # sin関数の線の描画用
+  sin_line_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta*a)), 
+    y_from = c(0, 0), 
+    x_to = c(cos(theta), cos(theta*a)), 
+    y_to = c(sin(theta), sin(theta*a)), 
+    fnc = c("sin theta", "sin(a theta)")
+  )
+  
+  # sin関数の線ラベルの描画用
+  sin_label_df <- sin_line_df |> 
+    dplyr::group_by(fnc) |> # 中点の計算用
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to))
+    ) |> 
+    dplyr::ungroup() |> 
+    tibble::add_column(
+      fnc_label = c("sin~theta", "sin~(a*theta)")
+    ) |> 
+    dplyr::select(x, y, fnc, fnc_label)
+  
+  # サイン波との対応用
+  segment_circle_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta*a)), 
+    y_from = c(sin(theta), sin(theta*a)), 
+    x_to = c(-axis_size-l, -axis_size-l), 
+    y_to = c(sin(theta), sin(theta*a)), 
+    fnc = c("sin theta", "sin(a theta)")
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", a==", round(a, digits = 2), 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 円を作図
+  d <- 1.2
+  circle_graph <- ggplot() + 
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y, color = ang)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label, color = ang), parse = TRUE) + # 角度ラベル
+    geom_segment(data = sin_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+                 size = 1) + # sin関数
+    geom_text(data = sin_label_df, 
+               mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+               angle = 90, vjust = 1) + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 円上の点
+    scale_color_manual(breaks = c("sin theta", "sin(a theta)", "theta", "a theta"), 
+                       values = c("red", "blue", "red", "blue")) + # 線の色
+    scale_linetype_manual(breaks = c("sin theta", "sin(a theta)", "r"), 
+                          values = c("solid", "dashed", "solid")) + 
+    theme(legend.position = "none") + # 凡例の非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  theta_vals <- seq(from = max(theta_min, theta-theta_size), to = theta, by = 0.01)
+  
+  # サイン波の描画用
+  sin_curve_df <- tibble::tibble(
+    theta = c(theta_vals, theta_vals), 
+    sin_theta = c(sin(theta_vals), sin(theta_vals*a)), 
+    fnc = rep(c("sin theta", "sin(a theta)"), each = length(theta_vals))
+  )
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  segment_sin_df <- tibble::tibble(
+    x_from = c(theta, theta, theta, theta), 
+    y_from = c(sin(theta), sin(theta), sin(theta*a), sin(theta*a)), 
+    x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta*a)), 
+    fnc = rep(c("sin theta", "sin(a theta)"), each = 2)
+  )
+  
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", a==", round(a, digits = 2), 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", sin~(a*theta)==", round(sin(theta*a), digits = 2), 
+    ")"
+  )
+  
+  # サイン波を作図
+  sin_graph <- ggplot() + 
+    geom_line(data = sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta, color = fnc), 
+              size = 1) + # sin関数
+    geom_segment(data = segment_sin_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 単位円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = sin_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    scale_color_manual(breaks = c("sin theta", "sin(a theta)"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = c("sin~theta", "sin~(a*theta)")), 
+                       name = "function") + # 線の色
+    theme(legend.text.align = 0) + # 凡例の設定
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(theta-theta_size, theta), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "sine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(f(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(sin_graph, circle_graph) + 
+      patchwork::plot_layout(guides = "collect")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 600, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　「グラフの作成」で作成した`circle_df, tick_df`も使います。\
+
+　「関数をk倍する場合」のコードでgif画像を作成します。
+
+```{r, eval=FALSE, echo=FALSE}
+### 資料作成用:(再掲)
+
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/sin_a.gif", delay = 0.1) -> tmp_path
+```
+
+</details>
+
+\ 
+
+・$a = 2$の推移
+
+![](../../figure/curves/sin_a2.gif)
+
+　円周上($2 \pi$の範囲)を$\sin(\theta)$の点が1周する間に、$\sin(a \theta)$の点がa周するのを確認できます。\
+
+・$a = -2$の推移
+
+![](../../figure/curves/sin_a-2.gif)
+
+　$a$が負の値のとき、円周上の点が逆回転します。\
+
+・$a = -1$の推移
+
+![](../../figure/curves/sin_a-1.gif)
+
+　$k = -1$や$b = \pi$のグラフと比較します。\
+\
+
+
+## 変数にbを加える場合
+
+　sin関数の変数$\theta$に加える定数と並行移動の関係を可視化します。\
+\
+
+
+### グラフの作成
+
+　角度$\theta$を固定した$\sin(\theta + b)$をグラフで確認します。\
+\
+
+　変数に加える定数と角度を指定します。
+
+```{r}
+# 変数の定数項を指定
+b <- 0.5 * pi
+
+# 角度を指定
+alpha <- 120
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　sin関数の変数(角度)の定数項$b$と、角度(ラジアン)$\theta$を指定します。\
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = c(theta, theta), 
+  sin_theta = sin(theta + c(0, b)), 
+  cos_theta = cos(theta + c(0, b)), 
+  fnc = c("sin theta", "sin(theta+b)")
+)
+point_df
+```
+
+　sin関数$\sin \theta$と定数を加えた変数によるsin関数$\sin (\theta + b)$、cos関数$\cos \theta$と定数を加えた変数によるcos関数$\cos(\theta + b)$を計算して、$\theta$と共に格納します。\
+　作図時の色分けなど用に、元の関数と定数を加えた変数による値を区別するための列`fnc`を作成します。\
+
+　単位円を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, by = 0.05), 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+circle_df; tick_df
+```
+
+　「変数をa倍する場合」と同じ処理です。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- tibble::tibble(
+  x_from = c(0, 0, 0), 
+  y_from = c(0, 0, 0), 
+  x_to = c(1, cos(theta), cos(theta+b)), 
+  y_to = c(0, sin(theta), sin(theta+b)), 
+  fnc = c("r", "sin theta", "sin(theta+b)")
+)
+
+# 角度マークの描画用
+d1 <- 0.15
+d2 <- 0.2
+d3 <- 0.4
+tmp_t_vals  <- seq(from = min(0, theta), to = max(0, theta), length.out = 100)
+tmp_b_vals  <- seq(from = min(theta, theta+b),  to = max(theta, theta+b), length.out = 100)
+tmp_tb_vals <- seq(from = min(0, theta+b),  to = max(0, theta+b), length.out = 100)
+angle_df <- tibble::tibble(
+  rad = c(tmp_t_vals, tmp_b_vals, tmp_tb_vals), 
+  x = c(cos(tmp_t_vals)*d1, cos(tmp_b_vals)*d2, cos(tmp_tb_vals)*d3), 
+  y = c(sin(tmp_t_vals)*d1, sin(tmp_b_vals)*d2, sin(tmp_tb_vals)*d3), 
+  ang = c(
+    rep("theta", times = length(tmp_t_vals)), 
+    rep("b", times = length(tmp_b_vals)), 
+    rep("theta+b", times = length(tmp_tb_vals))
+  )
+)
+
+# 角度ラベルの描画用
+d1 <- 0.1
+d2 <- 0.3
+d3 <- 0.5
+angle_label_df <- tibble::tibble(
+  rad = c(median(c(0, theta)), median(c(theta, theta+b)), median(c(0, theta+b))), 
+  x = cos(rad) * c(d1, d2, d3), 
+  y = sin(rad) * c(d1, d2, d3), 
+  angle_label = c("theta", "b", "(theta+b)"), 
+  ang = c("theta", "b", "theta+b")
+)
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}, \theta, b, \theta + b$のそれぞれの角度における半径を描画するために、原点と単位円上の点を結ぶ線分の座標を格納して`radius_df`とします。始点の座標を`x_from, y_from`、終点の座標を`x_to, y_to`列とします。\
+　3つの扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。角度$\theta$として$0$から$\theta$、角度$b$として$\theta$から$b$、角度$\theta + b$として$0$から$\theta + b$の値を使います。\
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるsin関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# sin関数の線の描画用
+sin_line_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta+b)), 
+  y_from = c(0, 0), 
+  x_to = c(cos(theta), cos(theta+b)), 
+  y_to = c(sin(theta), sin(theta+b)), 
+  fnc = c("sin theta", "sin(theta+b)")
+)
+
+# sin関数の線ラベルの描画用
+sin_label_df <- sin_line_df |> 
+  dplyr::group_by(fnc) |> # 中点の計算用
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to))
+  ) |> 
+  dplyr::ungroup() |> 
+  tibble::add_column(
+    fnc_label = c("sin~theta", "sin~(theta+b)")
+  ) |> 
+  dplyr::select(x, y, fnc, fnc_label)
+sin_line_df; sin_label_df
+```
+
+　これまでと同様に処理します。\
+
+　単位円上の点とsin関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 0.5
+
+# サイン波との対応用
+segment_circle_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta+b)), 
+  y_from = c(sin(theta), sin(theta+b)), 
+  x_to = c(-axis_size-l, -axis_size-l), 
+  y_to = c(sin(theta), sin(theta+b)), 
+  fnc = c("sin theta", "sin(theta+b)")
+)
+segment_circle_df
+```
+
+　単位円上の点からy軸への垂線を引くように座標を指定します。作図時に、隣のグラフに届かないような長さ`l`を指定します。\
+　また、2つのグラフの描画範囲を固定するために、`axis_size`として値を指定しておきます。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", b==", round(b, digits = 2), 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 円を作図
+d <- 1.2
+circle_graph <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y, color = ang)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label, color = ang), parse = TRUE) + # 角度ラベル
+  geom_segment(data = sin_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # sin関数
+  geom_text(data = sin_label_df, 
+             mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+             angle = 90, vjust = 1) + # sin関数ラベル
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # sin波との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 円上の点
+  scale_color_manual(breaks = c("sin theta", "sin(theta+b)", "theta", "b", "theta+b"), 
+                     values = c("red", "blue", "red", "purple", "blue")) + # 線の色
+  scale_linetype_manual(breaks = c("sin theta", "sin(theta+b)", "r"), 
+                        values = c("solid", "dashed", "solid")) + 
+  theme(legend.position = "none") + # 凡例の非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph
+```
+
+　これまでと同様に処理します。\
+
+　サイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-2*pi, to = theta+2*pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、2周期分の値を指定します。\
+
+　サイン波の描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+sin_curve_df <- tibble::tibble(
+  theta = c(theta_vals, theta_vals), 
+  sin_theta = c(sin(theta_vals), sin(theta_vals+b)), 
+  fnc = rep(c("sin theta", "sin(theta+b)"), each = length(theta_vals))
+)
+sin_curve_df
+```
+
+　作図用の$\theta$の値と$\sin \theta, \sin(\theta + b)$の値を格納します。\
+
+　先ほどと同様に、sin関数上の点と円周上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+segment_sin_df <- tibble::tibble(
+  x_from = c(theta, theta, theta, theta), 
+  y_from = c(sin(theta), sin(theta), sin(theta+b), sin(theta+b)), 
+  x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+  y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta+b)), 
+  fnc = rep(c("sin theta", "sin(theta+b)"), each = 2)
+)
+segment_sin_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　角度$b$に関して描画するためのデータフレームを作成します。
+
+```{r}
+# 角度bに関する可視化用
+b_df <- tibble::tibble(
+  x = theta+b, 
+  y = sin(theta+b), 
+  x_to = theta, 
+  y_to = sin(theta+b), 
+  angle_lable = "b"
+) |> 
+  dplyr::mutate(
+    # 中点に配置
+    x_mid = median(c(x, x_to)), 
+    y_mid = median(c(y, y_to))
+  )
+b_df
+```
+
+　角度$\theta + b$における点の座標を`x, y`列、角度$\theta$における点の座標を`x_to, y_to`列、またその中点を`x_mid, y_mid`列として、ラベル用の文字列と共に格納します。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+25, by = 1)
+tick_vec
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+　サイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", b==", round(b, digits = 2), 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", sin~(theta+b)==", round(sin(theta+b), digits = 2), 
+  ")"
+)
+
+# サイン波を作図
+sin_graph <- ggplot() + 
+  geom_line(data = sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta, color = fnc), 
+            size = 1) + # sin関数
+  geom_segment(data = segment_sin_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               linetype = "dotted") + # 単位円との対応線
+  geom_segment(data = b_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+               color ="purple") + # 長さbの線分
+  geom_text(data = b_df, 
+            mapping = aes(x = x_mid, y = y_mid, label = angle_lable), 
+            vjust = -0.5, color = "purple") + # 線分bのラベル
+  geom_point(data = b_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4, shape = 1) + # theta+bの点
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = sin_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  scale_color_manual(breaks = c("sin theta", "sin(theta+b)"), 
+                     values = c("red", "blue"), 
+                     labels = parse(text = c("sin~theta", "sin~(theta+b)")), 
+                     name = "function") + # 線の色
+  theme(legend.text.align = 0) + # 凡例の設定
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "sine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(f(theta)))
+sin_graph
+```
+
+　「関数をk倍する場合」の作図処理に、角度$b$に関しても可視化します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=18, fig.height=6}
+# グラフを並べて描画
+patchwork::wrap_plots(sin_graph, circle_graph) + 
+  patchwork::plot_layout(guides = "collect")
+```
+
+　角度$\theta$の曲線(赤色の線)に角度$b$が加えられることで、角度$\theta + b$の曲線(青色の線)が、x軸方向に$-b$(紫色の直線)だけ並行移動する($b$の分戻る)のを確認できます。\
+
+・$\theta^{\circ} = 120^{\circ}, b = -\frac{1}{2} \pi$のグラフ
+
+![](../../figure/curves/sin_t120_b-0_5pi.png)
+
+　$b$が負の値の(変数から定数を引いた)場合は、x軸方向に$b$だけ並行移動する($b$の分進む)のを確認できます。\
+
+・$\theta^{\circ} = 120^{\circ}, b = \pi$のグラフ
+
+![](../../figure/curves/sin_t120_bpi.png)
+
+「関数をk倍する場合」の$k = -1$のときと同じグラフになるのを確認できます。\
+\
+
+
+### アニメーションの作成
+
+　続いて、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数と角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 100
+
+# 変数の定数項を指定
+b <- -0.5 * pi
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+axis_size <- 1.5
+l         <- 0.6
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = c(theta, theta), 
+    sin_theta = sin(theta + c(0, b)), 
+    cos_theta = cos(theta + c(0, b)), 
+    fnc = c("sin theta", "sin(theta+b)")
+  )
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0, 0), 
+    y_from = c(0, 0, 0), 
+    x_to = c(1, cos(theta), cos(theta+b)), 
+    y_to = c(0, sin(theta), sin(theta+b)), 
+    fnc = c("r", "sin theta", "sin(theta+b)")
+  )
+  
+  # 角度マークの描画用
+  d1 <- 0.15
+  d2 <- 0.2
+  d3 <- 0.4
+  tmp_t_vals  <- seq(from = min(0, theta), to = max(0, theta), length.out = 100)
+  tmp_b_vals  <- seq(from = min(theta, theta+b),  to = max(theta, theta+b), length.out = 100)
+  tmp_tb_vals <- seq(from = min(0, theta+b),  to = max(0, theta+b), length.out = 100)
+  angle_df <- tibble::tibble(
+    rad = c(tmp_t_vals, tmp_b_vals, tmp_tb_vals), 
+    x = c(cos(tmp_t_vals)*d1, cos(tmp_b_vals)*d2, cos(tmp_tb_vals)*d3), 
+    y = c(sin(tmp_t_vals)*d1, sin(tmp_b_vals)*d2, sin(tmp_tb_vals)*d3), 
+    ang = c(
+      rep("theta", times = length(tmp_t_vals)), 
+      rep("b", times = length(tmp_b_vals)), 
+      rep("theta+b", times = length(tmp_tb_vals))
+    )
+  )
+  
+  # 角度ラベルの描画用
+  d1 <- 0.1
+  d2 <- 0.3
+  d3 <- 0.5
+  angle_label_df <- tibble::tibble(
+    rad = c(median(c(0, theta)), median(c(theta, theta+b)), median(c(0, theta+b))), 
+    x = cos(rad) * c(d1, d2, d3), 
+    y = sin(rad) * c(d1, d2, d3), 
+    angle_label = c("theta", "b", "(theta+b)"), 
+    ang = c("theta", "b", "theta+b")
+  )
+  
+  # sin関数の線の描画用
+  sin_line_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta+b)), 
+    y_from = c(0, 0), 
+    x_to = c(cos(theta), cos(theta+b)), 
+    y_to = c(sin(theta), sin(theta+b)), 
+    fnc = c("sin theta", "sin(theta+b)")
+  )
+  
+  # sin関数の線ラベルの描画用
+  sin_label_df <- sin_line_df |> 
+    dplyr::group_by(fnc) |> # 中点の計算用
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to))
+    ) |> 
+    dplyr::ungroup() |> 
+    tibble::add_column(
+      fnc_label = c("sin~theta", "sin~(theta+b)")
+    ) |> 
+    dplyr::select(x, y, fnc, fnc_label)
+  
+  # サイン波との対応用
+  segment_circle_df <- tibble::tibble(
+    x_from = c(cos(theta), cos(theta+b)), 
+    y_from = c(sin(theta), sin(theta+b)), 
+    x_to = c(-axis_size-l, -axis_size-l), 
+    y_to = c(sin(theta), sin(theta+b)), 
+    fnc = c("sin theta", "sin(theta+b)")
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", b==", round(b, digits = 2), 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 円を作図
+  d <- 1.2
+  circle_graph <- ggplot() + 
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, linetype = fnc)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y, color = ang)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label, color = ang), parse = TRUE) + # 角度ラベル
+    geom_segment(data = sin_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+                 size = 1) + # sin関数
+    geom_text(data = sin_label_df, 
+               mapping = aes(x = x, y = y, label = fnc_label, color = fnc), parse = TRUE, 
+               angle = 90, vjust = 1) + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 円上の点
+    scale_color_manual(breaks = c("sin theta", "sin(theta+b)", "theta", "b", "theta+b"), 
+                     values = c("red", "blue", "red", "purple", "blue")) + # 線の色
+    scale_linetype_manual(breaks = c("sin theta", "sin(theta+b)", "r"), 
+                          values = c("solid", "dashed", "solid")) + 
+    theme(legend.position = "none") + # 凡例の非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+  
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  tmp_theta  <- max(theta, theta+b)
+  theta_vals <- seq(from = max(theta_min, tmp_theta-theta_size), to = tmp_theta, by = 0.01)
+  
+  # サイン波の描画用
+  sin_curve_df <- tibble::tibble(
+    theta = c(theta_vals, theta_vals), 
+    sin_theta = c(sin(theta_vals), sin(theta_vals+b)), 
+    fnc = rep(c("sin theta", "sin(theta+b)"), each = length(theta_vals))
+  )
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  segment_sin_df <- tibble::tibble(
+    x_from = c(theta, theta, theta, theta), 
+    y_from = c(sin(theta), sin(theta), sin(theta+b), sin(theta+b)), 
+    x_to = c(theta, max(theta_vals)+l, theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, sin(theta), -axis_size*d, sin(theta+b)), 
+    fnc = rep(c("sin theta", "sin(theta+b)"), each = 2)
+  )
+  
+  # 角度bに関する可視化用
+  b_df <- tibble::tibble(
+    x = theta+b, 
+    y = sin(theta+b), 
+    x_to = theta, 
+    y_to = sin(theta+b), 
+    angle_lable = "b"
+  ) |> 
+    dplyr::mutate(
+      # 中点に配置
+      x_mid = median(c(x, x_to)), 
+      y_mid = median(c(y, y_to))
+    )
+  
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((tmp_theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", b==", round(b, digits = 2), 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", sin~(theta+b)==", round(sin(theta+b), digits = 2), 
+    ")"
+  )
+  
+  # サイン波を作図
+  sin_graph <- ggplot() + 
+    geom_line(data = sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta, color = fnc), 
+              size = 1) + # sin関数
+    geom_segment(data = segment_sin_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 単位円との対応線
+    geom_segment(data = b_df, 
+                 mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+                 color ="purple") + # 長さbの線分
+    geom_text(data = b_df, 
+              mapping = aes(x = x_mid, y = y_mid, label = angle_lable), 
+              vjust = -0.5, color = "purple") + # 線分bのラベル
+    geom_point(data = b_df, 
+               mapping = aes(x = x, y = y), 
+               size = 4, shape = 1) + # theta+bの点
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = sin_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    scale_color_manual(breaks = c("sin theta", "sin(theta+b)"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = c("sin~theta", "sin~(theta+b)")), 
+                       name = "function") + # 線の色
+    theme(legend.text.align = 0) + # 凡例の設定
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(tmp_theta-theta_size, tmp_theta), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "sine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(f(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(sin_graph, circle_graph) + 
+      patchwork::plot_layout(guides = "collect")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 600, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　「グラフの作成」で作成した`circle_df, tick_df`も使います。\
+
+　「関数をk倍する場合」のコードでgif画像を作成します。
+
+```{r, eval=FALSE, echo=FALSE}
+### 資料作成用:(再掲)
+
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/sin_b.gif", delay = 0.1) -> tmp_path
+```
+
+</details>
+
+\ 
+
+・$b = \frac{1}{2}\pi$の推移
+
+![](../../figure/curves/sin_b0_5pi.gif)
+
+・$b = -\frac{1}{2}\pi$の推移
+
+![](../../figure/curves/sin_b-0_5pi.gif)
+
+・$b = \pi$の推移
+
+![](../../figure/curves/sin_bpi.gif)
+
+　$a = -1$や$a = -1$のグラフと比較します。\
+\
+
+
+## サイン波の変形
+
+　ここまでは、個別の変化を確認しました。最後に、全ての変形を行います。\
+\
+
+
+### グラフの作成
+
+　角度$\theta$を固定した$k \sin(a \theta + b) + l$をグラフで確認します。\
+\
+
+　パラメータと角度を指定します。
+
+```{r}
+# パラメータを指定
+k_i <- c(-2, 3, 3)
+l_i <- c(0, 2, -3)
+a_i <- c(1.5, 1.5, -1)
+b_i <- c(1/6*pi, 1/6*pi, -1/2*pi)
+
+# 曲線の数を設定
+n <- length(k_i)
+
+# 角度を指定
+alpha <- 60
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　パラメータ$k, l, a, b$と角度(ラジアン)$\theta$を指定します。\
+　パラメータを、それぞれ`k_i, l_i, a_i, b_i`として、同じ数の値を指定します。また指定した数を`n`とします。\
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 因子レベルの設定用のベクトルを作成
+param_level <- paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")")
+
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = theta, 
+  sin_theta = sin(theta * a_i + b_i) * k_i + l_i, 
+  cos_theta = cos(theta * a_i + b_i) * k_i, 
+  param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+    factor(levels = param_level)
+)
+point_df
+```
+
+　$\theta$と$k \sin(a \theta + b) + l$、$k \cos(a \theta + b)$を格納します。\
+　作図時の色分けなど用に、元の関数とパラメータによって加工した値を区別するための列`param`を作成します。線の色付け順や凡例の表示順を設定する場合は、因子型にしてレベルを設定しておきます。\
+
+　円を描画するためのデータフレームを作成します。
+
+```{r}
+# 円の描画用
+circle_df <- tidyr::expand_grid(
+  i = 1:n, # 曲線番号
+  theta = seq(from = 0, to = 2*pi, by = 0.05)
+) |> # 曲線ごとに作図用のθを複製
+  dplyr::group_by(i) |> # 角度の作成用
+  dplyr::mutate(
+    sin_theta = sin(theta) * k_i[unique(i)] + l_i[unique(i)], 
+    cos_theta = cos(theta) * k_i[unique(i)], 
+    param = paste0(
+      "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+      ", a==", a_i[unique(i)], ", b==", round(b_i[unique(i)], 2), ")"
+    ) |> 
+    factor(levels = param_level)
+  ) |> 
+  dplyr::ungroup()
+circle_df
+```
+
+　`1`から`n`の整数を曲線(パラメータの組み合わせ)番号として、円の作図用のラジアン$0 \leq \theta \leq 2 \pi$(`theta`列)との全ての組み合わせを`expand_grid()`で作成します。これにより、パラメータの設定ごとに`theta`列を複製できます。$a, b$の計算は、円周上を移動するだけなので、結果に影響しません。\
+　`i`列でグループ化してパラメータの設定ごとに、$k \sin \theta + l$、$k \cos \theta$を計算します。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- dplyr::bind_rows(
+  tibble::tibble(
+    x_from = 0, 
+    y_from = 0 + l_i, 
+    x_to = 1 * abs(k_i), 
+    y_to = 0 + l_i, 
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level), 
+    k = k_i, 
+    type = "main"
+  ), # 水平方向の半径
+  tibble::tibble(
+    x_from = 0, 
+    y_from = 0 + l_i, 
+    x_to = cos(theta * a_i + b_i) * k_i,  
+    y_to = sin(theta * a_i + b_i) * k_i + l_i,  
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level), 
+    k = k_i, 
+    type = "main"
+  ), # 角度aθ+bの半径
+  tibble::tibble(
+    x_from = 0, 
+    y_from = 0 + l_i, 
+    x_to = cos(theta * a_i + b_i) * abs(k_i),  
+    y_to = sin(theta * a_i + b_i) * abs(k_i) + l_i,  
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level), 
+    k = k_i, 
+    type = "sub"
+  ) # kが負のとき用の半径
+) |> 
+  dplyr::group_by(k) |> # 行の抽出用
+  dplyr::filter(
+    (type == "main") | (k < 0 & type == "sub")
+  ) |> # 不要な行を除去
+  dplyr::ungroup()
+
+# 角度マークの描画用
+d <- 0.1
+angle_df <- tibble::tibble(
+  i = 1:n # 曲線番号
+) |> 
+  dplyr::group_by(i) |> # 角度の作成用
+  dplyr::summarise(
+    theta = seq(from = min(0, theta*a_i[i]+b_i[i]), to = max(0, theta*a_i[i]+b_i[i]), length.out = 100), 
+    .groups = "keep"
+  ) |> 
+  dplyr::mutate(
+    x = cos(theta) * (unique(i)+1)*d, 
+    y = sin(theta) * (unique(i)+1)*d + l_i[unique(i)], 
+    param = paste0(
+      "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+      ", a==", a_i[unique(i)], ", b==", round(b_i, 2)[unique(i)], ")"
+    ) |> 
+    factor(levels = param_level)
+  ) |> 
+  dplyr::ungroup()
+
+# 角度ラベルの描画用
+angle_label_df <- angle_df |> 
+  dplyr::group_by(i, param) |> # 中点の計算用
+  dplyr::summarise(
+    theta = median(theta), .groups = "keep"
+  ) |> 
+  dplyr::mutate(
+    x = cos(theta) * (i+2)*d, 
+    y = sin(theta) * (i+2)*d + l_i[i], 
+    angle_label = paste0("theta[", i, "]")
+  ) |> 
+  dplyr::ungroup()
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}$と各$a \theta + b$における半径を描画するために、原点と円上の点を結ぶ線分の座標を格納して`radius_df`とします。ただし、$k$が負の値の場合は、その角度$a \theta + b$の線分を破線で、反転させた線分を実線で描画することにします。\
+　そこで、それぞれデータフレームに値を格納しておいて`bind_rows()`で結合し、`filter()`で不要な行($k$が正の値の場合の行)を取り除きます(もっと上手く処理できれば教えて下さい)。\
+
+　各角度に応じた扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。\
+　`i`列でグループ化して角ごとに、$0$から$a \theta + b$の値を`summarise()`で作成します。\
+
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるsin関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# sin関数の線の描画用
+sin_line_df <- tibble::tibble(
+  i = 1:n, # 曲線番号
+  x_from = cos(theta * a_i + b_i) * k_i, 
+  y_from = 0 + l_i, 
+  x_to = cos(theta * a_i + b_i) * k_i, 
+  y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+  param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+    factor(levels = param_level)
+)
+
+# sin関数の線ラベルの描画用
+sin_label_df <- sin_line_df |> 
+  dplyr::group_by(i) |> # 中点の計算用
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), 
+    sin_theta = sin(theta * a_i[i] + b_i[i]) * k_i[i] + l_i[i], 
+    fnc_label = paste0("sin[", i, "]==", round(sin_theta, digits = 2))
+  ) |> 
+  dplyr::ungroup() |> 
+  dplyr::select(x, y, param, fnc_label)
+sin_line_df; sin_label_df
+```
+
+　これまでと同様に処理します。\
+
+　描画範囲を固定するための値を作成します。
+
+```{r}
+# 描画領域のサイズを設定
+d <- 0.5
+x_min <- -max(abs(k_i)) - d
+x_max <- max(abs(k_i)) + d
+y_min <- -max(abs(k_i)) + min(l_i) - d
+y_max <- max(abs(k_i)) + max(l_i) + d
+l     <- 1.5
+x_min; x_max; y_min; y_max
+```
+
+　2つのグラフの描画範囲を固定するために、x軸の範囲を`x_min, x_max`、y軸の範囲を`y_min, y_max`として、また隣のグラフに届かないような長さ`l`を指定します。\
+
+　円上の点とsin関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波との対応用
+segment_circle_df <- tibble::tibble(
+  x_from = cos(theta * a_i + b_i) * k_i, 
+  y_from = sin(theta * a_i + b_i) * k_i + l_i, 
+  x_to = x_min-l, 
+  y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+  param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+    factor(levels = param_level)
+)
+segment_circle_df
+```
+
+　円周上の点からy軸への垂線を引くように座標を指定します。\
+
+　ここまでは、設定したパラメータそれぞれに応じた値を持つ作図用のデータフレームを作成しました。\
+　目安として表示するために、単位円における作図用のデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+unit_circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, by = 0.05), 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+
+# 半径の描画用
+unit_radius_df <- tibble::tibble(
+  x_from = c(0, 0), 
+  y_from = c(0, 0), 
+  x_to = c(1, cos(theta)), 
+  y_to = c(0, sin(theta))
+)
+
+# 角度マークの描画用
+d <- 0.1
+unit_angle_df <- tibble::tibble(
+  theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+  x = cos(theta) * d, 
+  y = sin(theta) * d
+)
+
+# 角度ラベルの描画用
+d <- 0.2
+unit_angle_label_df <- tibble::tibble(
+  theta = 0.5 * theta, 
+  x = cos(theta) * d, 
+  y = sin(theta) * d, 
+  angle_label = "theta"
+)
+
+# サイン波との対応用
+segment_unit_circle_df <- tibble::tibble(
+  x = cos(theta), 
+  y = sin(theta), 
+  x_to = x_min-l, 
+  y_to = sin(theta)
+)
+```
+
+　「sin関数の可視化」と同様の処理です。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=8, fig.height=12}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 円を作図
+d <- 1.2
+circle_graph <- ggplot() + 
+  geom_path(data = unit_circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = unit_radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 角度θの半径
+  geom_path(data = unit_angle_df, 
+            mapping = aes(x = x, y = y)) + # 角度θのマーク
+  geom_text(data = unit_angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度θのラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta, color = param), 
+            linetype = "dotted", size = 1) + # 半径kの円
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                             color = param, linetype = type)) + # 角度aθ+bの半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y, color = param)) + # 角度aθ+bのマーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label, color = param), parse = TRUE) + # 角度aθ+bのラベル
+  geom_segment(data = sin_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+               size = 1) + # 角度aθ+bのsin関数
+  geom_text(data = sin_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = param), parse = TRUE, 
+            angle = 90, vjust = 1) + # 角度aθ+bのsin関数ラベル
+  geom_segment(data = segment_unit_circle_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 角度θのsin波との対応線
+  geom_point(data = segment_unit_circle_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4) + # 角度θの点
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+               size = 1, linetype = "dotted") + # 角度aθ+bのsin波との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta, color = param), 
+             size = 4) + # 円上の点
+  scale_linetype_manual(breaks = c("main", "sub"), 
+                        values = c("solid", "dashed")) + # 線の種類
+  scale_color_hue(breaks = point_df[["param"]], 
+                  labels = parse(text = as.character(point_df[["param"]])), 
+                  name = expression(k~sin(a*theta+b)+l)) + # 線の色の凡例
+  theme(legend.position = "none") + # 凡例の非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(x_min, x_max), ylim = c(y_min, y_max)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph
+```
+
+　これまでと同様に、単位円$(\cos(\theta), \sin(\theta))$とパラメータごとの円$(k \cos(\theta) + l, k \sin(\theta) + l)$に関して作図します。\
+
+　サイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-2*pi, to = theta+2*pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、2周期分の値を指定します。\
+
+　サイン波の描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+sin_curve_df <- tidyr::expand_grid(
+  i = 1:n, # 曲線番号
+  theta = theta_vals
+) |> # 曲線ごとに作図用のθを複製
+  dplyr::group_by(i) |> 
+  dplyr::mutate(
+    sin_theta = sin(theta * a_i[unique(i)] + b_i[unique(i)]) * k_i[unique(i)] + l_i[unique(i)], 
+    param = paste0(
+      "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+      ", a==", a_i[unique(i)], ", b==", round(b_i[unique(i)], 2), ")"
+    ) |> 
+      factor(levels = param_level)
+  ) |> 
+  dplyr::ungroup()
+sin_curve_df
+```
+
+　作図用の値`theta_vals`を`expand_grid()`で複製して、$\theta$と$k \sin(a \theta + b) + l$を計算します。\
+
+　先ほどと同様に、sin関数上の点と円周上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・円との対応用
+d <- 1.1
+segment_sin_df <- tibble::tibble(
+  x_from = theta, 
+  y_from = sin(theta * a_i + b_i) * k_i + l_i, 
+  x_to = max(theta_vals)+l, 
+  y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+  param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+    factor(levels = param_level)
+)
+segment_sin_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　また、元のsin関数と単位円上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波の描画用
+unit_sin_curve_df <- tibble::tibble(
+  theta = theta_vals, 
+  sin_theta = sin(theta_vals)
+)
+
+# x軸(角度)・単位円との対応用
+segment_unit_sin_df <- tibble::tibble(
+  x = theta, 
+  y = sin(theta) , 
+  x_to = max(theta_vals)+l, 
+  y_to = sin(theta)
+)
+```
+
+　曲線上の点からy軸への垂線を引くように座標を指定します。`x, y`列は、曲線上の点などを描画するのにも使います。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+25, by = 1)
+tick_vec
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+　サイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=12}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ")"
+)
+
+# サイン波を作図
+sin_graph <- ggplot() + 
+  geom_line(data = unit_sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta), 
+            size = 1) + # 角度θのsin関数
+  geom_segment(data = segment_unit_sin_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 角度θの単位円との対応線
+  geom_vline(data = segment_unit_sin_df, 
+             mapping = aes(xintercept = x), 
+             size = 1, linetype = "dotted") + # 角度θの単位円との対応線
+  geom_point(data = segment_unit_sin_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4) + # 角度θの関数曲線上の点
+  geom_line(data = sin_curve_df, 
+            mapping = aes(x = theta, y = sin_theta, color = param), 
+            size = 1) + # 角度aθ+bのsin関数
+  geom_segment(data = segment_sin_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+               size = 1, linetype = "dotted") + # 角度aθ+bの円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = sin_theta, color = param), 
+             size = 4) + # 角度aθ+bの関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  scale_color_hue(breaks = point_df[["param"]], 
+                  labels = parse(text = as.character(point_df[["param"]])), 
+                  name = expression(k~sin(a*theta+b)+l)) + 
+  theme(legend.text.align = 0) + # 凡例の左揃え
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(y_min, y_max)) + # 描画領域
+  labs(title = "sine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(f(theta)))
+sin_graph
+```
+
+　これまでと同様に、元のsin関数$\sin \theta$とパラメータごとのsin関数$k \sin(a \theta + b) + l$に関して作図します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=20, fig.height=10}
+# グラフを並べて描画
+patchwork::wrap_plots(sin_graph, circle_graph) + 
+  patchwork::plot_layout(guides = "collect")
+```
+
+　$l$の値によってグラフ全体がy軸方向に変化するのを確認できます。\
+\
+
+
+### アニメーションの作成
+
+　続いて、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数とパラメータ、角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 100
+
+# パラメータを指定
+k_i <- c(-2, 3, 3)
+l_i <- c(0, 2, -3)
+a_i <- c(1.5, 1.5, -1)
+b_i <- c(1/6*pi, 1/6*pi, -1/2*pi)
+
+# 曲線の数を設定
+n <- length(k_i)
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　「関数をk倍する場合」と同じ処理です。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+d <- 0.5
+x_min <- -max(abs(k_i)) - d
+x_max <- max(abs(k_i)) + d
+y_min <- -max(abs(k_i)) + min(l_i) - d
+y_max <- max(abs(k_i)) + max(l_i) + d
+l     <- 1.5
+
+# 円の描画用
+circle_df <- tidyr::expand_grid(
+  i = 1:n, # 曲線番号
+  theta = seq(from = 0, to = 2*pi, by = 0.05)
+) |> # 曲線ごとに作図用のθを複製
+  dplyr::group_by(i) |> # 角度の作成用
+  dplyr::mutate(
+    sin_theta = sin(theta) * k_i[unique(i)] + l_i[unique(i)], 
+    cos_theta = cos(theta) * k_i[unique(i)], 
+    param = paste0(
+      "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+      ", a==", a_i[unique(i)], ", b==", round(b_i[unique(i)], 2), ")"
+    ) |> 
+    factor(levels = param_level)
+  ) |> 
+  dplyr::ungroup()
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 因子レベルの設定用のベクトルを作成
+  param_level <- paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")")
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = theta, 
+    sin_theta = sin(theta * a_i + b_i) * k_i + l_i, 
+    cos_theta = cos(theta * a_i + b_i) * k_i, 
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level)
+  )
+
+  # 半径の描画用
+  radius_df <- dplyr::bind_rows(
+    tibble::tibble(
+      x_from = 0, 
+      y_from = 0 + l_i, 
+      x_to = 1 * abs(k_i), 
+      y_to = 0 + l_i, 
+      param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+        factor(levels = param_level), 
+      k = k_i, 
+      type = "main"
+    ), # 水平方向の半径
+    tibble::tibble(
+      x_from = 0, 
+      y_from = 0 + l_i, 
+      x_to = cos(theta * a_i + b_i) * k_i,  
+      y_to = sin(theta * a_i + b_i) * k_i + l_i,  
+      param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+        factor(levels = param_level), 
+      k = k_i, 
+      type = "main"
+    ), # 角度aθ+bの半径
+    tibble::tibble(
+      x_from = 0, 
+      y_from = 0 + l_i, 
+      x_to = cos(theta * a_i + b_i) * abs(k_i),  
+      y_to = sin(theta * a_i + b_i) * abs(k_i) + l_i,  
+      param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+        factor(levels = param_level), 
+      k = k_i, 
+      type = "sub"
+    ) # kが負のとき用の半径
+  ) |> 
+    dplyr::group_by(k) |> # 行の抽出用
+    dplyr::filter(
+      (type == "main") | (k < 0 & type == "sub")
+    ) |> # 不要な行を除去
+    dplyr::ungroup()
+    
+  # 角度マークの描画用
+  d <- 0.1
+  angle_df <- tibble::tibble(
+    i = 1:n # 曲線番号
+  ) |> 
+    dplyr::group_by(i) |> # 角度の作成用
+    dplyr::summarise(
+      theta = seq(from = min(0, theta*a_i[i]+b_i[i]), to = max(0, theta*a_i[i]+b_i[i]), length.out = 100), 
+      .groups = "keep"
+    ) |> 
+    dplyr::mutate(
+      x = cos(theta) * (unique(i)+1)*d, 
+      y = sin(theta) * (unique(i)+1)*d + l_i[unique(i)], 
+      param = paste0(
+        "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+        ", a==", a_i[unique(i)], ", b==", round(b_i, 2)[unique(i)], ")"
+      ) |> 
+      factor(levels = param_level)
+    ) |> 
+    dplyr::ungroup()
+  
+  # 角度ラベルの描画用
+  angle_label_df <- angle_df |> 
+    dplyr::group_by(i, param) |> # 中点の計算用
+    dplyr::summarise(
+      theta = median(theta), .groups = "keep"
+    ) |> 
+    dplyr::mutate(
+      x = cos(theta) * (i+2)*d, 
+      y = sin(theta) * (i+2)*d + l_i[i], 
+      angle_label = paste0("theta[", i, "]")
+    ) |> 
+    dplyr::ungroup()
+
+  # sin関数の線の描画用
+  sin_line_df <- tibble::tibble(
+    i = 1:n, # 曲線番号
+    x_from = cos(theta * a_i + b_i) * k_i, 
+    y_from = 0 + l_i, 
+    x_to = cos(theta * a_i + b_i) * k_i, 
+    y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level)
+  )
+  
+  # sin関数の線ラベルの描画用
+  sin_label_df <- sin_line_df |> 
+    dplyr::group_by(i) |> # 中点の計算用
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to)), 
+      sin_theta = sin(theta * a_i[i] + b_i[i]) * k_i[i] + l_i[i], 
+      fnc_label = paste0("sin[", i, "]==", round(sin_theta, digits = 2))
+    ) |> 
+    dplyr::ungroup() |> 
+    dplyr::select(x, y, param, fnc_label)
+
+  # サイン波との対応用
+  segment_circle_df <- tibble::tibble(
+    x_from = cos(theta * a_i + b_i) * k_i, 
+    y_from = sin(theta * a_i + b_i) * k_i + l_i, 
+    x_to = x_min-l, 
+    y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level)
+  )
+
+  # 半径の描画用
+  unit_radius_df <- tibble::tibble(
+    x_from = c(0, 0), 
+    y_from = c(0, 0), 
+    x_to = c(1, cos(theta)), 
+    y_to = c(0, sin(theta))
+  )
+  
+  # 角度マークの描画用
+  d <- 0.1
+  unit_angle_df <- tibble::tibble(
+    theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+    x = cos(theta) * d, 
+    y = sin(theta) * d
+  )
+  
+  # 角度ラベルの描画用
+  d <- 0.2
+  unit_angle_label_df <- tibble::tibble(
+    theta = 0.5 * theta, 
+    x = cos(theta) * d, 
+    y = sin(theta) * d, 
+    angle_label = "theta"
+  )
+  
+  # サイン波との対応用
+  segment_unit_circle_df <- tibble::tibble(
+    x = cos(theta), 
+    y = sin(theta), 
+    x_to = x_min-l, 
+    y_to = sin(theta)
+  )
+
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 円を作図
+  d <- 1.2
+  circle_graph <- ggplot() + 
+    geom_path(data = unit_circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = unit_radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 角度θの半径
+    geom_path(data = unit_angle_df, 
+              mapping = aes(x = x, y = y)) + # 角度θのマーク
+    geom_text(data = unit_angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度θのラベル
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta, color = param), 
+              linetype = "dotted", size = 1) + # 半径kの円
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                               color = param, linetype = type)) + # 角度aθ+bの半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y, color = param)) + # 角度aθ+bのマーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label, color = param), parse = TRUE) + # 角度aθ+bのラベル
+    geom_segment(data = sin_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+                 size = 1) + # 角度aθ+bのsin関数
+    geom_text(data = sin_label_df, 
+              mapping = aes(x = x, y = y, label = fnc_label, color = param), parse = TRUE, 
+              angle = 90, vjust = 1) + # 角度aθ+bのsin関数ラベル
+    geom_segment(data = segment_unit_circle_df, 
+                 mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 角度θのsin波との対応線
+    geom_point(data = segment_unit_circle_df, 
+               mapping = aes(x = x, y = y), 
+               size = 4) + # 角度θの点
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+                 linetype = "dotted") + # 角度aθ+bのsin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta, color = param), 
+               size = 4) + # 円上の点
+    scale_linetype_manual(breaks = c("main", "sub"), 
+                          values = c("solid", "dashed")) + # 線の種類
+    scale_color_hue(breaks = point_df[["param"]], 
+                    labels = parse(text = as.character(point_df[["param"]])), 
+                    name = expression(k~sin(a*theta+b)+l)) + # 線の色の凡例
+    theme(legend.position = "none") + # 凡例の非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(x_min, x_max), ylim = c(y_min, y_max)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  theta_vals <- seq(from = max(theta_min, theta-theta_size), to = theta, by = 0.01)
+  
+  # サイン波の描画用
+  sin_curve_df <- tidyr::expand_grid(
+    i = 1:n, # 曲線番号
+    theta = theta_vals
+  ) |> # 曲線ごとに作図用のθを複製
+    dplyr::group_by(i) |> 
+    dplyr::mutate(
+      sin_theta = sin(theta * a_i[unique(i)] + b_i[unique(i)]) * k_i[unique(i)] + l_i[unique(i)], 
+      param = paste0(
+        "list(k==", k_i[unique(i)], ", l==", l_i[unique(i)], 
+        ", a==", a_i[unique(i)], ", b==", round(b_i[unique(i)], 2), ")"
+      ) |> 
+        factor(levels = param_level)
+    ) |> 
+    dplyr::ungroup()
+  
+  # x軸(角度)・円との対応用
+  d <- 1.1
+  segment_sin_df <- tibble::tibble(
+    x_from = theta, 
+    y_from = sin(theta * a_i + b_i) * k_i + l_i, 
+    x_to = max(theta_vals)+l, 
+    y_to = sin(theta * a_i + b_i) * k_i + l_i, 
+    param = paste0("list(k==", k_i, ", l==", l_i, ", a==", a_i, ", b==", round(b_i, 2), ")") |> 
+      factor(levels = param_level)
+  )
+
+  # サイン波の描画用
+  unit_sin_curve_df <- tibble::tibble(
+    theta = theta_vals, 
+    sin_theta = sin(theta_vals)
+  )
+  
+  # x軸(角度)・単位円との対応用
+  segment_unit_sin_df <- tibble::tibble(
+    x = theta, 
+    y = sin(theta) , 
+    x_to = max(theta_vals)+l, 
+    y_to = sin(theta)
+  )
+
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ")"
+  )
+  
+  # サイン波を作図
+  sin_graph <- ggplot() + 
+    geom_line(data = unit_sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta), 
+              size = 1) + # 角度θのsin関数
+    geom_segment(data = segment_unit_sin_df, 
+                 mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 角度θの単位円との対応線
+    geom_vline(data = segment_unit_sin_df, 
+               mapping = aes(xintercept = x), 
+               linetype = "dotted") + # 角度θの単位円との対応線
+    geom_point(data = segment_unit_sin_df, 
+               mapping = aes(x = x, y = y), 
+               size = 4) + # 角度θの関数曲線上の点
+    geom_line(data = sin_curve_df, 
+              mapping = aes(x = theta, y = sin_theta, color = param), 
+              size = 1) + # 角度aθ+bのsin関数
+    geom_segment(data = segment_sin_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = param), 
+                 linetype = "dotted") + # 角度aθ+bの円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = sin_theta, color = param), 
+               size = 4) + # 角度aθ+bの関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    scale_color_hue(breaks = point_df[["param"]], 
+                    labels = parse(text = as.character(point_df[["param"]])), 
+                    name = expression(k~sin(a*theta+b)+l)) + 
+    theme(legend.text.align = 0) + # 凡例の左揃え
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(theta-theta_size, theta), ylim = c(y_min, y_max)) + # 描画領域
+    labs(title = "sine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(f(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(sin_graph, circle_graph) + 
+      patchwork::plot_layout(guides = "collect")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1500, height = 1000, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　「グラフの作成」で作成した`unit_circle_df, tick_df`も使います。\
+
+　「関数をk倍する場合」のコードでgif画像を作成します。
+
+```{r, eval=FALSE, echo=FALSE}
+### 資料作成用:(再掲)
+
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/sin_curves.gif", delay = 0.1) -> tmp_path
+```
+
+</details>
+
+\ 
+
+![](../../figure/curves/sin_curves.gif)
+
+　色々比較してみてください。\
+\
+
+　この記事では、sin関数の変形を確認しました。\
+\
+
+
+# cos関数の可視化
+
+
+
+# tan関数の可視化
+
+
+
+# 参考書籍
+
 
