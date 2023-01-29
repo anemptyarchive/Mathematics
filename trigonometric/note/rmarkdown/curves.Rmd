@@ -1011,7 +1011,7 @@ radius_df <- tibble::tibble(
 # 角度マークの描画用
 d <- 0.1
 angle_df <- tibble::tibble(
-  theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+  theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
   x = cos(theta) * d, 
   y = sin(theta) * d
 )
@@ -1287,7 +1287,7 @@ for(i in 1:frame_num) {
   # 角度マークの描画用
   d <- 0.1
   angle_df <- tibble::tibble(
-    theta = seq(from = min(0, theta), to = max(0, theta), by = 0.1), 
+    theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
     x = cos(theta) * d, 
     y = sin(theta) * d
   )
@@ -1470,9 +1470,9 @@ file_path_vec |>
 \
 
 
-# sin関数の振幅・周期・並行移動の変形の可視化
+# sin関数の振幅・周期・平行移動の変形の可視化
 
-　sin関数に関して、関数または変数の係数や定数項による波の振幅・周期・並行移動の変化をグラフで確認します。sin関数の作図については「sin関数の可視化」を参照してください。\
+　sin関数に関して、関数または変数の係数や定数項による波の振幅・周期・平行移動の変化をグラフで確認します。sin関数の作図については「sin関数の可視化」を参照してください。\
 \
 
 　利用するパッケージを読み込みます。
@@ -2132,7 +2132,7 @@ file_path_vec |>
 
 ## 関数にlを加える場合
 
-　sin関数$\sin \theta$に定数$l$を加えた$\sin \theta + l$のグラフは、$\sin \theta$の曲線がy軸方向に$l$だけ並行移動します。定数項$l$と並行移動の関係は直感的な変化なので、個別の可視化は省略します。最後の「sin関数の変形」で確認することにします。\
+　sin関数$\sin \theta$に定数$l$を加えた$\sin \theta + l$のグラフは、$\sin \theta$の曲線がy軸方向に$l$だけ平行移動します。定数項$l$と平行移動の関係は直感的な変化なので、個別の可視化は省略します。最後の「sin関数の変形」で確認することにします。\
 \
 
 
@@ -2746,7 +2746,7 @@ file_path_vec |>
 
 ## 変数にbを加える場合
 
-　sin関数の変数$\theta$に加える定数と並行移動の関係を可視化します。\
+　sin関数の変数$\theta$に加える定数と平行移動の関係を可視化します。\
 \
 
 
@@ -3098,13 +3098,13 @@ patchwork::wrap_plots(sin_graph, circle_graph) +
   patchwork::plot_layout(guides = "collect")
 ```
 
-　角度$\theta$の曲線(赤色の線)に角度$b$が加えられることで、角度$\theta + b$の曲線(青色の線)が、x軸方向に$-b$(紫色の直線)だけ並行移動する($b$の分戻る)のを確認できます。\
+　角度$\theta$の曲線(赤色の線)に角度$b$が加えられることで、角度$\theta + b$の曲線(青色の線)が、x軸方向に$-b$(紫色の直線)だけ平行移動する($b$の分戻る)のを確認できます。\
 
 ・$\theta^{\circ} = 120^{\circ}, b = -\frac{1}{2} \pi$のグラフ
 
 ![](../../figure/curves/sin_t120_b-0_5pi.png)
 
-　$b$が負の値の(変数から定数を引いた)場合は、x軸方向に$b$だけ並行移動する($b$の分進む)のを確認できます。\
+　$b$が負の値の(変数から定数を引いた)場合は、x軸方向に$b$だけ平行移動する($b$の分進む)のを確認できます。\
 
 ・$\theta^{\circ} = 120^{\circ}, b = \pi$のグラフ
 
@@ -4353,6 +4353,1401 @@ file_path_vec |>
 
 
 # cos関数の可視化
+
+　単位円における角度とcos関数(コサイン波・余弦波)の関係をグラフで可視化します。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(patchwork)
+library(magick)
+```
+
+```{r, echo=FALSE}
+### 資料作成用:(チェック用)
+
+# 利用パッケージ
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## グラフの作成
+
+　角度を固定したグラフを作成します。\
+\
+
+
+### 変数の設定
+
+　まずは、cos関数の変数である角度(ラジアン)を設定します。\
+\
+
+　角度を指定します。
+
+```{r}
+# 角度を指定
+alpha <- -120
+
+# ラジアンに変換
+theta <- alpha / 180 * pi
+theta
+```
+
+　度数法における角度$\alpha$を指定して、弧度法における角度(ラジアン)$\theta = \alpha \frac{2 \pi}{360}$に変換します。$\pi$は円周率で`pi`で扱えます。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　曲線上に関数の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 関数の点の描画用
+point_df <- tibble::tibble(
+  theta = theta, 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+point_df
+```
+
+　sin関数$\sin \theta$、cos関数$\cos \theta$を計算して、$\theta$と共に格納します。\
+\
+
+　コサイン波の作図用のラジアンの値を作成します。
+
+```{r}
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = theta-pi, to = theta+pi, by = 0.01)
+head(theta_vals)
+```
+
+　この例では、指定した$\theta$を中心に前後$\pi$を範囲とします。範囲(サイズ)を$2 \pi$にすると、1周期分の曲線を描画できます。\
+
+　x軸目盛として、角度ラベルを描画するのに用いるベクトルを作成します。
+
+```{r}
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+tick_vec
+```
+
+　単位円の目盛と同様に、$30^{\circ} = \frac{\pi}{6}$間隔で目盛を表示することにします。$\frac{n}{6} \pi$の形で目盛を描画するために、作図用の角度$\theta$の最小値を、`floor()`で小数点以下を切り捨てて、$\frac{6}{\pi}$倍して、最小値の$n$を求めて`tick_min`とします。\
+　`theta_vals`のサイズが$2 \pi$の場合は、$n$から$n+13$までの整数を生成して`tick_vec`とします。\
+
+　コサイン波を描画するためのデータフレームを作成します。
+
+```{r}
+# コサイン波の描画用
+cos_curve_df <- tibble::tibble(
+  theta = theta_vals, 
+  cos_theta = cos(theta_vals)
+)
+cos_curve_df
+```
+
+　作図用の$\theta$の値と$\cos \theta$の値を格納します。\
+
+</details>
+
+\ 
+
+
+### 単位円の作図
+
+　次に、cos関数の変数である角度を単位円上で確認するためのグラフを作成します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　単位円を描画するためのデータフレームと、単位円上に角度目盛を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円の描画用
+circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, by = 0.04), 
+  sin_theta = sin(theta), 
+  cos_theta = cos(theta)
+)
+
+# 角度目盛の描画用
+tick_df <- tibble::tibble(
+  alpha = 0:11 * 30, 
+  theta = 0:11 / 6 * pi, 
+  x = cos(theta), 
+  y = sin(theta), 
+  rad_label = paste0("frac(", 0:11, ", 6)~pi")
+)
+circle_df; tick_df
+```
+
+　単位円の作図用のラジアン$0 \leq \theta < 2 \pi$を作成して、$\sin \theta, \cos \theta$を計算します。単位円の座標は、x軸の値$x = \cos \theta$、y軸の値$y = \sin \theta$に対応します。\
+　$30^{\circ} = 30 \frac{2 \pi}{360} = \frac{\pi}{6}$間隔で、$\frac{n}{6} \pi\ (n = 0, \dots, 11)$の形で目盛を表示することにします。単位円と同様に、x軸とy軸の値を計算して、ラベルと合わせて格納します。ラベルとして数式を表示する場合は、`expression()`の記法を使います。\
+
+　角度を表示するためのデータフレームを作成します。
+
+```{r}
+# 半径の描画用
+radius_df <- tibble::tibble(
+  x_from = c(0, 0), 
+  y_from = c(0, 0), 
+  x_to = c(1, cos(theta)), 
+  y_to = c(0, sin(theta))
+)
+
+# 角度マークの描画用
+d <- 0.1
+angle_df <- tibble::tibble(
+  theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
+  x = cos(theta) * d, 
+  y = sin(theta) * d
+)
+
+# 角度ラベルの描画用
+d <- 0.2
+angle_label_df <- tibble::tibble(
+  theta = 0.5 * theta, 
+  x = cos(theta) * d, 
+  y = sin(theta) * d, 
+  angle_label = "theta"
+)
+radius_df; angle_df; angle_label_df
+```
+
+　$0^{\circ}, \alpha$のそれぞれの角度における半径を描画するために、原点と単位円上の点を結ぶ線分の座標を格納して`radius_df`とします。始点の座標を`x_from, y_from`、終点の座標を`x_to, y_to`列とします。\
+　扇形(角度マーク)を描画するための値(ラジアン)を作成して、x軸とy軸の値を計算して`angle_df`とします。$\theta$が正の値($\theta > 0$)のときは0から$\theta$、負の値($\theta < 0$)のときは$\theta$から0の値を使います。\
+　角度の中点に配置するように座標とラベル用の文字列を格納して`angle_label_df`とします。\
+
+　単位円におけるcos関数の値を描画するためのデータフレームを作成します。
+
+```{r}
+# cos関数の線の描画用
+cos_line_df <- tibble::tibble(
+  x_from = 0, 
+  y_from = sin(theta), 
+  x_to = cos(theta), 
+  y_to = sin(theta)
+)
+
+# cos関数の線ラベルの描画用
+cos_label_df <- cos_line_df |> 
+  dplyr::mutate(
+    # 中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), 
+    fnc_label = paste0("cos~theta")
+  ) |> 
+  dplyr::select(x, y, fnc_label)
+cos_line_df; cos_label_df
+```
+
+　cos関数の値は、角度$\theta$における単位円上の点$(\cos \theta, \sin \theta)$と、$y = 0$の直線への垂線との交点$(0, \sin \theta)$を結ぶ線分で表現できます。この2点の座標を格納して`cos_line_df`とします。\
+　cos関数の水平線(線分)の中点に配置するように座標とラベル用の文字列を格納して`cos_label_df`とします。\
+
+　グラフの描画範囲を固定するための値を設定します。
+
+```{r}
+# 描画領域のサイズを設定
+draw_size   <- 1
+margin_size <- 0.5
+axis_size   <- draw_size + margin_size
+```
+
+　曲線の描画範囲の0.5倍(単位円の半径)の値を`draw_size`、曲線の最小値・最大値からx軸・y軸までの範囲を`margin_size`として指定し、またグラフ全体のサイズの0.5倍の値(2つの和)を`axis_size`とします。\
+
+　単位円上の点とcos関数上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# サイン波との対応用
+l <- 1
+segment_circle_df <- tibble::tibble(
+  x_from = cos(theta), 
+  y_from = sin(theta), 
+  x_to = cos(theta), 
+  y_to_top = axis_size+l, # (上側に配置する場合)
+  y_to_bottom = -axis_size-l # (下側に配置する場合)
+)
+segment_circle_df
+```
+
+　単位円上の点からy軸への垂線を引くように座標を指定します。作図時に、隣のグラフに届かないような長さ`l`を指定します。\
+　コサイン波のグラフを上側・下側に配置する場合の2通りの値を格納しておきます。\
+
+　単位円のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta*degree==", round(theta*180/pi, digits = 2), "*degree", 
+  ", theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 単位円を作図
+d <- 1.1
+circle_graph_top <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+  geom_segment(data = cos_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               color = "red", size = 1) + # sin関数
+  geom_text(data = cos_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+            vjust = 1, color = "red") + # sin関数ラベル
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to_top), 
+               size = 1, linetype = "dotted") + # sin波との対応線:(上側に配置する場合)
+  #geom_segment(data = segment_circle_df, 
+  #             mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to_bottom), 
+  #             size = 1, linetype = "dotted") + # sin波との対応線:(下側に配置する場合)
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 単位円上の点
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+#circle_graph_top
+```
+
+　x軸を$\cos \theta$、y軸を$\sin \theta$として、(`geom_line()`ではなく)`geom_path()`で曲線(円)を描画します。綺麗な円を描画するには`coord_***()`のアスペクト比の引数`ratio`を`1`にします。\
+　ラベル配置位置の調整用の値を`d`として、`tick_df`を使って角度ラベルを描画します。また、x軸・y軸方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
+　半径などの線分を`geom_segment()`で描画します。\
+
+</details>
+
+\ 
+
+```{r, echo=FALSE, fig.width=6, fig.height=6}
+### 資料作成用:(出力)
+
+circle_graph_top
+```
+
+```{r, echo=FALSE, fig.width=6, fig.height=6}
+### 資料作成用:(再掲・出力)
+
+# 単位円を作図
+d <- 1.1
+circle_graph_bottom <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = cos_theta, y = sin_theta), 
+            size = 1) + # 単位円
+  geom_text(data = tick_df, 
+            mapping = aes(x = x, y = y, angle = alpha+90), 
+            label = "|", size = 2) + # 角度目盛
+  geom_text(data = tick_df, 
+            mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_segment(data = radius_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+  geom_path(data = angle_df, 
+            mapping = aes(x = x, y = y)) + # 角度マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+  geom_segment(data = cos_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               color = "red", size = 1) + # sin関数
+  geom_text(data = cos_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+            vjust = 1, color = "red") + # sin関数ラベル
+  #geom_segment(data = segment_circle_df, 
+  #             mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to_top), 
+  #             size = 1, linetype = "dotted") + # sin波との対応線:(上側に配置する場合)
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to_bottom), 
+               size = 1, linetype = "dotted") + # sin波との対応線:(下側に配置する場合)
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = sin_theta), 
+             size = 4) + # 単位円上の点
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = fnc_label), 
+       x = "x", y = "y")
+circle_graph_bottom
+```
+
+　コサイン波のグラフを上側・下側に配置する場合の2つの図を作成しておきます。\
+\
+
+
+### コサイン波の作図：上に配置
+
+　続いて、単位円の上にコサイン波を配置したグラフを作成します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　cos関数上の点と単位円上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+l <- 0.2
+segment_cos_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta)), 
+  y_from = c(theta, theta), 
+  x_to = c(-axis_size*d, cos(theta)), 
+  y_to = c(theta, max(theta_vals)+l)
+)
+segment_cos_df
+```
+
+　曲線上の点からx軸とy軸への垂線を引くように座標を指定します。\
+
+　コサイン波のグラフを作成します。
+
+```{r, fig.width=6, fig.height=12}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# コサイン波を作図
+cos_graph <- ggplot() + 
+  geom_path(data = cos_curve_df, 
+            mapping = aes(x = cos_theta, y = theta), 
+            color = "red", size = 1) + # cos関数
+  geom_segment(data = segment_cos_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = theta), 
+             size = 4) + # 関数曲線上の点
+  scale_y_reverse(breaks = tick_vec/6*pi, 
+                  labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(max(theta_vals), min(theta_vals))) + # 描画領域
+  labs(title = "cosine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(cos(theta)), y = expression(theta))
+cos_graph
+```
+
+　x軸を$\cos \theta$、y軸を$\theta$として`geom_path()`で曲線を描画します。\
+　他の曲線と形(向き)を合わせるために、`scale_y_reverse()`でy軸を反転させます。また、目盛の表示位置の引数`breaks`に`tick_vec`を$\frac{\pi}{6}$倍した値、目盛ラベルの引数`labels`に$\frac{n}{6} \pi$の形の文字列を指定します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=6, fig.height=18}
+# グラフを並べて描画
+graph <- patchwork::wrap_plots(cos_graph, circle_graph_top, nrow = 2, ncol = 1)
+#graph
+```
+
+　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。\
+
+</details>
+
+\ 
+
+```{r, echo=FALSE, fig.width=6, fig.height=18}
+### 資料作成用:(出力)
+
+graph
+```
+
+　単位円上の点の横幅がコサイン波(cos関数)に対応しているのを確認できます。\
+\
+
+
+### コサイン波の作図：下に配置
+
+　同様に、単位円の下にコサイン波を配置します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　先ほどと同様に、cos関数上の点と単位円上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+l <- 0.7
+segment_cos_df <- tibble::tibble(
+  x_from = c(cos(theta), cos(theta)), 
+  y_from = c(theta, theta), 
+  x_to = c(-axis_size*d, cos(theta)), 
+  y_to = c(theta, min(theta_vals)-l)
+)
+segment_cos_df
+```
+
+　曲線上の点からx軸の反対側とy軸への垂線を引くように座標を指定します。\
+
+　「上に配置」の作図コードで、コサイン波のグラフを作成できます。
+
+```{r, echo=FALSE, fig.width=6, fig.height=12}
+### 資料作成用:(再掲)
+
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# コサイン波を作図
+cos_graph <- ggplot() + 
+  geom_path(data = cos_curve_df, 
+            mapping = aes(x = cos_theta, y = theta), 
+            color = "red", size = 1) + # cos関数
+  geom_segment(data = segment_cos_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_theta, y = theta), 
+             size = 4) + # 関数曲線上の点
+  scale_y_reverse(breaks = tick_vec/6*pi, 
+                  labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(max(theta_vals), min(theta_vals))) + # 描画領域
+  labs(title = "cosine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(cos(theta)), y = expression(theta))
+cos_graph
+```
+
+　x軸を$\theta$、y軸を$\sin \theta$として`geom_line()`で曲線を描画します。\
+　`scale_x_continuous()`でx軸目盛を設定します。目盛の表示位置の引数`breaks`に`tick_vec`を$\frac{\pi}{6}$倍した値、目盛ラベルの引数`labels`に$\frac{n}{6} \pi$の形の文字列を指定します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=6, fig.height=18}
+# グラフを並べて描画
+graph <- patchwork::wrap_plots(circle_graph_bottom, cos_graph, nrow = 2, ncol = 1)
+#graph
+```
+
+\ 
+
+</details>
+
+\ 
+
+```{r, echo=FALSE, fig.width=6, fig.height=18}
+### 資料作成用:(出力)
+
+graph
+```
+
+\ 
+
+
+### コサイン波の作図：左上に配置
+
+　ここまでは、コサイン波が縦方向に伸びるグラフを作成しました。今度は、横方向に伸びるグラフを単位円の左上に配置したグラフを作成します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　コサイン波のグラフの前に、単位円における横軸の値を、関数曲線における縦軸の値に変換するためのグラフを用意します。\
+
+　x軸の値を90度回転する線を描画するためのデータフレームを作成します。
+
+```{r}
+# cos関数の値の変換線の描画用
+adapt_line_df <- tibble::tibble(
+  rad = seq(from = 0, to = 0.5*pi, length.out = 50), 
+  x = cos(rad) * (axis_size+cos(theta)) - axis_size, 
+  y = sin(rad) * (axis_size+cos(theta)) - axis_size
+)
+adapt_line_df
+```
+
+　単位円の第1象限に対応する値$0 \leq \theta \leq \frac{\pi}{2}$を作成して、x軸とy軸の値を計算します。その際に、x軸とy軸の値に`axis_size + cos(theta)`を掛けることで、半径が`axis_size + cos(theta)`の円になります。さらに、x軸とy軸の値から`axis_size`を引くことで、円全体を`axis_size`だけ左と下方向に並行移動します。`axis_size + cos(theta)`の`axis_size`が移動分に対応し、グラフの左下を円の中心(扇形の頂点)として、$\cos \theta$を90度回転する曲線になります。\
+
+　単位円とコサイン波との変換図のグリッド線を描画するためのデータフレームを作成します。
+
+```{r}
+# 変換図のグリッド線の描画用
+adapt_grid_df <- tidyr::expand_grid(
+  d = axis_size + seq(from = -1, to = 1, by = 0.5), # グリッド線の位置を指定
+  rad = seq(from = 0, to = 0.5*pi, length.out = 50)
+) |> # グリッド線の数に応じてラジアンを複製
+  dplyr::mutate(
+    x = cos(rad) * d - axis_size, 
+    y = sin(rad) * d - axis_size
+  )
+adapt_grid_df
+```
+
+　x軸の値が$\{-1, -0.5, 0, 0.5, 1\}$の5つの値に関してグリッド線を表示することにします。\
+　0.5間隔の値を`seq(from = -1, to = 1, by = 0.5)`で作成して、先ほどと同様に、`axis_size`を足してx軸とy軸の値を計算します。その際に、`expand_grid()`で「曲線描画用の値(`rad`列の値)」を「グリッド線の数(`d`列の値の数)」に応じて複製します。\
+
+　変換図上の点とcos関数上の点・単位円上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円とコサイン波の対応用
+l <- 0.5
+segment_adapt_df <- tibble::tibble(
+  x = c(cos(theta), -axis_size), 
+  y = c(-axis_size, cos(theta)), 
+  x_to = c(cos(theta), -axis_size-l), 
+  y_to = c(-axis_size-l, cos(theta))
+)
+segment_adapt_df
+```
+
+　曲線(扇形の孤)を延長するように座標を指定します。\
+
+　変換図を作成します。
+
+```{r, fig.width=6, fig.height=6}
+# 変換グラフを作図
+adapt_graph <- ggplot() + 
+  geom_line(data = adapt_grid_df, 
+            mapping = aes(x = x, y = y, group = d), 
+            color = "white") + # グリッド線
+  geom_segment(data = segment_adapt_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円・コサイン波との対応線
+  geom_line(data = adapt_line_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1, linetype = "dotted") + # cos関数の値の線
+  geom_point(data = segment_adapt_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4) + # cos関数の値
+  #theme(panel.grid = element_blank()) + # 元のグリッド線を非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(x = "x", y = "x")
+adapt_graph
+```
+
+\ 
+
+　cos関数上の点と変換図上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+l <- 0.5
+segment_cos_df <- tibble::tibble(
+  x_from = c(theta, theta), 
+  y_from = c(cos(theta), cos(theta)), 
+  x_to = c(theta, max(theta_vals)+l), 
+  y_to = c(-axis_size*d, cos(theta))
+)
+segment_cos_df
+```
+
+　曲線上の点からx軸とy軸の反対側への垂線を引くように座標を指定します。\
+
+　コサイン波のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6}
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# コサイン波を作図
+cos_graph <- ggplot() + 
+  geom_line(data = cos_curve_df, 
+            mapping = aes(x = theta, y = cos_theta), 
+            color = "red", size = 1) + # cos関数
+  geom_segment(data = segment_cos_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = cos_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "cosine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(cos(theta)))
+cos_graph
+```
+
+　x軸を$\theta$、y軸を$\cos \theta$として`geom_line()`(または`geom_path()`)で曲線を描画します。\
+　「上に配置」のときと同様に、`scale_x_continuous()`でx軸目盛を設定します。\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=16, fig.height=12}
+# グラフを並べて描画
+graph <- patchwork::wrap_plots(
+  cos_graph, adapt_graph, patchwork::plot_spacer(), circle_graph_top, 
+  nrow = 2, ncol = 2
+)
+#graph
+```
+
+　グラフを配置しない位置を`plot_spacer()`で指定します。\
+
+</details>
+
+\ 
+
+```{r, echo=FALSE, fig.width=16, fig.height=12}
+### 資料作成用:(出力)
+
+graph
+```
+
+　　単位円上の点の横幅がコサイン波(cos関数)の高さに対応しているのを確認できます。\
+\
+
+
+### コサイン波の作図：右下に配置
+
+　同様に、単位円の右下にコサイン波を配置します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　x軸の値を90度変換する線を描画するためのデータフレームを作成します。
+
+```{r}
+# cos関数の値の変換線の描画用
+adapt_line_df <- tibble::tibble(
+  rad = seq(from = pi, to = 1.5*pi, length.out = 50), 
+  x = cos(rad) * (axis_size-cos(theta)) + axis_size, 
+  y = sin(rad) * (axis_size-cos(theta)) + axis_size
+)
+adapt_line_df
+```
+
+　こちらは、単位円の第3象限に対応する値$\pi \leq \theta \leq \frac{3 \pi}{2}$を作成して、グラフの右上が円の中心(扇形の頂点)となるように、x軸とy軸の値を計算します。\
+
+　単位円とコサイン波との変換図のグリッド線を描画するためのデータフレームを作成します。
+
+```{r}
+# 変換図のグリッド線の描画用
+adapt_grid_df <- tidyr::expand_grid(
+  d = axis_size - seq(from = -1, to = 1, by = 0.5), # グリッド線の位置を指定
+  rad = seq(from = pi, to = 1.5*pi, length.out = 50)
+) |> # グリッド線の数に応じてラジアンを複製
+  dplyr::mutate(
+    x = cos(rad) * d + axis_size, 
+    y = sin(rad) * d + axis_size
+  )
+adapt_grid_df
+```
+
+　同様に処理します。\
+
+　変換図上の点とcos関数上の点・単位円上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# 単位円とコサイン波の対応用
+l <- 0.5
+segment_adapt_df <- tibble::tibble(
+  x = c(cos(theta), axis_size), 
+  y = c(axis_size, cos(theta)), 
+  x_to = c(cos(theta), axis_size+l), 
+  y_to = c(axis_size+l, cos(theta))
+)
+segment_adapt_df
+```
+
+　曲線(扇形の孤)を延長するように座標を指定します。\
+
+　「左上に配置」の作図コードで、変換図を作成できます。
+
+```{r, echo=FALSE, fig.width=6, fig.height=6}
+### 資料作成用:(再掲)
+
+# 変換グラフを作図
+adapt_graph <- ggplot() + 
+  geom_line(data = adapt_grid_df, 
+            mapping = aes(x = x, y = y, group = d), 
+            color = "white") + # グリッド線
+  geom_segment(data = segment_adapt_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円・コサイン波との対応線
+  geom_line(data = adapt_line_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1, linetype = "dotted") + # cos関数の値の線
+  geom_point(data = segment_adapt_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4) + # cos関数の値
+  #theme(panel.grid = element_blank()) + # 元のグリッド線を非表示
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(x = "x", y = "x")
+adapt_graph
+```
+
+\ 
+
+　cos関数上の点と変換図上の点を結ぶ線(の一部)を描画するためのデータフレームを作成します。
+
+```{r}
+# x軸(角度)・単位円との対応用
+d <- 1.1
+l <- 0.8
+segment_cos_df <- tibble::tibble(
+  x_from = c(theta, theta), 
+  y_from = c(cos(theta), cos(theta)), 
+  x_to = c(theta, min(theta_vals)-l), 
+  y_to = c(-axis_size*d, cos(theta))
+)
+segment_cos_df
+```
+
+　曲線上の点からx軸・y軸への垂線を引くように座標を指定します。\
+
+　「左上に配置」の作図コードで、サイン波のグラフを作成できます。
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+### 資料作成用:(再掲)
+
+# 関数ラベルを作成
+fnc_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# コサイン波を作図
+cos_graph <- ggplot() + 
+  geom_line(data = cos_curve_df, 
+            mapping = aes(x = theta, y = cos_theta), 
+            color = "red", size = 1) + # cos関数
+  geom_segment(data = segment_cos_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 単位円との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = theta, y = cos_theta), 
+             size = 4) + # 関数曲線上の点
+  scale_x_continuous(breaks = tick_vec/6*pi, 
+                     labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "cosine curve", 
+       subtitle = parse(text = fnc_label), 
+       x = expression(theta), y = expression(cos(theta)))
+cos_graph
+```
+
+\ 
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=16, fig.height=12}
+# グラフを並べて描画
+graph <- patchwork::wrap_plots(
+  circle_graph_bottom, patchwork::plot_spacer(), 
+  adapt_graph, cos_graph, widths = c(1, 2, 1, 2), 
+  nrow = 2, ncol = 2
+)
+#graph
+```
+
+\ 
+
+</details>
+
+\ 
+
+```{r, echo=FALSE, fig.width=16, fig.height=12}
+### 資料作成用:(出力)
+
+graph
+```
+
+\
+
+
+## アニメーションの作成：1周期
+
+　次は、単位円と曲線上の点を変化させたアニメーションを作成します。\
+\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　フレーム数を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 120
+
+# 作図用のラジアンの値を作成
+theta_vals <- seq(from = 0, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+
+# x軸目盛ラベルの描画用の値を作成
+tick_min <- floor(min(theta_vals) * 6 / pi)
+tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+```
+
+　フレーム数`frame_num`を指定して、$0$から$2 \pi$の範囲の`frame_num`個の値を作成します。$\cos 0 = \cos 2 \pi$なので、`frame_num + 1`個の等間隔に切り分けて最後の値$2 \pi$を除くと、最後のフレームと最初のフレームの繋がりが良くなります。\
+
+　`theta_vals`から順番に値を取り出して作図し、グラフを書き出します。
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+draw_size   <- 1
+margin_size <- 0.5
+axis_size   <- draw_size + margin_size
+
+# コサイン波の描画用
+cos_curve_df <- tibble::tibble(
+  theta = theta_vals, 
+  cos_theta = cos(theta_vals)
+)
+
+# 角度ごとに作図
+for(i in seq_along(theta_vals)) {
+  
+  # i番目のラジアンを抽出
+  theta <- theta_vals[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = theta, 
+    sin_theta = sin(theta), 
+    cos_theta = cos(theta)
+  )
+  
+  ## 単位円の作図:(上側・下側によって一部の処理を切り替える)
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0), 
+    y_from = c(0, 0), 
+    x_to = c(1, cos(theta)), 
+    y_to = c(0, sin(theta))
+  )
+  
+  # 角度マークの描画用
+  d <- 0.1
+  angle_df <- tibble::tibble(
+    theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
+    x = cos(theta) * d, 
+    y = sin(theta) * d
+  )
+  
+  # 角度ラベルの描画用
+  d <- 0.2
+  angle_label_df <- tibble::tibble(
+    theta = 0.5 * theta, 
+    x = cos(theta) * d, 
+    y = sin(theta) * d, 
+    angle_label = "theta"
+  )
+  
+  # cos関数の線の描画用
+  cos_line_df <- tibble::tibble(
+    x_from = 0, 
+    y_from = sin(theta), 
+    x_to = cos(theta), 
+    y_to = sin(theta)
+  )
+  
+  # cos関数の線ラベルの描画用
+  cos_label_df <- cos_line_df |> 
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to)), 
+      fnc_label = paste0("cos~theta")
+    ) |> 
+    dplyr::select(x, y, fnc_label)
+  
+  # サイン波との対応用
+  l <- 0.9
+  segment_circle_df <- tibble::tibble(
+    x_from = cos(theta), 
+    y_from = sin(theta), 
+    x_to = cos(theta), 
+    y_to = axis_size+l # (上側に配置する場合)
+    #y_to = -axis_size-l # (下側に配置する場合)
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta*degree==", round(theta*180/pi, digits = 2), "*degree", 
+    ", theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 単位円を作図
+  d <- 1.1
+  circle_graph_top <- ggplot() +  # (上側に配置する場合)
+  #circle_graph_bottom <- ggplot() +  # (下側に配置する場合)
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+    geom_segment(data = cos_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 color = "red", size = 1) + # sin関数
+    geom_text(data = cos_label_df, 
+              mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+              vjust = 1, color = "red") + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 単位円上の点
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+  
+  ## コサイン波の作図:(上・下・左・右によって全部の処理を切り替える)
+  
+  # cos関数の値の変換線の描画用
+  adapt_line_df <- tibble::tibble(
+    rad = seq(from = 0, to = 0.5*pi, length.out = 50), 
+    x = cos(rad) * (axis_size+cos(theta)) - axis_size, 
+    y = sin(rad) * (axis_size+cos(theta)) - axis_size
+  )
+  
+  # 単位円とコサイン波の対応用
+  l <- 0.6
+  segment_adapt_df <- tibble::tibble(
+    x = c(cos(theta), -axis_size), 
+    y = c(-axis_size, cos(theta)), 
+    x_to = c(cos(theta), -axis_size-l), 
+    y_to = c(-axis_size-l, cos(theta))
+  )
+  
+  # 変換グラフを作図
+  adapt_graph <- ggplot() + 
+    geom_line(data = adapt_grid_df, 
+              mapping = aes(x = x, y = y, group = d), 
+              color = "white") + # グリッド線
+    geom_segment(data = segment_adapt_df, 
+                 mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # 単位円・コサイン波との対応線
+    geom_line(data = adapt_line_df, 
+              mapping = aes(x = x, y = y), 
+              size = 1, linetype = "dotted") + # cos関数の値の線
+    geom_point(data = segment_adapt_df, 
+               mapping = aes(x = x, y = y), 
+               size = 4) + # cos関数の値
+    #theme(panel.grid = element_blank()) + # 元のグリッド線を非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(x = "x", y = "x")
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  l <- 0.5
+  segment_cos_df <- tibble::tibble(
+    x_from = c(theta, theta), 
+    y_from = c(cos(theta), cos(theta)), 
+    x_to = c(theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, cos(theta))
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # コサイン波を作図
+  cos_graph <- ggplot() + 
+    geom_line(data = cos_curve_df, 
+              mapping = aes(x = theta, y = cos_theta), 
+              color = "red", size = 1) + # cos関数
+    geom_segment(data = segment_cos_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # 単位円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = cos_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "cosine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(cos(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(
+    cos_graph, adapt_graph, patchwork::plot_spacer(), circle_graph_top, 
+    nrow = 2, ncol = 2
+  )
+  
+  ## 画像の保存
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1500, height = 1000, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　単位円の作図に関して、上側・下側のどちらに配置するかによって、`segment_circle_df`の`y_to`列と、単位円のグラフの変数名`circle_graph_***`の処理を、コメントアウトなどで切り替える必要があります。\
+　コサイン波の作図に関して、どこに配置するかによって処理全体を書き換えてください(ほぼ同じコードを4つとも用意するのは面倒でした)。\
+　また、「グラフの作成」で作成した`circle_df`・`tick_df`と、左・右に配置する場合は`adapt_grid_df`も使います。\
+
+　変数の値(角度)ごとに「グラフの作成」と同様に処理します。作成したグラフを`ggsave()`で保存します。\
+　保存用のフォルダは空である必要があります。また、画像ファイルの読み込み時に、文字列基準で書き出した順番になるようなファイル名である必要があります。\
+　($\theta = 0$のときの作図では、`angle_df`が1行しか値を持たないため、`geom_path()`で描画できずメッセージが表示されます。)\
+
+　アニメーション(gif画像)を作成します。
+
+```{r, eval=FALSE}
+# ファイル名を取得
+file_name_vec <- list.files(dir_path)
+
+# ファイルパスを作成
+file_path_vec <- paste0(dir_path, "/", file_name_vec)
+
+# gif画像を作成
+file_path_vec |> 
+  magick::image_read() |> 
+  magick::image_animate(fps = 1, dispose = "previous") |> 
+  magick::image_write_gif(path = "trigonometric/figure/curves/cos_curve.gif", delay = 0.1) -> tmp_path
+```
+
+　`list.files()`で`dir_path`フォルダ内のファイル名を取得して、ファイルパスを作成します。\
+　`image_read()`で画像を読み込んで、`image_animate()`でgifファイルに変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
+
+</details>
+
+\ 
+
+![](../../figure/curves/cos_curve_1_top.gif)
+![](../../figure/curves/cos_curve_1_bottom.gif)
+![](../../figure/curves/cos_curve_1_left.gif)
+![](../../figure/curves/cos_curve_1_right.gif)
+
+\ 
+
+
+## アニメーションの作成：任意の周期
+
+　最後に、角度を変化させたアニメーションで確認します。\
+\
+
+　フレーム数と角度の範囲を指定して、角度として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 120
+
+# 角度の範囲を指定
+theta_min <- -2 * pi
+theta_max <- 2 * pi
+
+# フレームごとの角度を作成
+theta_i <- seq(from = theta_min, to = theta_max, length.out = frame_num+1)[1:frame_num]
+head(theta_i/pi*180)
+```
+
+　フレーム数`frame_num`と、角度(ラジアン)$\theta$の最小値`theta_min`・最大値`theta_max`を指定して、`frame_num`個の等間隔の値を作成します。三角関数は$2 \pi$で1周期なので、最小値に$2 \pi$の$n$倍を加えた値を最大値にして、等間隔に切り分け最大値自体を除くと、最後のフレームと最初のフレームの繋がりが良くなります。\
+
+<details><summary>・コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します。
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "trigonometric/figure/tmp_folder"
+
+# 描画領域のサイズを設定
+draw_size   <- 1
+margin_size <- 0.5
+axis_size   <- draw_size + margin_size
+
+# 角度ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の角度を取得
+  theta <- theta_i[i]
+  
+  # 関数の点の描画用
+  point_df <- tibble::tibble(
+    theta = theta, 
+    sin_theta = sin(theta), 
+    cos_theta = cos(theta)
+  )
+  
+  ## 単位円の作図:(上側・下側によって一部の処理を切り替える)
+  
+  # 半径の描画用
+  radius_df <- tibble::tibble(
+    x_from = c(0, 0), 
+    y_from = c(0, 0), 
+    x_to = c(1, cos(theta)), 
+    y_to = c(0, sin(theta))
+  )
+  
+  # 角度マークの描画用
+  d <- 0.1
+  angle_df <- tibble::tibble(
+    theta = seq(from = min(0, theta), to = max(0, theta), length.out = 100), 
+    x = cos(theta) * d, 
+    y = sin(theta) * d
+  )
+  
+  # 角度ラベルの描画用
+  d <- 0.2
+  angle_label_df <- tibble::tibble(
+    theta = 0.5 * theta, 
+    x = cos(theta) * d, 
+    y = sin(theta) * d, 
+    angle_label = "theta"
+  )
+  
+  # cos関数の線の描画用
+  cos_line_df <- tibble::tibble(
+    x_from = 0, 
+    y_from = sin(theta), 
+    x_to = cos(theta), 
+    y_to = sin(theta)
+  )
+  
+  # cos関数の線ラベルの描画用
+  cos_label_df <- cos_line_df |> 
+    dplyr::mutate(
+      # 中点に配置
+      x = median(c(x_from, x_to)), 
+      y = median(c(y_from, y_to)), 
+      fnc_label = paste0("cos~theta")
+    ) |> 
+    dplyr::select(x, y, fnc_label)
+  
+  # サイン波との対応用
+  l <- 0.9
+  segment_circle_df <- tibble::tibble(
+    x_from = cos(theta), 
+    y_from = sin(theta), 
+    x_to = cos(theta), 
+    y_to = axis_size+l # (上側に配置する場合)
+    #y_to = -axis_size-l # (下側に配置する場合)
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta*degree==", round(theta*180/pi, digits = 2), "*degree", 
+    ", theta==", round(theta/pi, digits = 2), "*pi", 
+    ", sin~theta==", round(sin(theta), digits = 2), 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # 単位円を作図
+  d <- 1.1
+  circle_graph_top <- ggplot() +  # (上側に配置する場合)
+    #circle_graph_bottom <- ggplot() +  # (下側に配置する場合)
+    geom_path(data = circle_df, 
+              mapping = aes(x = cos_theta, y = sin_theta), 
+              size = 1) + # 単位円
+    geom_text(data = tick_df, 
+              mapping = aes(x = x, y = y, angle = alpha+90), 
+              label = "|", size = 2) + # 角度目盛
+    geom_text(data = tick_df, 
+              mapping = aes(x = x*d, y = y*d, label = rad_label, 
+                            hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+    geom_segment(data = radius_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to)) + # 半径
+    geom_path(data = angle_df, 
+              mapping = aes(x = x, y = y)) + # 角度マーク
+    geom_text(data = angle_label_df, 
+              mapping = aes(x = x, y = y, label = angle_label), parse = TRUE) + # 角度ラベル
+    geom_segment(data = cos_line_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 color = "red", size = 1) + # sin関数
+    geom_text(data = cos_label_df, 
+              mapping = aes(x = x, y = y, label = fnc_label), parse = TRUE, 
+              vjust = 1, color = "red") + # sin関数ラベル
+    geom_segment(data = segment_circle_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # sin波との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = cos_theta, y = sin_theta), 
+               size = 4) + # 単位円上の点
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "unit circle", 
+         subtitle = parse(text = fnc_label), 
+         x = "x", y = "y")
+  
+  ## コサイン波の作図:(上・下・左・右によって全部の処理を切り替える)
+  
+  # cos関数の値の変換線の描画用
+  adapt_line_df <- tibble::tibble(
+    rad = seq(from = 0, to = 0.5*pi, length.out = 50), 
+    x = cos(rad) * (axis_size+cos(theta)) - axis_size, 
+    y = sin(rad) * (axis_size+cos(theta)) - axis_size
+  )
+  
+  # 単位円とコサイン波の対応用
+  l <- 0.6
+  segment_adapt_df <- tibble::tibble(
+    x = c(cos(theta), -axis_size), 
+    y = c(-axis_size, cos(theta)), 
+    x_to = c(cos(theta), -axis_size-l), 
+    y_to = c(-axis_size-l, cos(theta))
+  )
+  
+  # 変換グラフを作図
+  adapt_graph <- ggplot() + 
+    geom_line(data = adapt_grid_df, 
+              mapping = aes(x = x, y = y, group = d), 
+              color = "white") + # グリッド線
+    geom_segment(data = segment_adapt_df, 
+                 mapping = aes(x = x, y = y, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # 単位円・コサイン波との対応線
+    geom_line(data = adapt_line_df, 
+              mapping = aes(x = x, y = y), 
+              size = 1, linetype = "dotted") + # cos関数の値の線
+    geom_point(data = segment_adapt_df, 
+               mapping = aes(x = x, y = y), 
+               size = 4) + # cos関数の値
+    #theme(panel.grid = element_blank()) + # 元のグリッド線を非表示
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(x = "x", y = "x")
+  
+  # 作図用のラジアンの値を作成
+  theta_size <- 2 * pi
+  theta_vals <- seq(from = max(theta_min, theta-theta_size), to = theta, by = 0.01)
+  
+  # x軸目盛ラベルの描画用の値を作成
+  tick_min <- floor((theta-theta_size) * 6 / pi)
+  tick_vec <- seq(from = tick_min, to = tick_min+13, by = 1)
+  
+  # コサイン波の描画用
+  cos_curve_df <- tibble::tibble(
+    theta = theta_vals, 
+    cos_theta = cos(theta_vals)
+  )
+  
+  # x軸(角度)・単位円との対応用
+  d <- 1.1
+  l <- 0.5
+  segment_cos_df <- tibble::tibble(
+    x_from = c(theta, theta), 
+    y_from = c(cos(theta), cos(theta)), 
+    x_to = c(theta, max(theta_vals)+l), 
+    y_to = c(-axis_size*d, cos(theta))
+  )
+  
+  # 関数ラベルを作成
+  fnc_label <- paste0(
+    "list(", 
+    "theta==", round(theta/pi, digits = 2), "*pi", 
+    ", cos~theta==", round(cos(theta), digits = 2), 
+    ")"
+  )
+  
+  # コサイン波を作図
+  cos_graph <- ggplot() + 
+    geom_line(data = cos_curve_df, 
+              mapping = aes(x = theta, y = cos_theta), 
+              color = "red", size = 1) + # cos関数
+    geom_segment(data = segment_cos_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 size = 1, linetype = "dotted") + # 単位円との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = cos_theta), 
+               size = 4) + # 関数曲線上の点
+    scale_x_continuous(breaks = tick_vec/6*pi, 
+                       labels = parse(text = paste0("frac(", tick_vec, ", 6)~pi"))) + # 角度目盛ラベル
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(theta-theta_size, theta), ylim = c(-axis_size, axis_size)) + # 描画領域
+    labs(title = "cosine curve", 
+         subtitle = parse(text = fnc_label), 
+         x = expression(theta), y = expression(cos(theta)))
+  
+  # グラフを並べて描画
+  graph <- patchwork::wrap_plots(
+    cos_graph, adapt_graph, patchwork::plot_spacer(), circle_graph_top, 
+    nrow = 2, ncol = 2
+  )
+  
+  ## 画像の保存
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1500, height = 1000, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, "/", frame_num, appendLF = FALSE)
+}
+```
+
+　変数の値(角度)ごとに「グラフの作成」と同様に処理します。ただし、コサイン波の作図用の$\theta$の値に関して、各`theta`を最大値として`theta_size`を描画範囲とします。ただし、`theta - theta_size`が`theta_min`よりも小さくなる場合は、`theta_min`から`theta`を描画範囲とします。\
+
+　「1周期」のコードで、gif画像を作成できます。\
+
+</details>
+
+\ 
+
+![](../../figure/curves/cos_curve_2_top.gif)
+![](../../figure/curves/cos_curve_2_bottom.gif)
+![](../../figure/curves/cos_curve_2_left.gif)
+![](../../figure/curves/cos_curve_2_right.gif)
+
+　$\cos \theta$が$2 \pi$の範囲で周期するのを確認できます。\
+　(下側に配置する場合は、$\theta$軸を反転させた方が分かりやすいかもしれない。)\
+\
+
+　この記事では、cos関数を可視化して確認しました。次の記事では、cos関数の値を加工した場合を可視化します。\
+\
+
+
+# cos関数の振幅・周期・平行移動の変形の可視化
 
 
 
