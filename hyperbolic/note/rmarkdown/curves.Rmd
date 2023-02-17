@@ -1,0 +1,468 @@
+---
+title: "双曲線関数の可視化"
+author: "@anemptyarchive\\thanks{\\url{https://www.anarchive-beta.com/}}"
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
+output:
+  html_document:
+    toc: TRUE       # 目次
+    toc_depth: 3    # 目次の見出しレベル
+    toc_float: TRUE # 目次のスクロール追跡
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  message = FALSE, error = FALSE, warning = FALSE # メッセージを非表示
+)
+```
+
+----
+
+【編集履歴】
+
+- 2023/02/17：「双曲線の可視化」を追加
+
+----
+
+
+# 双曲線の作図
+
+　横向きの双曲線(hyperbola)のグラフを作成します。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+```
+
+```{r, echo=FALSE}
+###資料作成用:(チェック用)
+
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## 定義式の確認
+
+　まずは、双曲線の定義式を確認します。\
+\
+
+
+### 双曲線
+
+　双曲線は、次の式で定義されます。
+
+$$
+\frac{x^2}{a^2} + \frac{y^2}{b^2}
+    = 1
+$$
+
+　座標(x軸とy軸の値)は、それぞれ次の式で計算できます。
+
+$$
+\begin{cases}
+    x = \pm a \cosh \theta \\
+    y = b \sinh \theta
+\end{cases}
+$$
+
+　$\sinh \theta$はハイパボリックサイン関数、$\cosh \theta$はハイパボリックコサイン関数です。\
+
+　双曲線の漸近線は、次の式です。
+
+$$
+\frac{x}{a} \pm \frac{y}{b}
+    = 0
+$$
+
+　この式を$y$について解くと、次の式になります。
+
+$$
+y   = \pm \frac{b}{a} x
+$$
+
+\ 
+
+
+### 単位双曲線
+
+　また、単位双曲線は、次の式で定義されます。
+
+$$
+x^2 + y^2
+    = 1
+$$
+
+　$a = 1, b = 1$のときの双曲線の式です。\
+　座標は、それぞれ次の式で計算できます。
+
+$$
+\begin{cases}
+    x = \pm \cosh \theta \\
+    y = \sinh \theta
+\end{cases}
+$$
+
+　単位双曲線の漸近線は、次の式です。
+
+$$
+x \pm y
+    = 0
+$$
+
+　この式を$y$について解くと、次の式になります。
+
+$$
+y   = \pm x
+$$
+
+\ 
+
+　これらの式を使ってグラフを作成します。\
+\
+
+
+## 単位双曲線の作図
+
+　次は、単位双曲線のグラフを作成します。\
+\
+
+
+### 線ごとに描画
+
+　双曲線を描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線の描画用
+hyperbola_df <- tibble::tibble(
+  theta = seq(from = -2, to = 2, by = 0.002), # 範囲を指定
+  x = cosh(theta), 
+  y = sinh(theta)
+)
+hyperbola_df
+```
+
+　変数$\theta$として用いる値を`theta`列として作成して、x軸の値としてcosh関数$\cosh \theta$、y軸の値としてsinh関数$\sinh \theta$を計算します。\
+
+　グラフサイズ用の値を作成します。
+
+```{r}
+# 軸の最大値を設定
+axis_max <- max(hyperbola_df[["x"]])
+axis_max
+```
+
+　$\cosh \theta$の最大値を`axis_max`とします。\
+
+　漸近線を描画するためのデータフレームを作成します。
+
+```{r}
+# 漸近線の描画用
+asymptote_df <- tibble::tibble(
+  x = seq(from = -axis_max, to = axis_max, length.out = 100), 
+  y = x
+)
+asymptote_df
+```
+
+　`-axis_max`から`axis_max`の範囲を$x$として、$y = x$とあわせて格納します。\
+
+　双曲線の間の領域を描画するためのデータフレームを作成します。
+
+```{r}
+# 正方形グリッドの描画用
+square_df <- tibble::tibble(
+  x = c(1, 1, -1, -1, 1), 
+  y = c(1, -1, -1, 1, 1)
+)
+square_df
+```
+
+　$x = \pm 1$と$y = \pm 1$の直線の4つの交点の座標を格納します。\
+
+　単位双曲線のグラフを作成します。
+
+```{r, fig.width=7, fig.height=6, dpi=100}
+# 単位双曲線を作図
+ggplot() + 
+  geom_segment(mapping = aes(x = -axis_max, y = 0, xend = axis_max, yend = 0), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # x軸線
+  geom_segment(mapping = aes(x = 0, y = -axis_max, xend = 0, yend = axis_max), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # y軸線
+  geom_path(data = square_df, 
+            mapping = aes(x = x, y = y, linetype = "grid")) + # 正方形グリッド
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, linetype = "asymptote")) + # 漸近線(正の傾き)
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = -y, linetype = "asymptote")) + # 漸近線(負の傾き)
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = x, y = y, linetype = "hyperbola"), 
+            size = 1) + # 双曲線(第1,2象限)
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = -x, y = y, linetype = "hyperbola"), 
+            size = 1) + # 双曲線(第3,4象限)
+  scale_linetype_manual(breaks = c("hyperbola", "asymptote", "grid"), 
+                        values = c("solid", "dashed", "dotted"), 
+                        labels = c(expression(x^2 - y^2 == 1), 
+                                   expression(x %+-% y == 0), 
+                                   expression(list(x == {} %+-% 1, y == {} %+-% 1))), 
+                        name = "formula") + # 線の種類:(凡例表示用)
+  guides(linetype = guide_legend(override.aes = list(size = c(0.5, 0.5, 0.5), 
+                                                     linetype = c("solid", "dashed", "dotted")))) + # 凡例の体裁:(凡例表示用)
+  theme(legend.text.align = 0.5) + # 凡例の体裁:(凡例表示用)
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max), expand = FALSE) + # 表示範囲
+  labs(title = "unit hyperbola", 
+       x = "x", y = "y")
+```
+
+　横軸を$\cosh \theta$と$-\cosh \theta$、縦軸を$\sinh \theta$として、(`geom_line()`ではなく)`geom_path()`で双曲線を描画します。綺麗な双曲線を描画するには`coord_***()`のアスペクト比の引数`ratio`に`1`を指定します。\
+　横軸を$x$、縦軸を$y$と$-y$として、`geom_line()`または`geom_path()`で漸近線を描画します。\
+　x軸とy軸を`geom_segment()`で描画します。線分の始点の座標の引数`x, y`、終点の座標の引数`xend, yend`にそれぞれグラフサイズ`axis_max`を使って指定します。\
+\
+
+
+### まとめて描画
+
+　先ほどは、線ごとに`geom_***()`を使って作図しました。次は、双曲線と漸近線について、それぞれ2つの線の値をデータフレームに格納しておき、1つの関数で作図します。\
+\
+
+　双曲線を描画するためのデータフレームを作成します。
+
+```{r}
+# 作図用の変数の値を指定
+theta_vec <- seq(from = -2, to = 2, by = 0.002)
+
+# 双曲線の描画用
+hyperbola_df <- tibble::tibble(
+  t = theta_vec, 
+  sinh_t = sinh(theta_vec), 
+  cosh_t_plus = cosh(theta_vec),  # 第1,2象限
+  cosh_t_minus = -cosh(theta_vec) # 第3,4象限
+) |> 
+  tidyr::pivot_longer(
+    cols = c(cosh_t_plus, cosh_t_minus), 
+    names_to = "sign", # 符号
+    names_prefix = "cosh_t_", 
+    values_to = "cosh_t"
+  ) # 列をまとめる
+hyperbola_df
+```
+
+　$- \cos \theta$と$\cos \theta$を別の列として作成し、`pivot_longer()`で1列にまとめます。\
+　あるいは、それぞれ複製して格納します。
+
+```{r}
+# 双曲線の描画用
+hyperbola_df <- tibble::tibble(
+  t = c(theta_vec, theta_vec), 
+  sinh_t = c(sinh(theta_vec), sinh(theta_vec)), 
+  cosh_t = c(cosh(theta_vec), -cosh(theta_vec)), 
+  sign = rep(c("plus", "minus"), each = length(theta_vec))# 符号
+)
+hyperbola_df
+```
+
+　2つの曲線を区別するための符号列`sign`を作成します。\
+
+　グラフサイズ用の値を作成します。
+
+```{r}
+# 軸の最大値を設定
+axis_max <- hyperbola_df[["cosh_t"]] |> 
+  max() |> 
+  ceiling()
+axis_max
+```
+
+\ 
+
+　漸近線の描画用のデータフレームを作成します。
+
+```{r}
+# 漸近線の描画用
+asymptote_df <- tibble::tibble(
+  x = seq(from = -axis_max, to = axis_max, length.out = 100), 
+  y_plus = x,  # 正の傾き
+  y_minus = -x # 負の傾き
+) |> 
+  tidyr::pivot_longer(
+    cols = c(y_plus, y_minus), 
+    names_to = "slope", # 符号
+    names_prefix = "y_", 
+    values_to = "y"
+  ) # 列をまとめる
+asymptote_df
+```
+
+　$y = x$と$y = -x$を別の列として作成して1列にまとめます。\
+　あるいは、それぞれ複製して格納します。
+
+```{r}
+# 漸近線の描画用
+asymptote_df <- tibble::tibble(
+  x = seq(from = -axis_max, to = axis_max, length.out = 100) |> 
+    rep(times = 2), 
+  y = rep(c(1, -1), each = 100) * x, 
+  slope = rep(c("plus", "minus"), each = 100) # 符号
+)
+asymptote_df
+```
+
+　2つの直線を区別するための傾きの符号列`slope`を作成します。\
+
+　x軸とy軸を描画するためのデータフレームを作成します。
+
+```{r}
+# 軸線の描画用
+axis_df <- tibble::tibble(
+  x_from = c(-axis_max, 0), 
+  y_from = c(0, -axis_max), 
+  x_to = c(axis_max, 0), 
+  y_to = c(0, axis_max), 
+  axis = c("x", "y") # 軸
+)
+axis_df
+```
+
+　始点の座標を`x_from, y_from`列、終点の座標を`x_to, y_to`列として格納します。\
+
+　単位双曲線のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 単位双曲線を作図
+ggplot() + 
+  geom_segment(data = axis_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+  geom_path(data = square_df, 
+            mapping = aes(x = x, y = y), 
+            linetype = "dotted") + # 正方形グリッド
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, group = slope), 
+            linetype = "dashed") + # 漸近線
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+            size = 1) + # 双曲線
+  theme(legend.text.align = 0.5) + # 凡例の体裁:(凡例表示用)
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+  labs(title = "unit hyperbola", 
+       x = "x", y = "y")
+```
+
+　双曲線と漸近線、軸線について、2つの線を別々に描画するために`group`引数に2つの線を区別するための列を指定します。\
+
+　こちらの処理方法を別記事の双曲線関数の可視化で利用します。\
+\
+
+
+## 双曲線の作図
+
+　最後に、(一般化した)双曲線のグラフを作成します。\
+\
+
+　定数を指定して、双曲線を描画するためのデータフレームを作成します。
+
+```{r}
+# 定数を指定
+a <- 2
+b <- 3
+
+# 双曲線の描画用
+hyperbola_df <- tibble::tibble(
+  theta = seq(from = -2, to = 2, by = 0.002), # 範囲を指定
+  x = a * cosh(theta), 
+  y = b * sinh(theta)
+)
+hyperbola_df
+```
+
+　変数$\theta$として用いる値を`theta`列として作成して、x軸の値$a \cosh \theta$、y軸の値$b \sinh \theta$を計算します。\
+
+　グラフサイズ用の値を作成します。
+
+```{r}
+# 軸の最大値を設定
+x_max <- max(hyperbola_df[["x"]])
+y_max <- max(hyperbola_df[["y"]])
+x_max; y_max
+```
+
+　$a \cosh \theta$の最大値を`x_max`、$b \sinh \theta$の最大値を`y_max`とします。\
+
+　漸近線を描画するためのデータフレームを作成します。
+
+```{r}
+# 漸近線の描画用
+asymptote_df <- tibble::tibble(
+  x = seq(from = -x_max, to = x_max, length.out = 100), 
+  y = b * x / a
+)
+asymptote_df
+```
+
+　`-axis_max`から`axis_max`の範囲を$x$として、$y = \frac{b}{a} x$を計算します。\
+
+　双曲線の間の領域を描画するためのデータフレームを作成します。
+
+```{r}
+# 長方形グリッドの描画用
+square_df <- tibble::tibble(
+  x = c(a, a, -a, -a, a), 
+  y = c(b, -b, -b, b, b)
+)
+square_df
+```
+
+　$x = \pm a$と$y = \pm b$の直線の4つの交点の座標を格納します。\
+
+　双極性のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 双曲線を作図
+ggplot() + 
+  geom_segment(mapping = aes(x = -x_max, y = 0, xend = x_max, yend = 0), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # x軸線
+  geom_segment(mapping = aes(x = 0, y = -y_max, xend = 0, yend = y_max), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # y軸線
+  geom_path(data = square_df, 
+            mapping = aes(x = x, y = y, linetype = "grid")) + # 長方形グリッド
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, linetype = "asymptote")) + # 漸近線(正の傾き)
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = -y, linetype = "asymptote")) + # 漸近線(負の傾き)
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = x, y = y, linetype = "hyperbola"), 
+            size = 1) + # 双曲線(第1,2象限)
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = -x, y = y, linetype = "hyperbola"), 
+            size = 1) + # 双曲線(第3,4象限)
+  scale_linetype_manual(breaks = c("hyperbola", "asymptote", "grid"), 
+                        values = c("solid", "dashed", "dotted"), 
+                        labels = c(expression(frac(x^2, a^2) - frac(y^2, b^2) == 1), 
+                                   expression(frac(x, a) %+-% frac(y, b) == 0), 
+                                   expression(list(x == {} %+-% a, y == {} %+-% b))), 
+                        name = "formula") + # 線の種類:(凡例表示用)
+  guides(linetype = guide_legend(override.aes = list(size = c(0.5, 0.5, 0.5), 
+                                                     linetype = c("solid", "dashed", "dotted")))) + # 凡例の体裁:(凡例表示用)
+  theme(legend.text.align = 0.5) + # 凡例の体裁:(凡例表示用)
+  coord_fixed(ratio = 1, 
+              xlim = c(-x_max, x_max), ylim = c(-y_max, y_max), expand = FALSE) + # 表示範囲
+  labs(title = "hyperbola", 
+       subtitle = parse(text = paste0("list(a==", a, ", b==", b, ")")), 
+       x = "x", y = "y")
+```
+
+　「単位双曲線」のときと同様に処理します。(まとめて描画については、私に使う予定がないので省略します。)\
+\
+
+　この記事では、双曲線を可視化しました。次の記事では、双曲線関数を可視化していきます。\
+\
+
