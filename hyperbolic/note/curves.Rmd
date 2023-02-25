@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 - 2023/02/18：「tanh関数の可視化」を追加
 - 2023/02/22：「sinh関数の可視化」を追加
 - 2023/02/23：「cosh関数の可視化」を追加
-- 2023/02/24：「csch関数の可視化」「sech関数の可視化」を追加
+- 2023/02/24：「csch関数の可視化」「sech関数の可視化」「coth関数の可視化」を追加
 
 ----
 
@@ -5257,6 +5257,1157 @@ paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pa
 \
 
 　この記事では、sech関数を可視化しました。次の記事では、coth関数を可視化します。\
+\
+
+
+# coth関数の可視化
+
+　双曲線関数の1つであるcoth関数(双曲線余接関数・ハイパボリックコタンジェント関数・hyperbolic cotangent function)をグラフで確認します。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(patchwork)
+library(gganimate)
+library(magick)
+```
+
+```{r, echo=FALSE}
+###資料作成用:(チェック用)
+
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## 定義式の確認
+
+　まずは、coth関数の定義式を確認します。\
+\
+
+　coth関数は、tanh関数の逆数で定義されます。
+
+$$
+\mathrm{coth}\ x
+    = \frac{1}{\tanh x}
+    = \frac{\cosh x}{\sinh x}
+    = \frac{
+          e^x + e^{-x}
+      }{
+          e^x - e^{-x}
+      }
+$$
+
+　tanh関数はハイパボリックタンジェント関数、$\sinh x$はハイパボリックサイン関数、$\cosh x$はハイパボリックコサイン関数です。また、$e^x$はネイピア数$e$を底とする自然指数関数です。tanh関数については「tanh関数の可視化」を参照してください。\
+
+　$x < 0$のとき$\mathrm{coth}\ x < -1$、$x > 0$のとき$\mathrm{coth}\ x > 1$の値をとります。\
+\
+
+
+## coth関数曲線の作図
+
+　次に、coth関数のグラフを作成します。\
+\
+
+　作図用の変数の値を作成します。
+
+```{r}
+# 作図用の変数の値を指定
+theta_vec <- seq(from = -5, to = 5, by = 0.01)
+head(theta_vec)
+```
+
+　作図に利用する変数$\theta$の範囲と間隔を指定して`theta_vec`とします。\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　coth関数の曲線を描画するためのデータフレームを作成します。
+
+```{r}
+# 閾値を指定
+threshold <- 20
+
+# coth曲線の描画用
+coth_df <- tibble::tibble(
+  t = theta_vec, 
+  coth_t = 1 / sinh(theta_vec)
+) |> 
+  dplyr::mutate(
+    coth_t = dplyr::if_else(
+      (coth_t >= -threshold & coth_t <= threshold), true = coth_t, false = as.numeric(NA)
+    )
+  ) # 閾値の範囲外を欠損値に置換
+coth_df
+```
+
+　$\theta$の値と$\mathrm{coth}\ \theta$の値をデータフレームに格納します。coth関数は`tanh()`を使って計算できます。\
+　0付近で$-\infty$または$\infty$に近付くので、閾値`threshold`を指定しておき、`-threshold`未満または`threshold`より大きい場合は(数値型の)欠損値`NA`に置き換えます。\
+
+</details>
+
+　coth関数のグラフを作成します。
+
+```{r, fig.width=8, fig.height=6, dpi=100}
+# coth関数曲線を作図
+ggplot() + 
+  geom_line(data = coth_df, mapping = aes(x = t, y = coth_t), 
+            size = 1) + # coth曲線
+  geom_vline(xintercept = 0, linetype = "dashed") + # 漸近線
+  labs(title = "coth function", 
+       x = expression(theta), y = expression(coth~theta))
+```
+
+　x軸を$\theta$、y軸を$\mathrm{coth}\ \theta$として、`geom_line()`で折れ線グラフを描画します。\
+　また、$x = 0$の漸近線を`geom_vline()`で描画します。\
+
+　変数が$\theta = 0$のとき$\tanh \theta = 0$なので、$\mathrm{coth}\ \theta = \frac{1}{\tanh \theta}$は0除算になるため定義されません。\
+\
+
+
+## 双曲線の作図
+
+　続いて、coth関数の可視化に利用する単位双曲線(unit hyperbola)のグラフを作成します。双曲線については「双曲線の作図」を参照してください。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　作図に利用するデータフレームを作成します。
+
+```{r}
+# 作図用の変数の値を指定
+theta_vec <- seq(from = -2, to = 2, by = 0.002)
+
+# 双曲線の描画用
+hyperbola_df <- tibble::tibble(
+  t = c(theta_vec, theta_vec), 
+  sinh_t = c(sinh(theta_vec), sinh(theta_vec)), 
+  cosh_t = c(cosh(theta_vec), -cosh(theta_vec)), 
+  sign = rep(c("plus", "minus"), each = length(theta_vec))# 符号
+)
+
+# 軸の最大値を設定
+axis_max <- hyperbola_df[["cosh_t"]] |> 
+  max() |> 
+  ceiling()
+
+# 漸近線の描画用
+asymptote_df <- tibble::tibble(
+  x = seq(from = -axis_max, to = axis_max, length.out = 100) |> 
+    rep(times = 2), 
+  y = rep(c(1, -1), each = 100) * x, 
+  slope = rep(c("plus", "minus"), each = 100) # 符号
+)
+
+# 正方形グリッドの描画用
+square_df <- tibble::tibble(
+  x = c(1, 1, -1, -1, 1), 
+  y = c(1, -1, -1, 1, 1)
+)
+
+# 軸線の描画用
+axis_df <- tibble::tibble(
+  x_from = c(-axis_max, 0), 
+  y_from = c(0, -axis_max), 
+  x_to = c(axis_max, 0), 
+  y_to = c(0, axis_max), 
+  axis = c("x", "y")
+)
+```
+
+\ 
+
+</details>
+
+　双曲線と補助線のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 単位双曲線を作図
+ggplot() + 
+  geom_segment(data = axis_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+  geom_path(data = square_df, 
+            mapping = aes(x = x, y = y), linetype = "dashed") + # 正方形グリッド
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, group = slope), linetype = "dashed") + # 漸近線
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+            size = 1) + # 双曲線
+  theme(legend.text.align = 0.5) + # 凡例の体裁:(凡例表示用)
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+  labs(title = "unit hyperbola", 
+       x = "x", y = "y")
+```
+
+　このグラフ上に双曲線関数を描画します。\
+\
+
+
+## 双曲線上のcoth関数の可視化
+
+　次は、単位双曲線上における双曲線関数(coth・sinh・cosh)のグラフを作成します。\
+\
+
+
+### グラフの作成
+
+　変数を固定したcoth関数をグラフで確認します。\
+\
+
+　変数の値を設定します。
+
+```{r}
+# 変数の値を指定
+theta <- 1.5
+```
+
+　変数$\theta$の値を指定します。\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　曲線上の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 曲線上の点の描画用
+point_df <- tibble::tibble(
+  t = theta, 
+  coth_t = 1 / tanh(theta), 
+  sinh_t = sinh(theta), 
+  cosh_t = cosh(theta)
+)
+point_df
+```
+
+　coth曲線上の点のx軸の値$\theta$とy軸の値$\mathrm{coth}\ \theta$、単位双曲線上の点のx軸の値$\cosh \theta$とy軸の値$\sinh \theta$を格納します。\
+
+　変数の値(の半分)を面積(塗りつぶし領域)として描画するためのデータフレームを作成します。
+
+```{r}
+# 変数(面積)の描画用
+variable_area_df <- tibble::tibble(
+  x = seq(from = 0, to = cosh(theta), length.out = 50), 
+  sign = dplyr::if_else(theta >= 0, true = 1, false = -1), # 符号
+  curve = sign * sqrt(x^2 - 1), # x軸と双曲線上の線分
+  straight = sinh(theta)/cosh(theta) * x # 原点と曲線上の点の線分
+) |> 
+  dplyr::mutate(
+    curve = dplyr::if_else(is.na(curve), true = 0, false = curve)
+  ) # 双曲線の範囲外を0に置換
+variable_area_df
+```
+
+　「原点と双曲線上の点を結ぶ線分」と「$0 \leq x < 1$の範囲のx軸線($y = 0$の直線)と$1 \leq x \leq \cosh \theta$の範囲の双曲線」の範囲を塗りつぶします。ただし、双曲線について、$\theta > 0$のときは$y > 0$の範囲を塗りつぶすため$y = \sqrt{x^2 - 1}$、$\theta < 0$のときは$y < 0$の範囲を塗りつぶすため$y = - \sqrt{x^2 - 1}$を使います。\
+　x軸の値として$0$から$\cosh \theta$の範囲の値を作成して`x`列とします。\
+　`theta`の正負によって符号を変更して`sign`列としておき、双曲線を計算して`curve`列とします。ただし、$0$から$1$の範囲が`NaN`になるので`0`に置き換えます。\
+　原点と点$(\cosh \theta, \sinh \theta)$を結ぶ直線の傾きは$a = \frac{\sinh \theta}{\cosh \theta}$です。$y = a x$を計算して`straight`列とします。\
+
+　双曲線関数を直線として描画するためのデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("coth", "sinh", "cosh", "(other)")
+
+# 双曲線関数の描画用
+function_df <- tibble::tibble(
+  x_from = c(
+    0, 
+    0, cosh(theta), 
+    0, 0, 
+    min(0, 1/tanh(theta))
+  ), 
+  y_from = c(
+    1, 
+    0, 0, 
+    0, sinh(theta), 
+    ifelse(theta >= 0, yes = 0, no = 1)
+  ), 
+  x_to = c(
+    1/tanh(theta), 
+    0, cosh(theta), 
+    cosh(theta), cosh(theta), 
+    ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1/tanh(theta), no = cosh(theta))
+  ), 
+  y_to = c(
+    1, 
+    sinh(theta), sinh(theta), 
+    0, sinh(theta), 
+    ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1, no = sinh(theta))
+  ), 
+  fnc = c(
+    "coth", 
+    "sinh", "sinh", 
+    "cosh", "cosh", 
+    "(other)"
+  ) |> 
+    factor(levels = fnc_level_vec) # 色分け用
+)
+function_df
+```
+
+　関数を区別するための`fnc`列の因子レベルを`fnc_level_vec`として指定しておきます。因子レベルは、辺(線分)の描画順(重なり順)や色付け順に影響します。\
+
+　各線分の始点の座標を`x_from, y_from`列、終点の座標を`x_to, y_to`列とします。\
+　変数の値によって始点と終点の座標が変わるのでややこしいですが、頑張って指定します。\
+
+　関数名をラベルとして描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線関数ラベルの描画用
+function_label_df <- tibble::tibble(
+  x = c(0.5/tanh(theta), 0, 0.5*cosh(theta)), 
+  y = c(1, 0.5*sinh(theta), sinh(theta)), 
+  angle = c(0, 90, 0), 
+  v = c(-0.5, -0.5, 1), 
+  fnc = c("coth", "sinh", "cosh") |> 
+    factor(levels = fnc_level_vec), # 色分け用
+  fnc_label = c("coth~theta", "sinh~theta", "cosh~theta") # 関数ラベル
+)
+function_label_df
+```
+
+　関数を示す線分の中点に関数名を配置します。ギリシャ文字などの記号や数式を表示する場合は、`expression()`の記法を使います。\
+　ラベルの表示角度を`angle`列、上下の表示位置を`v`列として値を指定します。\
+
+　関数の値を表示するための文字列を作成します。
+
+```{r}
+# 変数ラベルの描画用
+function_label <- paste0(
+  "list(", 
+  "theta==", theta, 
+  ", coth~theta==", round(1/tanh(theta), digits = 2), 
+  ", sinh~theta==", round(sinh(theta), digits = 2), 
+  ", cosh~theta==", round(cosh(theta), digits = 2), 
+  ")"
+)
+function_label
+```
+
+　等号は`==`、複数の(数式上の)変数を並べるには`list(変数1, 変数2)`とします。(プログラム上の)変数の値を使う場合は、文字列として作成しておき`parse()`の`text`引数に渡します。\
+
+</details>
+
+　双曲線上に双曲線関数を重ねたグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 双曲線関数を作図
+ggplot() + 
+  geom_segment(data = axis_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, group = slope), 
+            linetype = "dashed") + # 漸近線
+  geom_hline(yintercept = 1, linetype = "dashed") + # coth関数用の補助線
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+            size = 1) + # 双曲線
+  geom_point(data = point_df, 
+             mapping = aes(x = cosh_t, y = sinh_t), 
+             size = 4) + # 双曲線上の点
+  geom_ribbon(data = variable_area_df, 
+              mapping = aes(x = x, ymin = curve, ymax = straight), 
+              fill = "#00A968", alpha = 0.5) + # 変数(面積)
+  geom_text(mapping = aes(x = 0.5, y = 0.25*tanh(theta), label = "frac(theta, 2)"), parse = TRUE, 
+            size = 3) + # 変数ラベル
+  geom_segment(data = function_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # 双曲線関数直線
+  geom_text(data = function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, angle = angle, vjust = v), parse = TRUE, 
+            show.legend = FALSE) + # 双曲線関数ラベル
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+  labs(title = "hyperbolic functions", 
+       subtitle = parse(text = function_label), 
+       color = "function", 
+       x = expression(cosh~theta), y = expression(sinh~theta))
+```
+
+　`geom_segment()`で線分を描画して、各関数の値を可視化します。\
+　`geom_ribbon()`で原点から曲線上の点の範囲を塗りつぶして、変数の値を可視化します。\
+　`geom_label()`でラベル(文字列)を描画します。この例では、変数ラベルを$(0.5, 0.25 \tanh \theta)$の位置に配置します。\
+
+　csch関数の値は、「原点$(0, 0)$と双曲線上の点$(\cosh \theta, \sinh \theta)$を通る直線」と「$y = 1$の直線」の交点のx軸の値に対応します。\
+\
+
+
+### アニメーションの作成
+
+　続いて、変数の値を変化させたアニメーションで確認します。\
+\
+
+　フレーム数を指定して、変数として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 101
+
+# 変数の値を作成
+theta_i <- seq(from = -2, to = 2, length.out = frame_num) # 範囲を指定
+head(theta_i)
+```
+
+　フレーム数`frame_num`を指定して、`frame_num`個の$\theta$の値を作成します。\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　フレーム切替用のラベルとして使う文字列ベクトルを作成します。
+
+```{r}
+# フレーム切替用ラベルのレベルを作成
+frame_label_vec <- paste0(
+  "θ = ", round(theta_i, digits = 2), 
+  ", coth θ = ", round(1/tanh(theta_i), digits = 2), 
+  ", sinh θ = ", round(sinh(theta_i), digits = 2), 
+  ", cosh θ = ", round(cosh(theta_i), digits = 2)
+)
+head(frame_label_vec)
+```
+
+　この例では、変数と関数の値をグラフに表示するために、フレームごとの値をフレーム切替用のラベル列として使います。\
+　`theta_i`の値と対応する関数の値を文字列結合します。\
+
+　曲線上の点を描画するためのデータフレームを作成します。
+
+```{r}
+# 曲線上の点の描画用
+anim_point_df <- tibble::tibble(
+  t = theta_i, 
+  sinh_t = sinh(theta_i), 
+  cosh_t = cosh(theta_i), 
+  frame_label = factor(frame_label_vec, levels = frame_label_vec) # フレーム切替用ラベル
+)
+anim_point_df
+```
+
+　変数$\theta$と関数$\sinh \theta, \cosh \theta$の値をフレーム切替用のラベルとあわせて格納します。\
+
+　変数の値(の半分)を面積(塗りつぶし領域)として描画するためのデータフレームを作成します。
+
+```{r}
+# 変数(面積)の描画用
+anim_variable_area_df <- tibble::tibble(
+  t = theta_i, 
+  frame_label = factor(frame_label_vec, levels = frame_label_vec) # フレーム切替用ラベル
+) |> 
+  dplyr::group_by(t, frame_label) |> # x軸の値の作成用
+  dplyr::summarise(
+    x = seq(from = 0, to = cosh(t), length.out = 50), .groups = "drop"
+  ) |> # フレームごとにx軸の値を作成
+  dplyr::mutate(
+    sign = dplyr::if_else(t >= 0, true = 1, false = -1), # 符号
+    curve = sign * sqrt(x^2 - 1), # x軸と双曲線上の線分
+    curve = dplyr::if_else(is.na(curve), true = 0, false = curve), # 双曲線の範囲外を0に置換
+    straight = sinh(t)/cosh(t) * x # 原点と曲線上の点の線分
+  )
+anim_variable_area_df
+```
+
+　変数の値とフレーム切替用のラベルを格納して、変数の値(フレーム)ごとに(`t, frame_label`列でグループ化して)、塗りつぶし範囲の曲線と直線(下限と上限)の値を計算します。\
+　変数の値に応じてx軸の範囲($0 \leq x \leq \cosh \theta$)が変わるので、フレームごとに`summarise()`で`x`列の値を作成して計算に使います。\
+
+　変数ラベルを描画するためのデータフレームを作成します。
+
+```{r}
+# 変数ラベルの描画用
+anim_variable_label_df <- tibble::tibble(
+  t = theta_i, 
+  x = 0.5, 
+  y = 0.25 * tanh(theta_i), 
+  frame_label = factor(frame_label_vec, levels = frame_label_vec) # フレーム切替用ラベル
+)
+anim_variable_label_df
+```
+
+　この例では、$x = 0.5$の位置に変数ラベルを配置します。塗りつぶし範囲のy軸の中点は$\frac{x \tanh \theta}{2}$で計算できます。\
+
+　双曲線関数を直線として描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線関数の描画用
+anim_function_df <- tibble::tibble(
+  x_from = c(
+    rep(0, times = frame_num), 
+    rep(0, times = frame_num), cosh(theta_i), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    apply(cbind(0, 1/tanh(theta_i)), MARGIN = 1, FUN = min)
+  ), 
+  y_from = c(
+    rep(1, times = frame_num), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    rep(0, times = frame_num), sinh(theta_i), 
+    ifelse(theta_i >= 0, yes = 0, no = 1)
+  ), 
+  x_to = c(
+    1/tanh(theta_i), 
+    rep(0, times = frame_num), cosh(theta_i), 
+    cosh(theta_i), cosh(theta_i), 
+    ifelse((sinh(theta_i) > 0 & sinh(theta_i) < 1), yes = 1/tanh(theta_i), no = cosh(theta_i))
+  ), 
+  y_to = c(
+    rep(1, times = frame_num), 
+    sinh(theta_i), sinh(theta_i), 
+    rep(0, times = frame_num), sinh(theta_i), 
+    ifelse((sinh(theta_i) > 0 & sinh(theta_i) < 1), yes = 1, no = sinh(theta_i))
+  ), 
+  fnc = c(
+    "coth", 
+    "sinh", "sinh", 
+    "cosh", "cosh", 
+    "(other)"
+  ) |> 
+    rep(each = frame_num) |> 
+    factor(levels = fnc_level_vec), # 色分け用
+  label_flag = c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE) |> 
+    rep(each = frame_num), # # 関数ラベル用
+  frame_label = frame_label_vec |> 
+    rep(times = 6) |> 
+    factor(levels = frame_label_vec) # フレーム切替用ラベル
+)
+anim_function_df
+```
+
+　「グラフの作成」と同様に、`frame_num`個の座標を格納します。\
+　関数ラベルを描画する辺(線分)を`label_flag`列に指定しておきます。\
+
+　関数名をラベルとして描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線関数ラベルの描画用
+anim_function_label_df <- anim_function_df |> 
+  dplyr::filter(label_flag) |> # ラベル付けする辺を抽出
+  dplyr::group_by(fnc, frame_label) |> # 中点の計算用
+  dplyr::summarise(
+    # 線分の中点に配置
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), .groups = "drop"
+  ) |> # 線分の中点に配置
+  tibble::add_column(
+    angle = rep(c(0, 90, 0), each = frame_num), 
+    v = rep(c(-0.5, -0.5, 1), each = frame_num), 
+    fnc_label = rep(c("coth~theta", "sinh~theta", "cosh~theta"), each = frame_num) # 関数ラベル
+  )
+anim_function_label_df
+```
+
+　`flag_label`列が`TRUE`の列を取り出して、関数とフレームごとに(`fnc, frame_label`列でグループ化して)、中点の座標を`median()`で計算します。\
+
+</details>
+
+　単位双曲線上の双曲線関数のアニメーションを作成します。
+
+```{r}
+# 双曲線関数のアニメーションを作図
+anim <- ggplot() + 
+  geom_segment(data = axis_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, group = slope), 
+            linetype = "dashed") + # 漸近線
+  geom_hline(yintercept = 1, linetype = "dashed") + # coth関数用の補助線
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+            size = 1) + # 双曲線
+  geom_point(data = anim_point_df, 
+             mapping = aes(x = cosh_t, y = sinh_t), 
+             size = 4) + # 双曲線上の点
+  geom_ribbon(data = anim_variable_area_df, 
+              mapping = aes(x = x, ymin = curve, ymax = straight), 
+              fill = "#00A968", alpha = 0.5) + # 変数(面積)
+  geom_text(data = anim_variable_label_df, 
+            mapping = aes(x = x, y = y), label = "frac(theta, 2)", parse = TRUE, 
+            size = 3) + # 変数ラベル
+  geom_segment(data = anim_function_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # 双曲線関数直線
+  geom_text(data = anim_function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, 
+                          color = fnc, angle = angle, vjust = v), parse = TRUE, 
+            show.legend = FALSE) + # 双曲線関数ラベル
+  gganimate::transition_manual(frames = frame_label) + # フレーム
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+  labs(title = "hyperbolic functions", 
+       subtitle = "{current_frame}", 
+       color = "function", 
+       x = "x", y = "y")
+
+# gif画像を作成
+gganimate::animate(plot = anim, nframes = frame_num, fps = 10, width = 600, height = 600)
+```
+
+　`gganimate`パッケージを利用して、アニメーション(gif画像)を作成します。\
+　`transition_manual()`のフレーム制御の引数`frames`にフレーム(変数)ラベル列`frame_label`を指定して、グラフを作成します。\
+　`animate()`の`plot`引数にグラフオブジェクト、`nframes`引数にフレーム数`frame_num`を指定して、gif画像を作成します。また、`fps`引数に1秒当たりのフレーム数を指定できます。\
+\
+
+
+## 双曲線上の点とcoth曲線の関係の可視化
+
+　最後は、双曲線上におけるcoth関数の値(直線)と、coth関数の曲線の関係をグラフで確認します。\
+\
+
+
+### グラフの作成
+
+　変数を固定したグラフで確認します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　双曲線関数を直線として描画するためのデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("coth", "sinh", "cosh", "(other)", "1")
+
+# 双曲線関数の描画用
+function_df <- tibble::tibble(
+  x_from = c(
+    0, 0, 0, 
+    0, cosh(theta), 
+    0, 0, 
+    min(0, 1/tanh(theta)), 1/tanh(theta)
+  ), 
+  y_from = c(
+    0, 1, 0, 
+    0, 0, 
+    0, sinh(theta), 
+    ifelse(theta >= 0, yes = 0, no = 1), 0
+  ), 
+  x_to = c(
+    1/tanh(theta), 1/tanh(theta), 0, 
+    0, cosh(theta), 
+    cosh(theta), cosh(theta), 
+    ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1/tanh(theta), no = cosh(theta)), 1/tanh(theta)
+  ), 
+  y_to = c(
+    0, 1, 1/tanh(theta), 
+    sinh(theta), sinh(theta), 
+    0, sinh(theta), 
+    ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1, no = sinh(theta)), 1
+  ), 
+  fnc = c(
+    "coth", "coth", "coth", 
+    "sinh", "sinh", 
+    "cosh", "cosh", 
+    "(other)", "1"
+  ) |> 
+    factor(levels = fnc_level_vec), # 色分け用
+  type = c(
+    "main", "main", "sub", 
+    "main", "main", 
+    "main", "main", 
+    "main", "main"
+  ) # 線の種類
+)
+function_df
+```
+
+　「双曲線上のcoth関数の可視化」のときの座標に、coth関数曲線と対応させるために、x軸線上に平行移動したcoth関数直線と、さらに90度回転させた座標を追加します。\
+　また、回転させた辺を区別するための`type`列を追加します。\
+
+　関数名をラベルとして描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線関数ラベルの描画用
+function_label_df <- tibble::tibble(
+  x = c(0.5/tanh(theta), 0, 0.5*cosh(theta), 1/tanh(theta)), 
+  y = c(1, 0.5*sinh(theta), sinh(theta), 0.5), 
+  angle = c(0, 90, 0, 90), 
+  v = c(-0.5, -0.5, 1, 1.5), 
+  fnc = c("coth", "sinh", "cosh", "1") |> 
+    factor(levels = fnc_level_vec), # 色分け用
+  fnc_label = c("coth~theta", "sinh~theta", "cosh~theta", "1") # 関数ラベル
+)
+function_label_df
+```
+
+　平行移動を示す辺のラベルを追加します。\
+
+　90度回転させる軌道を描画するためのデータフレームを作成します。
+
+```{r}
+# 軸変換線の描画用
+adapt_df <- tibble::tibble(
+  t = dplyr::case_when(
+    theta > 0 ~ seq(from = 0, to = 0.5*pi, length.out = 100), 
+    theta == 0 ~ 0, 
+    theta < 0 ~ seq(from = pi, to = 1.5*pi, length.out = 100)
+  ), 
+  x = cos(t) / abs(tanh(theta)), 
+  y = sin(t) / abs(tanh(theta))
+)
+adapt_df
+```
+
+　弧度法における角度を作成して、半径が$\mathrm{coth}\ \theta$の絶対値の孤(原点からの長さが$|\cosh \theta|$の点)の座標を計算します。$\theta > 0$のときは$0 \leq t \leq \frac{\pi}{2}$、$\theta = 0$のときは$t = 0$、$\theta < 0$のときは$\pi \leq t \leq \frac{3 \pi}{2}$の角度を使います。$\theta$が正の値のときの$t$は度数法における$0^{\circ}$から$90^{\circ}$の角度、$\theta$が$0$のときは$0^{\circ}$、$\theta$が負の値のときは$180^{\circ}$から$270^{\circ}$の角度に対応します。\
+　半径が$a$の円のx軸の値は$x = a \cos t$、y軸の値は$y = a \sin t$で計算できます。\
+　絶対値は`abs()`で計算できます。\
+
+　双曲線上の点とcoth曲線上の点を結ぶ補助線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# coth曲線との対応用
+l <- 0.5
+segment_hyperbola_df <- tibble::tibble(
+  x_from = 0, 
+  x_to = axis_max+l, 
+  y = 1 / tanh(theta)
+)
+segment_hyperbola_df
+```
+
+　点$(0, \mathrm{coth}\ \theta)$からy軸の反対側への垂線を引くように座標を指定します。\
+
+　双曲線のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 変数ラベルの描画用
+hyperbola_label <- paste0(
+  "list(", 
+  "theta==", theta, 
+  ", cosh~theta==", round(cosh(theta), digits = 2), 
+  ", sinh~theta==", round(sinh(theta), digits = 2), 
+  ")"
+)
+
+# 双曲線関数を作図
+hyperbola_graph <- ggplot() + 
+  geom_segment(data = axis_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+               arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+  geom_line(data = asymptote_df, 
+            mapping = aes(x = x, y = y, group = slope), 
+            linetype = "dashed") + # 漸近線
+  geom_hline(yintercept = 1, linetype = "dashed") + # coth関数用の補助線
+  geom_path(data = hyperbola_df, 
+            mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+            size = 1) + # 双曲線
+  geom_point(data = point_df, 
+             mapping = aes(x = cosh_t, y = sinh_t), 
+             size = 4) + # 双曲線上の点
+  geom_ribbon(data = variable_area_df, 
+              mapping = aes(x = x, ymin = curve, ymax = straight), 
+              fill = "#00A968", alpha = 0.5) + # 変数(面積)
+  geom_text(mapping = aes(x = 0.5, y = 0.25*tanh(theta), label = "frac(theta, 2)"), parse = TRUE, 
+            size = 3) + # 変数ラベル
+  geom_path(data = adapt_df, 
+            mapping = aes(x = x, y = y), 
+            color = "red", linetype = "dotted") + # x軸からy軸への変換線
+  geom_segment(data = segment_hyperbola_df, 
+               mapping = aes(x = x_from, y = y, xend = x_to, yend = y), 
+               linetype = "dotted") + # coth曲線との対応線
+  geom_segment(data = function_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                             color = fnc, size = fnc, linetype = type)) + # 双曲線関数直線
+  geom_text(data = function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, angle = angle, vjust = v), parse = TRUE, 
+            show.legend = FALSE) + # 双曲線関数ラベル
+  scale_color_manual(breaks = c("coth", "sinh", "cosh", "(other)", "1"), 
+                     values = c("red", "blue", "purple", "black", "orange")) + 
+  scale_size_manual(breaks = c("coth", "sinh", "cosh", "(other)", "1"), 
+                    values = c(1.5, 0.5, 0.5, 0.5, 1), guide = "none") + 
+  scale_linetype_manual(breaks = c("main", "sub"), 
+                        values = c("solid", "twodash"), guide = "none") + 
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+  labs(title = "hyperbola", 
+       subtitle = parse(text = hyperbola_label), 
+       color = "function", 
+       x = expression(cosh~theta), y = expression(sinh~theta))
+hyperbola_graph
+```
+
+\ 
+
+　coth曲線上の点と双曲線上の点を結ぶ補助線(の半分)を描画するためのデータフレームを作成します。
+
+```{r}
+# 双曲線との対応用
+d <- 1.1
+l <- 0.6
+segment_coth_df <- tibble::tibble(
+  x_from = c(theta, theta), 
+  y_from = c(1/tanh(theta), 1/tanh(theta)), 
+  x_to = c(theta, min(theta_vec)-l), 
+  y_to = c(-axis_max*d, 1/tanh(theta))
+)
+segment_coth_df
+```
+
+　曲線上の点からx軸とy軸への垂線を引くように座標を指定します。\
+
+　coth関数曲線のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# coth曲線の描画用
+coth_df <- tibble::tibble(
+  t = theta_vec, 
+  coth_t = 1/tanh(theta_vec)
+) |> 
+  dplyr::mutate(
+    coth_t = dplyr::if_else(
+     (coth_t >= -axis_max & coth_t <= axis_max), true = coth_t, false = as.numeric(NA)
+    )
+  ) # 描画範囲外を欠損値に置換
+
+# 関数ラベルの描画用
+coth_label <- paste0(
+  "list(", 
+  "theta==", theta, 
+  ", coth~theta==", round(1/tanh(theta), digits = 2), 
+  ")"
+)
+
+# coth関数を作図
+coth_graph <- ggplot() + 
+  geom_line(data = coth_df, 
+            mapping = aes(x = t, y = coth_t), 
+            color = "red", size = 1) + # coth曲線
+  geom_segment(data = segment_coth_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+               size = 1, linetype = "dotted") + # 双曲線との対応線
+  geom_point(data = point_df, 
+             mapping = aes(x = t, y = coth_t), 
+             size = 4) + # coth曲線上の点
+  coord_cartesian(clip = "off", 
+                  xlim = c(min(theta_vec), max(theta_vec)), ylim = c(-axis_max, axis_max)) + # 
+  labs(title = "coth function", 
+       subtitle = parse(text = coth_label), 
+       x = expression(theta), y = expression(coth~theta))
+coth_graph
+```
+
+\ 
+
+</details>
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=12, fig.height=6, dpi=100}
+# 並べて描画
+patchwork::wrap_plots(hyperbola_graph, coth_graph, guides = "collect")
+```
+
+　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。\
+
+　$y = 1$における横軸の高さがcoth関数の曲線に対応しているのを確認できます。\
+\
+
+
+### アニメーションの作成
+
+　続いて、変数の値を変化させたアニメーションで確認します。\
+\
+
+　フレーム数を指定して、変数として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 101
+
+# 変数の値を作成
+theta_i <- seq(from = -2, to = 2, length.out = frame_num) # 範囲を指定
+head(theta_i)
+```
+
+　フレーム数`frame_num`を指定して、`frame_num`個の$\theta$の値を作成します。\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　`theta_i`から順番に値を取り出して作図し、グラフを書き出します。
+
+```{r, eval=FALSE}
+# 一時保存フォルダを指定
+dir_path <- "../figure/tmp_folder"
+
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("coth", "sinh", "cosh", "(other)", "1")
+
+# 変数ごとに作図
+for(i in 1:frame_num) {
+  
+  # i番目の値を取得
+  theta <- theta_i[i]
+  
+  # 曲線上の点の描画用
+  point_df <- tibble::tibble(
+    t = theta, 
+    coth_t = 1 / tanh(theta), 
+    cosh_t = cosh(theta), 
+    sinh_t = sinh(theta)
+  ) |> 
+    dplyr::mutate(
+      coth_t = dplyr::if_else(
+        (coth_t >= -axis_max & coth_t <= axis_max), true = coth_t, false = as.numeric(NA)
+      )
+    ) # 描画範囲外を欠損値に置換
+  
+  # 変数(面積)の描画用
+  variable_area_df <- tibble::tibble(
+    x = seq(from = 0, to = cosh(theta), length.out = 50), 
+    sign = dplyr::if_else(theta >= 0, true = 1, false = -1), # 符号
+    curve = sign * sqrt(x^2 - 1), # x軸と双曲線上の線分
+    straight = sinh(theta)/cosh(theta) * x # 原点と曲線上の点の線分
+  ) |> 
+    dplyr::mutate(
+      curve = dplyr::if_else(is.na(curve), true = 0, false = curve)
+    ) # 双曲線の範囲外を0に置換
+  
+  # 双曲線関数の描画用
+  function_df <- tibble::tibble(
+    x_from = c(
+      0, 0, 0, 
+      0, cosh(theta), 
+      0, 0, 
+      min(0, 1/tanh(theta)), 1/tanh(theta)
+    ), 
+    y_from = c(
+      0, 1, 0, 
+      0, 0, 
+      0, sinh(theta), 
+      ifelse(theta >= 0, yes = 0, no = 1), 0
+    ), 
+    x_to = c(
+      1/tanh(theta), 1/tanh(theta), 0, 
+      0, cosh(theta), 
+      cosh(theta), cosh(theta), 
+      ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1/tanh(theta), no = cosh(theta)), 1/tanh(theta)
+    ), 
+    y_to = c(
+      0, 1, 1/tanh(theta), 
+      sinh(theta), sinh(theta), 
+      0, sinh(theta), 
+      ifelse((sinh(theta) > 0 & sinh(theta) < 1), yes = 1, no = sinh(theta)), 1
+    ), 
+    fnc = c(
+      "coth", "coth", "coth", 
+      "sinh", "sinh", 
+      "cosh", "cosh", 
+      "(other)", "1"
+    ) |> 
+      factor(levels = fnc_level_vec), # 色分け用
+    type = c(
+      "main", "main", "sub", 
+      "main", "main", 
+      "main", "main", 
+      "main", "main"
+    ) # 線の種類
+  ) |> 
+    dplyr::mutate(
+      x_from = dplyr::case_when(
+        (x_from < -axis_max & fnc != "(other)") ~ -Inf, # ((other)の辺は滑らかに変化させるためにそのまま描画する)
+        x_from > axis_max ~ Inf, 
+        TRUE ~ x_from
+      ), 
+      x_to = dplyr::case_when(
+        x_to < -axis_max ~ -Inf, 
+        (x_to > axis_max & fnc != "(other)") ~ Inf, # ((other)の辺は滑らかに変化させるためにそのまま描画する)
+        TRUE ~ x_to
+      ), 
+      y_to = dplyr::case_when(
+        y_to < -axis_max ~ -Inf, 
+        y_to > axis_max ~ Inf, 
+        TRUE ~ y_to
+      )
+    ) # 描画範囲外を枠の最大値に置換
+  
+  # 双曲線関数ラベルの描画用
+  function_label_df <- tibble::tibble(
+    x = c(0.5/tanh(theta), 0, 0.5*cosh(theta), 1/tanh(theta)), 
+    y = c(1, 0.5*sinh(theta), sinh(theta), 0.5), 
+    angle = c(0, 90, 0, 90), 
+    v = c(-0.5, -0.5, 1, 1.5), 
+    fnc = c("coth", "sinh", "cosh", "1") |> 
+      factor(levels = fnc_level_vec), # 色分け用
+    fnc_label = c("coth~theta", "sinh~theta", "cosh~theta", "1") # 関数ラベル
+  ) |> 
+    dplyr::mutate(
+      x = dplyr::case_when(
+        x < -axis_max ~ -Inf, 
+        x > axis_max ~ Inf, 
+        TRUE ~ x
+      )
+    ) # 描画範囲外を枠の最大値に置換
+  
+  # 軸変換線の描画用
+  adapt_df <- tibble::tibble(
+    t = dplyr::case_when(
+      theta > 0 ~ seq(from = 0, to = 0.5*pi, length.out = 100), 
+      theta == 0 ~ 0, 
+      theta < 0 ~ seq(from = pi, to = 1.5*pi, length.out = 100)
+    ), 
+    x = cos(t) / abs(tanh(theta)), 
+    y = sin(t) / abs(tanh(theta))
+  ) |> 
+    dplyr::mutate(
+      x = dplyr::if_else(
+        (x >= -axis_max & x <= axis_max), true = x, false = as.numeric(NA)
+      ), 
+      y = dplyr::if_else(
+        (y >= -axis_max & y <= axis_max), true = y, false = as.numeric(NA)
+      )
+    ) # 描画範囲外を欠損値に置換
+  
+  # coth曲線との対応用
+  l <- 0.5
+  segment_hyperbola_df <- tibble::tibble(
+    x_from = 0, 
+    x_to = axis_max+l, 
+    y = 1 / tanh(theta)
+  ) |> 
+    dplyr::mutate(
+      y = dplyr::if_else(
+        (y >= -axis_max & y <= axis_max), true = y, false = as.numeric(NA)
+      )
+    ) # 描画範囲外を欠損値に置換
+  
+  # 関数ラベルの描画用
+  hyperbola_label <- paste0(
+    "list(", 
+    "theta==", theta, 
+    ", cosh~theta==", round(cosh(theta), digits = 2), 
+    ", sinh~theta==", round(sinh(theta), digits = 2), 
+    ")"
+  )
+  
+  # 双曲線関数を作図
+  hyperbola_graph <- ggplot() + 
+    geom_segment(data = axis_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, group = "axis"), 
+                 arrow = arrow(length = unit(10, units = "pt"))) + # 軸線
+    geom_line(data = asymptote_df, 
+              mapping = aes(x = x, y = y, group = slope), 
+              linetype = "dashed") + # 漸近線
+    geom_hline(yintercept = 1, linetype = "dashed") + # coth関数用の補助線
+    geom_path(data = hyperbola_df, 
+              mapping = aes(x = cosh_t, y = sinh_t, group = sign), 
+              size = 1) + # 双曲線
+    geom_point(data = point_df, 
+               mapping = aes(x = cosh_t, y = sinh_t), 
+               size = 4) + # 双曲線上の点
+    geom_ribbon(data = variable_area_df, 
+                mapping = aes(x = x, ymin = curve, ymax = straight), 
+                fill = "#00A968", alpha = 0.5) + # 変数(面積)
+    geom_text(mapping = aes(x = 0.5, y = 0.25*tanh(theta), label = "frac(theta, 2)"), parse = TRUE, 
+              size = 3) + # 変数ラベル
+    geom_path(data = adapt_df, 
+              mapping = aes(x = x, y = y), 
+              color = "red", linetype = "dotted") + # x軸からy軸への変換線
+    geom_segment(data = segment_hyperbola_df, 
+                 mapping = aes(x = x_from, y = y, xend = x_to, yend = y), 
+                 linetype = "dotted") + # coth曲線との対応線
+    geom_segment(data = function_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                               color = fnc, size = fnc, linetype = type)) + # 双曲線関数直線
+    geom_text(data = function_label_df, 
+              mapping = aes(x = x, y = y, label = fnc_label, color = fnc, angle = angle, vjust = v), parse = TRUE, 
+              show.legend = FALSE) + # 双曲線関数ラベル
+    scale_color_manual(breaks = c("coth", "sinh", "cosh", "(other)", "1"), 
+                       values = c("red", "blue", "purple", "black", "orange")) + 
+    scale_size_manual(breaks = c("coth", "sinh", "cosh", "(other)", "1"), 
+                      values = c(1.5, 0.5, 0.5, 0.5, 1), guide = "none") + 
+    scale_linetype_manual(breaks = c("main", "sub"), 
+                          values = c("solid", "twodash"), guide = "none") + 
+    coord_fixed(ratio = 1, clip = "off", 
+                xlim = c(-axis_max, axis_max), ylim = c(-axis_max, axis_max)) + # 表示範囲
+    labs(title = "hyperbola", 
+         subtitle = parse(text = hyperbola_label), 
+         color = "function", 
+         x = expression(cosh~theta), y = expression(sinh~theta))
+  
+  # coth曲線の描画用
+  coth_df <- tibble::tibble(
+    t = theta_vec, 
+    coth_t = 1 / tanh(theta_vec)
+  ) |> 
+    dplyr::mutate(
+      coth_t = dplyr::if_else(
+        (coth_t >= -axis_max & coth_t <= axis_max), true = coth_t, false = as.numeric(NA)
+      )
+    ) # 閾値の範囲外を欠損値に置換
+  
+  # 双曲線との対応用
+  d <- 1.1
+  l <- 0.6
+  tmp_y <- ifelse((1/tanh(theta) >= -axis_max & 1/tanh(theta) <= axis_max), yes = 1/tanh(theta), no = as.numeric(NA)) # 描画範囲外の場合は欠損値
+  segment_coth_df <- tibble::tibble(
+    x_from = c(theta, theta), 
+    y_from = c(tmp_y, tmp_y), 
+    x_to = c(theta, min(theta_vec)-l), 
+    y_to = c(-axis_max*d, tmp_y)
+  )
+  
+  # 関数ラベルの描画用
+  coth_label <- paste0(
+    "list(", 
+    "theta==", theta, 
+    ", coth~theta==", round(1/tanh(theta), digits = 2), 
+    ")"
+  )
+  
+  # coth関数曲線の作図
+  coth_graph <- ggplot() + 
+    geom_line(data = coth_df, 
+              mapping = aes(x = t, y = coth_t), 
+              color = "red", size = 1) + # coth曲線
+    geom_segment(data = segment_coth_df, 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
+                 linetype = "dotted") + # 双曲線との対応線
+    geom_point(data = point_df, 
+               mapping = aes(x = t, y = coth_t), 
+               size = 4) + # coth曲線上の点
+    coord_cartesian(clip = "off", 
+                    xlim = c(min(theta_vec), max(theta_vec)), ylim = c(-axis_max, axis_max)) + # 
+    labs(title = "coth function", 
+         subtitle = parse(text = coth_label), 
+         x = expression(theta), y = expression(coth~theta))
+  
+  # 並べて描画
+  graph <- patchwork::wrap_plots(hyperbola_graph, coth_graph, guides = "collect")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 600, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", i, " / ", frame_num, appendLF = FALSE)
+}
+```
+
+　変数の値ごとに「グラフの作成」と同様に処理します。ただし、グラフサイズ(`-axis_max`から`axis_max`)外の場合は表示しないように、欠損値などに置き換える処理を追加しています。\
+　作成したグラフを`ggsave()`で保存します。\
+
+　coth関数のアニメーションを作成します。
+
+```{r, eval=FALSE}
+# gif画像を作成
+paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
+  magick::image_read() |> # 画像ファイルを読込
+  magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
+  magick::image_write_gif(path = "../figure/curves/coth.gif", delay = 0.1) -> tmp_path # gifファイル書き出
+```
+
+　全てのファイルパスを作成して、`image_read()`で画像ファイルを読み込んで、`image_animate()`でgif画像に変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
+
+</details>
+
+![](../figure/curves/coth.gif)
+
+　$\theta < 0$のとき1未満、$\theta > 0$のとき1より大きく、また$\theta = 0$で不連続に推移するのを確認できます。\
+\
+
+　この記事では、coth関数を可視化しました。次の記事では、6つの双曲線関数を可視化します。\
 \
 
 
