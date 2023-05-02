@@ -24,8 +24,466 @@ knitr::opts_chunk$set(
 - 2023/01/09：「sin関数の可視化」を追加
 - 2023/01/15：「sin関数の変形の可視化」を追加
 - 2023/01/29：「cos関数の可視化」を追加
+- 2023/05/01：「円周の作図」を更新して独立
 
 ----
+
+
+# 円周の作図
+
+　ggplot2パッケージを利用して、円周(circumference)のグラフを作成します。また、円座標系(circular coordinates)をグラフで確認します。\
+　詳しい計算については「Matplotlibによる円周の作図」も参照してください。\
+\
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(gganimate)
+```
+
+```{r, echo=FALSE}
+###資料作成用:(チェック用)
+
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+\
+
+
+## 定義式の確認
+
+　まずは、円の定義式を確認します。\
+\
+
+　点 $(a, b)$ を中心とする半径 $r$ の円は、次の式で定義されます。
+
+$$
+(x - a)^2 + (y - b)^2
+    = r^2
+$$
+
+　平面上の座標(x軸とy軸の値)は、それぞれ次の式で計算できます。
+
+$$
+\begin{cases}
+    x = a + r \cos \theta \\
+    y = b + r \sin \theta
+\end{cases}
+$$
+
+　$\sin \theta$ はサイン関数、$\cos \theta$ はコサイン関数です。$\theta$ は、中心と点 $(a + r, b)$ を結ぶ線分(原点を中心としたときのx軸の正の部分)と、中心と点 $(x, y)$ を結ぶ線分のなす角の角度に対応します。(正確には、なす角は $180^{\circ}$ 以下の正の値なので、なす角ではないと思いますが適切な呼び方が分かりません。)\
+　点 $(x, y)$ は、中心からのユークリッドノルム $\|(x - a, y - b)\| = \sqrt{(x - a)^2 + (y - b)^2}$ が $r$ の点です。\
+
+　原点 $(0, 0)$ を中心とする($a = 0, b = 0$ の)場合は、次の式になります。
+
+$$
+x^2 + y^2
+    = r^2
+$$
+
+　座標は、それぞれ次の式で計算できます。
+
+$$
+\begin{cases}
+    x = r \cos \theta \\
+    y = r \sin \theta
+\end{cases}
+$$
+
+\ 
+
+　原点を中心とする単位円(半径が1の円)の場合は、次の式になります。
+
+$$
+x^2 + y^2
+    = 1
+$$
+
+　座標は、それぞれ次の式で計算できます。
+
+$$
+\begin{cases}
+    x = \cos \theta \\
+    y = \sin \theta
+\end{cases}
+$$
+
+\ 
+
+　これらの式を使ってグラフを作成します。\
+\
+
+
+## 円の描画
+
+　次は、円のグラフを作成します。\
+\
+
+　円を描画するためのデータフレームを作成します。
+
+```{r}
+# 中心の座標を指定
+a <- 5
+b <- 6
+
+# 半径を指定
+r <- 2
+
+# 円の描画用
+circle_df <- tibble::tibble(
+  theta_deg = seq(from = 0, to = 360, length.out = 361), # 度数法
+  theta_rad = theta_deg / 180 * pi, # 弧度法
+  x = a + r * cos(theta_rad), 
+  y = b + r * sin(theta_rad)
+)
+circle_df
+```
+
+　半径 $r$ を`r`、円の中心のx軸の値 $a$ を`a`、y軸の値 $b$ を`b`として値を指定して、円周上の点の座標を計算します。\
+　度数法における角度 $0^{\circ} \leq \theta^{\circ} \leq 360^{\circ}$ の範囲の値を作成して`theta_deg`列とします。\
+　`theta_deg`列を用いて、弧度法における角度(ラジアン)を $\theta = \theta^{\circ} \frac{2 \pi}{360}$ で計算して`theta_rad`列とします。$\pi$ は円周率で、`pi`で扱えます。$0^{\circ} = 0 \frac{\pi}{180} = 0$、$360^{\circ} = 360 \frac{\pi}{180} = 2 \pi$ なので、ラジアンは、$0 \leq \theta \leq 2 \pi$ の範囲の値になります。詳しくは「度数法と弧度法の関係」で確認します。\
+　`theta_rad`列を用いて、x軸の値 $x = a + r \cos \theta$ とy軸の値 $y = b + r \sin \theta$ を計算して`x, y`列とします。\
+
+　あるいは、ラジアンを作成して、座標を計算します。
+
+```{r}
+# 円周の座標を計算
+circle_df <- tibble::tibble(
+  theta_rad = seq(from = 0, to = 2*pi, length.out = 361), # ラジアン
+  x = a + r * cos(theta_rad), 
+  y = b + r * sin(theta_rad)
+)
+circle_df
+```
+
+　ラジアンとして用いる $0 \leq \theta \leq 2 \pi$の範囲の値を作成して、同様に座標を計算します。\
+
+　円周のグラフを作成します。
+
+```{r, fig.width=8, fig.height=6, dpi=100}
+# 円を作図
+ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y, linetype = "circle")) + # 円周
+  geom_segment(mapping = aes(x = a, y = b, xend = a+r, yend = b)) + # 半径
+  geom_text(mapping = aes(x = a+0.5*r, y = b), 
+            label = "r", parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = -0.5) + # 半径ラベル
+  geom_point(mapping = aes(x = a, y = b), 
+             size = 3) + # 中心点
+  geom_text(mapping = aes(x = a, y = b), 
+            label = "O", parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = -0.5) + # 中心ラベル
+  scale_linetype_manual(breaks = "circle", values = "solid",
+                        label = expression((x - a)^2 + (y - b)^2 == r^2), 
+                        name = "formula") + # (凡例表示用)
+  coord_fixed(ratio = 1) + # アスペクト比
+  labs(title = "circle", 
+       subtitle = paste0("O=(a, b)=(", a, ", ", b, "), r=", r), 
+       x = expression(x == a + r~cos~theta), 
+       y = expression(y == b + r~sin~theta))
+```
+
+　横軸を $a + r \cos \theta$、縦軸を $b + r \sin \theta$ として、(`geom_line()`ではなく)`geom_path()`で円を描画します。綺麗な円を描画するには、`coord_***()`の`ratio`引数に`1`を指定します。\
+　また半径の目安として、(なす角が0の)中心と円周上の点を結ぶ線分を`geom_segment()`で描画しています。\
+　数式を表示する場合は、`expression()`の記法で指定します。\
+
+　原点を中心とする半径 $r$ の円全体をx軸方向に $a$、y軸方向に $b$ 移動したグラフになります。\
+\
+
+　以上で、円を描画できました。\
+\
+
+
+## 度数法と弧度法の関係
+
+　最後に、度数法における角度と弧度法における角度(ラジアン)の関係をグラフで確認します。\
+\
+
+
+### グラフの作成
+
+　度数法と弧度法の関係を角度目盛を表示したグラフで確認します。\
+\
+
+　円を描画するためのデータフレームを作成します。
+
+```{r}
+# 半径を指定
+r <- 1
+
+# 円周の座標を計算
+circle_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, length.out = 601), # ラジアン
+  x = r * cos(theta), 
+  y = r * sin(theta)
+)
+circle_df
+```
+
+　「円の描画」のときと同様にして、円周の座標を計算します。ただし簡単のため、原点を中心とします。\
+
+　角度に関する目盛やラベルを描画するためのデータフレームを作成します。
+
+```{r}
+# 半円の目盛の数(分母の値)を指定
+denom <- 6
+
+# 目盛の通し番号(分子の値)を作成
+tick_vec <- seq(from = 0, to = 2*denom-1, by = 1)
+
+# 角度目盛ラベルの描画用
+rad_label_df <- tibble::tibble(
+  theta_deg = tick_vec / denom * 180, # 度数法
+  theta_rad = tick_vec / denom * pi, # 弧度法
+  x = r * cos(theta_rad), 
+  y = r * sin(theta_rad), 
+  deg_label = paste0(theta_deg, "*degree"), # 度数法用ラベル
+  rad_label = paste0("frac(", tick_vec, ", ", denom, ")~pi"), # 弧度法用ラベル
+  angle_label = paste0(deg_label, "==", rad_label) # 度数法・弧度法の対応用ラベル
+)
+rad_label_df
+```
+
+　角度 $\theta$ に関する軸目盛ラベルを $\frac{i}{n} \pi$ の形で表示することにします。1周 $360^{\circ}$ は $2 \pi$ なので、この例では、$i$ を $0$ から $2 n$ 未満の整数とします。$n$ は、半円における目盛の数に対応します。\
+　$n$ を`n`、$i$ を`tick_vec`として値を作成します。\
+
+　度数法における角度を $\theta^{\circ} = 180^{\circ} \frac{i}{n}$ で計算して`theta_deg`列、弧度法における角度を $\theta = \frac{i}{n} \pi$ で計算して`theta_rad`列として、円周上の点の座標を計算します。\
+
+　`theta_deg`列や`tick_vec`を用いて、ラベル用の文字列を作成します。数式を表示する場合は、`expression()`の記法を用います。\
+
+　角マークを描画するためのデータフレームを作成します。
+
+```{r}
+# 角マークの座標を計算
+d <- 0.2
+angle_mark_df <- tibble::tibble(
+  theta = seq(from = 0, to = 1/denom*pi, length.out = 100), 
+  x = d * cos(theta), 
+  y = d * sin(theta)
+)
+angle_mark_df
+```
+
+　この例では、なす角 $\theta$ を示すために、軸目盛1つ分の角マーク(小さい扇型)を表示することにします。\
+　そこで、角マーク用のラジアン $0 \leq \theta \leq \frac{\pi}{n}$ を作成して、円弧の座標を計算します。サイズの調整用の値(半径)を`d`とします。\
+
+　角ラベルを描画するためのデータフレームを作成します。
+
+```{r}
+# 角ラベルの座標を計算
+d <- 0.3
+angle_label_df <- tibble::tibble(
+  theta = 0.5 / denom * pi, 
+  x = d * cos(theta), 
+  y = d * sin(theta)
+)
+angle_label_df
+```
+
+　角ラベルは、角マークの中点に表示することにします。\
+　そこで、角ラベル用のラジアンを $\theta = \frac{\pi}{2 n}$ として、点の座標を計算します。表示位置の調整用の値(原点からのノルム)を`d`とします。\
+
+　円周上に角度目盛を表示したグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 目盛ラベルの表示位置を指定
+d <- 1.1
+
+# グラフサイズ用の値を設定
+axis_size <- r * d + 0.3
+
+# 円周上の角度目盛を作図
+ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_text(data = rad_label_df, 
+            mapping = aes(x = x*d, y = y*d, label = angle_label, 
+                          hjust = 1-(x/r*0.5+0.5), vjust = 1-(y/r*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_text(data = rad_label_df, 
+            mapping = aes(x = x, y = y, angle = theta_deg+90), 
+            label = "|", size = 2) + # 角度目盛指示線
+  geom_segment(data = rad_label_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               linetype = "dotted") + # 角度目盛グリッド
+  geom_segment(mapping = aes(x = 0, y = 0, xend = r, yend = 0)) + # x軸上の半径
+  geom_text(mapping = aes(x = 0.5*r, y = 0), 
+            label = paste0("r==", r), parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = 0) + # 半径ラベル
+  geom_path(data = angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # 角マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y), 
+            label = "theta", parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = 0.5) + # 角ラベル
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "degree and radian", 
+       subtitle = expression(theta*degree == frac(2*pi, 360) ~ theta), 
+       #subtitle = expression(theta == frac(360, 2*pi) ~ theta*degree), 
+       x = expression(x == r ~ cos~theta), 
+       y = expression(y == r ~ sin~theta))
+```
+
+　目盛ラベルの表示位置の調整用の値を`d`とします。\
+　また、横・縦方向の表示位置の調整用の引数`hjust, vjust`を、`x, y`列の値を使って指定しています。$r \cos \theta, r \sin \theta$ (`x, y`列)は $-r$ から $r$ の値をとります。$r$ で割ると $-1$ から $1$ の値になり、さらに $0.5$ を掛けると $-0.5$ から $0.5$ の値になり、$0.5$ を足すと $0$ から $1$ の値になります。この値を $1$ から引いた値を使うといい感じの表示位置になります。`hjust, vjust`を指定(こんな面倒な設定を)せずに、`d`を少し大きくしても同様の図になります。\
+　角度目盛の指示線を`|`で表示します。線の向きは角度列`theta_deg`を90°回転させた方向です。\
+
+　度数法 $\theta^{\circ}$ と弧度法 $\theta$ は、$\theta = \frac{2 \pi}{360} \theta^{\circ}$、$\theta^{\circ} = \frac{360}{2 \pi} \theta$ の関係です。つまり、$\theta^{\circ} = 0^{\circ}$ のとき $\theta = 0$、$\theta^{\circ} = 180^{\circ}$ のとき $\theta = \pi$、$\theta^{\circ} = 360^{\circ}$ のとき $\theta = 2 \pi$ です。\
+　また、$\cos \theta = \cos (\theta + 2 \pi)$、$\sin \theta = \sin (\theta + 2 \pi)$ なので、$2 \pi$ で1周期です。\
+　円の大きさ(半径)や中心の位置(座標)は角度に影響しません。\
+\
+
+
+### アニメーションの作成
+
+　続いて、なす角と円周上の点の関係をアニメーションで確認します。\
+\
+
+　フレームごとの角度を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 150
+
+# フレームごとの角度を指定
+theta_n <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+
+# フレームごとの角度ラベルを作成
+frame_label_vec <- paste0(
+  "θ° = ", round(theta_n/pi*180, digits = 1), "°, ", 
+  "θ = ", round(theta_n/pi, digits = 2), "π"
+)
+head(theta_n); head(frame_label_vec)
+```
+
+　フレーム数`frame_num`を指定して、`frame_num`個の $\theta$ の値を等間隔に作成します。範囲を $2 n \pi$ にして`frame_num + 1`個の等間隔の値を作成して、最後の値を除くと繋がりの良いアニメーションになります。\
+　この例では、フレームごとの角度をグラフに表示するために、`theta_n`を用いた文字列をフレーム切替用のラベル列として使います。作図自体には不要な処理です。\
+
+　円周上の点を描画するためのデータフレームを作成します。
+
+```{r}
+# フレームごとの円周上の点の座標を計算
+anim_angle_point_df <- tibble::tibble(
+  frame_i = 1:frame_num, # フレーム番号
+  frame_label = factor(frame_label_vec, levels = frame_label_vec), # フレーム切替用ラベル
+  theta = theta_n, 
+  x = r * cos(theta), 
+  y = r * sin(theta)
+)
+anim_angle_point_df
+```
+
+　フレーム番号を`1`から`frame_num`の整数として、フレームラベル`frame_label_vec`と合わせて格納します。どちらか1つの列があれば作図できます。\
+　また、フレームごとの角度`theta_n`を用いて、円周上の各点の座標を計算します。\
+
+　角マークを描画するためのデータフレームを作成します。
+
+```{r}
+# フレームごとの角マークの座標を計算
+d <- 0.15
+anim_angle_mark_df <- tibble::tibble(
+  frame_i = 1:frame_num, # フレーム番号
+  frame_label = factor(frame_label_vec, levels = frame_label_vec), # フレーム切替用ラベル
+) |> 
+  dplyr::group_by(frame_i, frame_label) |> # ラジアンの作成用
+  dplyr::summarise(
+    theta = seq(from = 0, to = theta_n[frame_i], length.out = 100), .groups = "drop"
+  ) |> # なす角以下のラジアンを作成
+  dplyr::mutate(
+    x = d * cos(theta), 
+    y = d * sin(theta)
+  )
+anim_angle_mark_df
+```
+
+　フレームごとにグループ化して、`summarise()`を使ってフレーム(角度)ごとに`0`から`theta_n[frame_i]`までの値を作成して、円弧の座標を計算します。\
+
+　角ラベルを描画するためのデータフレームを作成します。
+
+```{r}
+# フレームごとの角ラベルの座標を計算
+d <- 0.2
+anim_angle_label_df <- tibble::tibble(
+  frame_i = 1:frame_num, # フレーム番号
+  frame_label = factor(frame_label_vec, levels = frame_label_vec), # フレーム切替用ラベル
+  theta = 0.5 * theta_n, 
+  x = d * cos(theta), 
+  y = d * sin(theta)
+)
+anim_angle_label_df
+```
+
+　x軸の正の部分とのなす角の中点にラベルと配置するために、`0.5 * theta_n`を用いて円弧上の点の座標を計算します。\
+
+　フレームごとに角度を変化させたアニメーションを作成します。
+
+```{r, eval=FALSE}
+# ラベルの表示位置を指定
+d <- 1.1
+
+# グラフサイズ用の値を設定
+axis_size <- d + 0.3
+
+# 角度と円周上の点のアニメーションを作図
+anim <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_text(data = rad_label_df, 
+            mapping = aes(x = x*d, y = y*d, label = angle_label, 
+                          hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), parse = TRUE) + # 角度目盛ラベル
+  geom_text(data = rad_label_df, 
+            mapping = aes(x = x, y = y, angle = theta_deg+90), 
+            label = "|", size = 2) + # 角度目盛指示線
+  geom_segment(data = rad_label_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               linetype = "dotted") + # 角度目盛グリッド
+  geom_point(data = anim_angle_point_df, 
+             mapping = aes(x = x, y = y), 
+             size = 4) + # 円周上の点
+  geom_segment(data = anim_angle_point_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               size = 1) + # 原点と円周上の点の線分
+  geom_segment(mapping = aes(x = 0, y = 0, xend = r, yend = 0), 
+               size = 1) + # 正のx軸上の半径
+  geom_text(mapping = aes(x = 0.5*r, y = 0), 
+            label = "r", parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = -0.5) + # 半径ラベル
+  geom_path(data = anim_angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # 角マーク
+  geom_text(data = anim_angle_label_df, 
+            mapping = aes(x = x, y = y), 
+            label = "theta", parse = TRUE, 
+            size = 5, hjust = 0.5, vjust = 0.5) + # 角ラベル
+  gganimate::transition_manual(frames = frame_label) + # フレーム
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "degree and radian", 
+       subtitle = "{current_frame}", 
+       x = expression(x == r ~ cos~theta), 
+       y = expression(y == r ~ sin~theta))
+
+# gif画像を作成
+gganimate::animate(plot = anim, nframes = frame_num, fps = 100, width = 600, height = 600)
+```
+
+　`gganimate`パッケージを利用して、アニメーション(gif画像)を作成します。\
+　`transition_manual()`のフレーム制御の引数`frames`にフレームラベル列`frame_label`(またはフレーム番号列`frame_i`)を指定して、グラフを作成します。\
+　`animate()`の`plot`引数にグラフオブジェクト、`nframes`引数にフレーム数`frame_num`を指定して、gif画像を作成します。また、`fps`引数に1秒当たりのフレーム数を指定できます。\
+
+　ラジアン(角度) $\theta$ が大きくなるほど円周上の点が反時計回りに移動するのが分かります。角度が負の値のときは時計回りの方向にできるなす角になります。\
+\
+
+　この記事では、円を可視化しました。次の記事からは、三角関数(円関数)を可視化していきます。\
+\
 
 
 # 三角関数の可視化
@@ -254,7 +712,7 @@ ggplot() +
 ```
 
 　ラベル配置位置の調整用の値を`d`とします。\
-　また、横・縦方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は―1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
+　また、横・縦方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は-1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
 
 　角度が$30^{\circ}$変化するとラジアンが$\frac{\pi}{6}$変化するのを確認できます。また、$0^{\circ} = 0, 360^{\circ} = 2 \pi$であり、$\sin 0 = \sin 2 \pi, \cos 0 = \cos 2 \pi$です。\
 \
@@ -900,7 +1358,7 @@ file_path_vec |>
 
 \ 
 
-![](../../figure/curves/curves.gif)
+![](../figure/curves/curves.gif)
 
 　描画範囲外の変数(角度)に関しても周期的に推移します。\
 \
@@ -1462,7 +1920,7 @@ file_path_vec |>
 
 \ 
 
-![](../../figure/curves/sin_curve.gif)
+![](../figure/curves/sin_curve.gif)
 
 　sin関数が$2 \pi$間隔で周期的に推移するのを確認できます。\
 \
@@ -1830,13 +2288,13 @@ patchwork::wrap_plots(sin_graph, circle_graph) +
 
 ・$\theta^{\circ} = 120^{\circ}, k = -1$のグラフ
 
-![](../../figure/curves/sin_t120_k-1.png)
+![](../figure/curves/sin_t120_k-1.png)
 
 　$k$が負の値のとき、円周上の点については原点に対して反転し、サイン波については$x = 0$の直線に対して反転したグラフになります。また、「変数をa倍する場合」で確認する$a = -1$のとき、「変数にbを加える場合」で確認する$b = \pi = 180^{\circ}$のときと同じグラフになることから、$-\sin \theta = \sin(-\theta) = \sin(\theta + 180^{\circ})$が成り立つのを確認できます。\
 
 ・$\theta^{\circ} = 120^{\circ}, k = \frac{1}{2}$のグラフ
 
-![](../../figure/curves/sin_t120_k0_5.png)
+![](../figure/curves/sin_t120_k0_5.png)
 
 　$k$が1未満のときは、単位円(振幅が-1から1)よりも小さくなります。\
 \
@@ -2113,19 +2571,19 @@ file_path_vec |>
 
 ・$k = 3$の推移
 
-![](../../figure/curves/sin_k3.gif)
+![](../figure/curves/sin_k3.gif)
 
 　sin関数をk倍することで振幅がk倍になりますが、$2 \pi$間隔の周期(角速度)に変化がないのを確認できます。\
 
 ・$k = -3$の推移
 
-![](../../figure/curves/sin_k-3.gif)
+![](../figure/curves/sin_k-3.gif)
 
 　k倍したsin関数と-k倍sin関数では、常に円周上の点が$180^{\circ} = \pi$変化(進む・戻る)した点を推移するのが分かります。\
 
 ・$k = -1$の推移
 
-![](../../figure/curves/sin_k-1.gif)
+![](../figure/curves/sin_k-1.gif)
 
 　後で、$a = -1$や$b = \pi$のグラフと比較します。\
 \
@@ -2457,7 +2915,7 @@ patchwork::wrap_plots(sin_graph, circle_graph) +
 
 ・$\theta^{\circ} = 120^{\circ}, a = -1$のグラフ
 
-![](../../figure/curves/sin_t120_a-1.png)
+![](../figure/curves/sin_t120_a-1.png)
 
 　$a$が負の値のとき、$x = 0$の直線に対して反転したグラフになります。\
 　$a = -1$のとき、「関数をk倍する場合」の$k = -1$のときや「変数にbを加える場合」の$b = \pi$のとき、サイン波の形が同じになりますが、単位円の点(単位円における位置関係)が異なるのが分かります。\
@@ -2727,19 +3185,19 @@ file_path_vec |>
 
 ・$a = 2$の推移
 
-![](../../figure/curves/sin_a2.gif)
+![](../figure/curves/sin_a2.gif)
 
 　円周上($2 \pi$の範囲)を$\sin(\theta)$の点が1周する間に、$\sin(a \theta)$の点がa周するのを確認できます。\
 
 ・$a = -2$の推移
 
-![](../../figure/curves/sin_a-2.gif)
+![](../figure/curves/sin_a-2.gif)
 
 　$a$が負の値のとき、円周上の点が逆回転します。\
 
 ・$a = -1$の推移
 
-![](../../figure/curves/sin_a-1.gif)
+![](../figure/curves/sin_a-1.gif)
 
 　$k = -1$や$b = \pi$のグラフと比較します。\
 \
@@ -3103,13 +3561,13 @@ patchwork::wrap_plots(sin_graph, circle_graph) +
 
 ・$\theta^{\circ} = 120^{\circ}, b = -\frac{1}{2} \pi$のグラフ
 
-![](../../figure/curves/sin_t120_b-0_5pi.png)
+![](../figure/curves/sin_t120_b-0_5pi.png)
 
 　$b$が負の値の(変数から定数を引いた)場合は、x軸方向に$b$だけ平行移動する($b$の分進む)のを確認できます。\
 
 ・$\theta^{\circ} = 120^{\circ}, b = \pi$のグラフ
 
-![](../../figure/curves/sin_t120_bpi.png)
+![](../figure/curves/sin_t120_bpi.png)
 
 「関数をk倍する場合」の$k = -1$のときと同じグラフになるのを確認できます。\
 \
@@ -3410,15 +3868,15 @@ file_path_vec |>
 
 ・$b = \frac{1}{2}\pi$の推移
 
-![](../../figure/curves/sin_b0_5pi.gif)
+![](../figure/curves/sin_b0_5pi.gif)
 
 ・$b = -\frac{1}{2}\pi$の推移
 
-![](../../figure/curves/sin_b-0_5pi.gif)
+![](../figure/curves/sin_b-0_5pi.gif)
 
 ・$b = \pi$の推移
 
-![](../../figure/curves/sin_bpi.gif)
+![](../figure/curves/sin_bpi.gif)
 
 　$a = -1$や$a = -1$のグラフと比較します。\
 \
@@ -4344,7 +4802,7 @@ file_path_vec |>
 
 \ 
 
-![](../../figure/curves/sin_curves.gif)
+![](../figure/curves/sin_curves.gif)
 
 　色々比較してみてください。\
 \
@@ -5464,10 +5922,10 @@ file_path_vec |>
 
 \ 
 
-![](../../figure/curves/cos_curve_1_top.gif)
-![](../../figure/curves/cos_curve_1_bottom.gif)
-![](../../figure/curves/cos_curve_1_left.gif)
-![](../../figure/curves/cos_curve_1_right.gif)
+![](../figure/curves/cos_curve_1_top.gif)
+![](../figure/curves/cos_curve_1_bottom.gif)
+![](../figure/curves/cos_curve_1_left.gif)
+![](../figure/curves/cos_curve_1_right.gif)
 
 \ 
 
@@ -5735,10 +6193,10 @@ for(i in 1:frame_num) {
 
 \ 
 
-![](../../figure/curves/cos_curve_2_top.gif)
-![](../../figure/curves/cos_curve_2_bottom.gif)
-![](../../figure/curves/cos_curve_2_left.gif)
-![](../../figure/curves/cos_curve_2_right.gif)
+![](../figure/curves/cos_curve_2_top.gif)
+![](../figure/curves/cos_curve_2_bottom.gif)
+![](../figure/curves/cos_curve_2_left.gif)
+![](../figure/curves/cos_curve_2_right.gif)
 
 　$\cos \theta$が$2 \pi$の範囲で周期するのを確認できます。\
 　(下側に配置する場合は、$\theta$軸を反転させた方が分かりやすいかもしれない。)\
@@ -5750,9 +6208,6 @@ for(i in 1:frame_num) {
 
 # cos関数の振幅・周期・平行移動の変形の可視化
 
-
-
-# tan関数の可視化
 
 
 
