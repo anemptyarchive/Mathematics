@@ -1,11 +1,11 @@
 ---
-title: "三角関数の可視化"
+title: "円関数の可視化"
 author: "@anemptyarchive\\thanks{\\url{https://www.anarchive-beta.com/}}"
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S')`"
 output:
   html_document:
     toc: TRUE       # 目次
-    toc_depth: 3    # 目次の見出しレベル
+    toc_depth: 5    # 目次の見出しレベル
     toc_float: TRUE # 目次のスクロール追跡
 ---
 
@@ -31,6 +31,7 @@ knitr::opts_chunk$set(
 - 2023/05/22：「cot関数の可視化」を追加
 - 2023/06/28：「sec関数の可視化」を追加
 - 2023/07/03：「csc関数の可視化」を追加
+- 2023/07/09：「三角関数の可視化」を「円関数の可視化」に更新
 
 ----
 
@@ -489,887 +490,6 @@ gganimate::animate(plot = anim, nframes = frame_num, fps = 100, width = 600, hei
 \
 
 　この記事では、円を可視化しました。次の記事からは、三角関数(円関数)を可視化していきます。\
-\
-
-
-# 三角関数の可視化
-
-　単位円における角度とsin関数(サイン波・正弦波)・cos関数(コサイン波・余弦波)・tan関数(タンジェント波・正接波)の関係をグラフで可視化します。\
-\
-
-　利用するパッケージを読み込みます。
-
-```{r, eval=FALSE}
-# 利用パッケージ
-library(tidyverse)
-library(patchwork)
-library(magick)
-```
-
-```{r, echo=FALSE}
-### 資料作成用:(チェック用)
-
-# 利用パッケージ
-library(ggplot2)
-```
-
-　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため`ggplot2`を読み込む必要があります。\
-　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
-\
-
-
-## グラフの作成
-
-　角度を固定したグラフで確認します。\
-\
-
-
-### 単位円・三角関数の作図
-
-　まずは、単位円と3つの関数のグラフを作成します。\
-\
-
-　角度として用いる値を作成して、ラジアンに変換します。
-
-```{r}
-# 角度の値を作成
-alpha_vals <- seq(from = 0, to = 360, by = 1)
-
-# ラジアンに変換
-theta_vals <- alpha_vals / 180 * pi
-head(alpha_vals); head(theta_vals)
-```
-
-　度数法における角度を$\alpha$(図の中では$\theta^{\circ}$と表記します)とすると、弧度法におけるラジアンは$\theta = \alpha \frac{\pi}{180}$で計算できます。$\pi$は円周率で、Rでは`pi`で扱えます。\
-　$0^{\circ} \leq \alpha \leq 360^{\circ}$の値を作成して、それぞれラジアンに変換します。\
-
-　あるいは直接、ラジアンとして用いる値を作成します。
-
-```{r}
-# ラジアンの値を作成
-theta_vals <- seq(from = 0, to = 2*pi, by = 0.01)
-head(theta_vals)
-```
-
-　$0^{\circ} = 0 \frac{\pi}{180} = 0$、$360^{\circ} = 360 \frac{\pi}{180} = 2 \pi$なので、$0 \leq \theta \leq 2 \pi$の値を作成します。\
-
-　$\theta$を三角関数の変数として、3つの関数を計算します。
-
-```{r}
-# サイン波・コサイン波・単位円の描画用
-curve_df <- tibble::tibble(
-  theta = theta_vals, 
-  sin_theta = sin(theta_vals), 
-  cos_theta = cos(theta_vals), 
-  tan_theta = tan(theta)
-)
-curve_df
-```
-
-　sin関数$\sin \theta$、cos関数$\cos \theta$、tan関数$\tan \theta$を計算して、$\theta$の値と共に格納します。\
-
-　単位円のグラフを作成します。
-
-```{r, fig.width=5, fig.height=5}
-# 半径の描画用
-radius_df <- tibble::tibble(
-  xstart = 0, 
-  ystart = 0, 
-  xend = 1, 
-  yend = 0
-)
-
-# 半径ラベルの描画用
-radius_label_df <- tibble::tibble(
-  x = 0.5, 
-  y = 0, 
-  label = "r = 1"
-)
-
-# 単位円を作図
-ggplot() + 
-  geom_path(data = curve_df, 
-            mapping = aes(x = cos_theta, y = sin_theta)) + # 単位円
-  geom_segment(data = radius_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend)) + # 半径
-  geom_label(data = radius_label_df, 
-             mapping = aes(x = x, y = y, label = label), 
-             hjust = 0.5, vjust = 0) + # 半径ラベル
-  coord_fixed(ratio = 1) + # アスペクト比
-  labs(title = "unit circle", 
-       x = expression(cos~theta), y = expression(sin~theta))
-```
-
-　横軸を$\cos \theta$、縦軸を$\sin \theta$として、(`geom_line()`ではなく)`geom_path()`で曲線(円)を描画します。綺麗な円を描画するには`coord_***()`の`ratio`引数を`1`にします。\
-　また目安として、`geom_segment()`で線分(半径)を描画しています。\
-
-　サイン波のグラフを作成します。
-
-```{r, fig.width=10, fig.height=5}
-# サイン波を作図
-ggplot() + 
-  geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = sin_theta)) + # 関数
-  coord_fixed(ratio = 1) + # アスペクト比
-  labs(title = "sine curve", 
-       x = expression(theta), y = expression(sin~theta))
-```
-
-　横軸を$\theta$、縦軸を$\sin \theta$として描画します。`geom_line()`または`geom_path()`で曲線を描画します。\
-
-　同様に、コサイン波のグラフを作成します。
-
-```{r, fig.width=10, fig.height=5}
-# コサイン波を作図
-ggplot() + 
-  geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = cos_theta)) + # 関数
-  coord_fixed(ratio = 1) + # アスペクト比
-  labs(title = "cosine curve", 
-       x = expression(theta), y = expression(cos~theta))
-```
-
-　縦軸を$\cos \theta$にします。\
-
-　タンジェント波を描画する前にデータを加工します。
-
-```{r}
-# 閾値を指定
-threshold <- 5
-
-# タンジェント波の描画用
-tan_curve_df <- curve_df |> 
-  dplyr::select(theta, tan_theta) |> 
-  dplyr::mutate(
-    tan_theta = dplyr::if_else(
-      (tan_theta >= -threshold & tan_theta <= threshold), 
-      true = tan_theta, 
-      false = NA_real_
-    )
-  )# 閾値外の値を欠損値に置換
-tan_curve_df
-```
-
-　閾値`threshold`を指定して、`-threshold`未満または`threshold`より大きい値を欠損値`NA`(実数型の欠損値`NA_real_`)に置き換えます。\
-
-　タンジェント波のグラフを作成します。
-
-```{r, fig.width=10, fig.height=8}
-# タンジェント波を作図
-ggplot() + 
-  geom_line(data = tan_curve_df, 
-            mapping = aes(x = theta, y = tan_theta)) + # 関数
-  coord_cartesian(ylim = c(-threshold, threshold), expand = FALSE) + # 描画範囲
-  labs(title = "tangent curve", 
-       x = expression(theta), y = expression(tan~theta))
-```
-
-　縦軸を$\tan \theta$にします。欠損値に置き換えなかった場合は、上に突き抜けた後の点と下から伸びる前の点を繋ぐような線が描画されます。\
-\
-
-
-### 度数法と弧度法の関係
-
-　次は、単位円を用いて、度数法における角度と弧度法における角度(ラジアン)の関係を確認します。\
-\
-
-　角度目盛を描画するためのデータフレームを作成します。
-
-```{r}
-# 角度目盛ラベルを作成
-rad_label_vec   <- paste0("frac(", 0:12, ", 6)~pi")
-angle_label_vec <- paste0(0:12*30, "*degree == frac(", 0:12, ", 6)~pi")
-
-# 角度目盛ラベルの描画用
-rad_label_df <- tibble::tibble(
-  alpha = 0:11 * 30, 
-  theta = 0:11 / 6 * pi, 
-  x = cos(theta), 
-  y = sin(theta), 
-  rad_label = rad_label_vec[1:12], 
-  angle_label = angle_label_vec[1:12]
-)
-rad_label_df
-```
-
-　$30^{\circ} = 30 \frac{\pi}{180} = \frac{\pi}{6}$間隔で目盛を表示することにします。\
-　単位円のときと同様に、縦軸と横軸の値を計算して、ラベルと合わせて格納します。ラベルとして数式を表示する場合は、`expression()`の記法で指定します。\
-
-　角度とラジアンの対応ラベルを単位円に重ねて描画します。
-
-```{r, fig.width=6, fig.height=6}
-# 単位円のグラフを作成
-d <- 1.1
-ggplot() + 
-  geom_path(data = curve_df, 
-            mapping = aes(x = cos_theta, y = sin_theta)) + # 単位円
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x, y = y, angle = alpha+90), 
-            label = "|", size = 2) + # 角度目盛
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x*d, y = y*d, label = angle_label, hjust = 1-(x*0.5+0.5), vjust = 1-(y*0.5+0.5)), 
-            parse = TRUE) + # 角度目盛ラベル
-  geom_segment(data = rad_label_df, 
-               x = 0, y = 0, mapping = aes(xend = x, yend = y), 
-               linetype = "dashed") + # 角度目盛グリッド
-  coord_fixed(ratio = 1, xlim = c(-d-0.3, d+0.3), ylim = c(-d-0.2, d+0.2)) + # 描画領域
-  labs(title = "degree and radian", 
-       x = expression(cos~theta), y = expression(sin~theta))
-```
-
-　ラベル配置位置の調整用の値を`d`とします。\
-　また、横・縦方向の配置位置の調整用の引数`hjust, yjust`に、`x, y`列の値を使って指定しています。`x, y`列($\sin \theta, \cos \theta$)は-1から1の値をとります。0.5を掛けると-0.5から0.5の値となり、さらに0.5を足すと0から1の値になります。(`hjust, vjust`を指定せずに`d`を少し大きくしても同様の図になります。)\
-
-　角度が$30^{\circ}$変化するとラジアンが$\frac{\pi}{6}$変化するのを確認できます。また、$0^{\circ} = 0, 360^{\circ} = 2 \pi$であり、$\sin 0 = \sin 2 \pi, \cos 0 = \cos 2 \pi$です。\
-\
-
-
-### 角度とサイン波・コサイン波の関係
-
-　では、角度と単位円、sin関数・cos関数のグラフの関係を可視化します。\
-\
-
-　角度を指定して、ラジアンに変換します。
-
-```{r}
-# 角度を指定
-alpha <- 120
-
-# ラジアンに変換
-theta <- alpha / 180 * pi
-theta
-```
-
-　$0^{\circ} \leq \alpha \leq 360^{\circ}$または$0 \leq \theta \leq 2 \pi$の範囲で1つの値を指定します。\
-
-　関数曲線上の点を描画するためのデータフレームを作成します。
-
-```{r}
-# 曲線上の点の描画用
-point_df <- tibble::tibble(
-  theta = theta, 
-  sin_theta = sin(theta), 
-  cos_theta = cos(theta), 
-  tan_theta = tan(theta)
-)
-point_df
-```
-
-　指定した角度と三角関数の値を格納します。\
-
-　角度を示すために、半径を描画するためのデータフレームを作成します。
-
-```{r}
-# 半径の描画用
-radius_df <- tibble::tibble(
-  xstart = c(0, 0), 
-  ystart = c(0, 0), 
-  xend = c(1, cos(theta)), 
-  yend = c(0, sin(theta))
-)
-radius_df
-```
-
-　$0^{\circ}$と$\alpha$において、原点と単位円上の点を結ぶ線分の座標を格納します。始点の座標を`xstart, ystart`、終点の座標を`xend, yend`列とします。\
-
-　角度マークを描画するためのデータフレームを作成します。
-
-```{r}
-# 角度マークの描画用
-d <- 0.1
-angle_df <- tibble::tibble(
-  deg = seq(from = 0, to = alpha, by = 1), 
-  rad = deg / 180 * pi, 
-  x = cos(rad) * d, 
-  y = sin(rad) * d
-)
-angle_df
-```
-
-　扇形(角度マーク)を描画するための点の角度$0^{\circ} \leq c \leq \alpha$を作成して、単位円のときと同様に処理します。\
-
-　角度ラベルを描画するためのデータフレームを作成します。
-
-```{r}
-# 角度ラベルの描画用
-d <- 0.2
-angle_label_df <- tibble::tibble(
-  deg = 0.5 * alpha, 
-  rad = deg / 180 * pi, 
-  x = cos(rad) * d, 
-  y = sin(rad) * d
-)
-angle_label_df
-```
-
-　角度の中点に配置することにします。\
-
-　単位円上の点とsin関数・cos関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
-
-```{r}
-# サイン波・コサイン波との対応用
-l <- 2
-segment_circle_df <- tibble::tibble(
-  xstart = c(cos(theta), cos(theta)), 
-  ystart = c(sin(theta), sin(theta)), 
-  xend = c(l, cos(theta)), 
-  yend = c(sin(theta), -l)
-)
-segment_circle_df
-```
-
-　単位円上の点から縦軸・横軸への垂線を引くように座標を指定します。作図時に、隣のグラフに届かないような長さ`l`を指定します。\
-
-　角度に関する装飾をした単位円のグラフを作成します。
-
-```{r, fig.width=6, fig.height=6}
-# 関数ラベルを作成
-fnc_label <- paste0(
-  "list(", 
-  "theta*degree==", alpha, 
-  ", theta==", round(alpha/180, digits = 2), "*pi", 
-  ", sin~theta==", round(sin(theta), digits = 2), 
-  ", cos~theta==", round(cos(theta), digits = 2), 
-  ")"
-)
-
-# 単位円を作図
-d <- 0.9
-circle_graph <- ggplot() + 
-  geom_path(data = curve_df, 
-            mapping = aes(x = cos_theta, y = sin_theta, color = theta), 
-            size = 1) + # 単位円
-  geom_segment(data = radius_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               size = 1) + # 半径
-  geom_path(data = angle_df, 
-            mapping = aes(x = x, y = y)) + # 角度マーク
-  geom_text(data = angle_label_df, 
-            mapping = aes(x = x, y = y), 
-            label = "theta", parse = TRUE) + # 角度ラベル
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x, y = y, angle = alpha+90), 
-            label = "|", size = 2) + # ラジアン目盛
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x*d, y = y*d, label = rad_label, hjust = x*0.5+0.5, vjust = y*0.5+0.5), 
-            parse = TRUE, size = 2.5) + # ラジアン目盛ラベル
-  geom_segment(data = segment_circle_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               linetype = "dashed") + # サイン波・コサイン波との対応線
-  geom_point(data = point_df, 
-             mapping = aes(x = cos_theta, y = sin_theta), 
-             size = 4) + # 関数曲線上の点
-  theme(legend.position = "none") + # 凡例を非表示
-  coord_fixed(ratio = 1, clip = "off", xlim = c(-1, 1), ylim = c(-1, 1)) + # 描画領域
-  labs(title = "sine and cosine curves", 
-       subtitle = parse(text = fnc_label), 
-       x = expression(cos~theta), y = expression(sin~theta))
-circle_graph
-```
-
-　他の関数(曲線)との対応関係が分かりやすいように、`color`引数に`theta`の値を指定して、$\theta$が大きいほど薄い色になるようにしています。\
-
-　先ほどと同様に、sin関数上の点と単位円上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
-
-```{r}
-# 横軸(角度)・単位円との対応用
-l <- 1.1
-segment_sin_df <- tibble::tibble(
-  xstart = c(theta, theta), 
-  ystart = c(sin(theta), sin(theta)), 
-  xend = c(theta, min(theta_vals)-l), 
-  yend = c(-l, sin(theta))
-)
-segment_sin_df
-```
-
-\ 
-
-　サイン波のグラフを作成します。
-
-```{r, fig.width=8, fig.height=6}
-# サイン波を作図
-sin_graph <- ggplot() + 
-  geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = sin_theta, color = theta), 
-            size = 1) + # 関数
-  geom_point(data = point_df, 
-             mapping = aes(x = theta, y = sin_theta), 
-             size = 4) + # 関数曲線上の点
-  geom_segment(data = segment_sin_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               linetype = "dashed") + # 単位円との対応線
-  theme(legend.position = "none") + # 凡例を非表示
-  scale_x_continuous(breaks = 0:12/6*pi, labels = parse(text = rad_label_vec)) + 
-  coord_fixed(ratio = 2, clip = "off", xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-1, 1)) + # 描画領域
-  labs(x = expression(theta), y = expression(sin~theta))
-sin_graph
-```
-
-　完成図の見やすさのためアスペクト比を調整しています。\
-
-　cos関数上の点と単位円上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
-
-```{r}
-# 縦軸(角度)・単位円との対応用
-l <- 1.1
-segment_cos_df <- tibble::tibble(
-  xstart = c(cos(theta), cos(theta)), 
-  ystart = c(theta, theta), 
-  xend = c(-l, cos(theta)), 
-  yend = c(theta, min(theta_vals)-l)
-)
-segment_cos_df
-```
-
-\ 
-
-　縦向きのコサイン波のグラフを作成します。
-
-```{r, fig.width=6, fig.height=8}
-# コサイン波を作図
-cos_graph <- ggplot() + 
-  geom_path(data = curve_df, 
-            mapping = aes(x = cos_theta, y = theta, color = theta), 
-            size = 1) + # 関数
-  geom_point(data = point_df, 
-             mapping = aes(x = cos_theta, y = theta), 
-             size = 4) + # 関数曲線上の点
-  geom_segment(data = segment_cos_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               linetype = "dashed") + # 単位円との対応線
-  theme(legend.position = "none") + # 凡例を非表示
-  scale_y_reverse(breaks = 0:12/6*pi, labels = parse(text = rad_label_vec)) + # y軸を反転
-  coord_fixed(ratio = 0.5, clip = "off", xlim = c(-1, 1), ylim = c(max(theta_vals), min(theta_vals))) + # 描画領域
-  labs(x = expression(cos~theta), y = expression(theta))
-cos_graph
-```
-
-　単位円との対応関係のため、横軸を$\cos \theta$、縦軸を反転させた$\theta$とします。\
-
-　3つのグラフを並べて描画します。
-
-```{r, fig.width=10, fig.height=10}
-# グラフを並べて描画
-patchwork::wrap_plots(
-  circle_graph, sin_graph, cos_graph, patchwork::plot_spacer(), 
-  nrow = 2, ncol = 2
-)
-```
-
-　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。`plot_spacer()`で空白を指定できます。\
-
-　単位円における横軸の値がコサイン波(cos関数)、縦軸の値がサイン波(sin関数)に対応しているのを確認できます。\
-\
-
-
-### 角度とタンジェント波
-
-　続いて、角度と単位円、tan関数のグラフの関係を可視化します。\
-\
-
-　単位円上の点とtan関数上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
-
-```{r}
-# タンジェント波との対応用
-l <- 2
-segment_circle_df <- tibble::tibble(
-  xstart = c(cos(theta), 1), 
-  ystart = c(sin(theta), tan(theta)), 
-  xend = c(1, l), 
-  yend = c(tan(theta), tan(theta))
-)
-segment_circle_df
-```
-
-　単位円上の点$(\cos \theta, \sin \theta)$と縦軸が1の点$(1, \tan \theta)$を結ぶ線分と、点$(1, \tan \theta)$から縦軸への垂線を引くように座標を指定します。\
-
-　閾値を指定して、範囲外の値を欠損値に置き換えます。
-
-```{r}
-# 閾値を指定
-threshold <- 2
-
-# タンジェント波の描画用
-tan_curve_df <- curve_df |> 
-  dplyr::select(theta, tan_theta) |> 
-  dplyr::mutate(
-    tan_theta = dplyr::if_else(
-      (tan_theta >= -threshold & tan_theta <= threshold), 
-      true = tan_theta, 
-      false = NA_real_
-    )
-  )# 閾値外の値を欠損値に置換
-tan_curve_df
-```
-
-　「単位円・三角関数の作図」のときと同じ処理です。\
-
-　角度に関する装飾をした単位円のグラフを作成します。
-
-```{r, fig.width=6, fig.height=7}
-# 関数ラベルを作成
-fnc_label <- paste0(
-  "list(", 
-  "theta*degree==", alpha, 
-  ", theta==", round(alpha/180, digits = 2), "*pi", 
-  ", tan~theta==", round(tan(theta), digits = 2), 
-  ")"
-)
-
-# 単位円のグラフを作成
-d <- 0.9
-circle_graph <- ggplot() + 
-  geom_path(data = curve_df, 
-            mapping = aes(x = cos_theta, y = sin_theta, color = theta), 
-            size = 1) + # 単位円
-  geom_segment(data = radius_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               size = 1) + # 半径
-  geom_path(data = angle_df, 
-            mapping = aes(x = x, y = y)) + # 角度マーク
-  geom_text(data = angle_label_df, 
-            mapping = aes(x = x, y = y), 
-            label = "theta", parse = TRUE) + # 角度ラベル
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x, y = y, angle = alpha+90), 
-            label = "|", size = 2) + # ラジアン目盛
-  geom_text(data = rad_label_df, 
-            mapping = aes(x = x*d, y = y*d, label = rad_label, hjust = x*0.5+0.5, vjust = y*0.5+0.5), 
-            parse = TRUE, size = 2.5) + # ラジアン目盛ラベル
-  geom_segment(data = segment_circle_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               linetype = "dashed") + # タンジェント波との対応線
-  geom_point(data = point_df, 
-             mapping = aes(x = cos_theta, y = sin_theta), 
-             size = 4) + # 関数曲線上の点
-  geom_vline(xintercept = 1, linetype = "dotdash") + # x=1の軸線
-  theme(legend.position = "none") + # 凡例を非表示
-  coord_fixed(ratio = 1, clip = "off", xlim = c(-1.5, 1.5), c(-threshold, threshold)) + # アスペクト比
-  labs(title = "tangent curve", 
-       subtitle = parse(text = fnc_label), 
-       x = expression(cos~theta), y = expression(sin~theta))
-circle_graph
-```
-
-　tan関数の値が分かりやすいように、横軸が1の垂直線を`geom_vline()`で描画します。\
-
-　tan関数上の点と単位円上の点を結ぶ線(の半分)を描画するためのデータフレームを作成します。
-
-```{r}
-# 横軸(角度)・単位円との対応用
-l <- 1.1
-segment_tan_df <- tibble::tibble(
-  xstart = c(theta, theta), 
-  ystart = c(tan(theta), tan(theta)), 
-  xend = c(theta, min(theta_vals)-l), 
-  yend = c(-threshold*l, tan(theta))
-)
-segment_tan_df
-```
-
-\ 
-
-　タンジェント波のグラフを作成します。
-
-```{r, fig.width=8, fig.height=7}
-# タンジェント波を作図
-tan_graph <- ggplot() + 
-  geom_line(data = tan_curve_df, 
-            mapping = aes(x = theta, y = tan_theta, color = theta), 
-            size = 1) + # 関数
-  geom_point(data = point_df, 
-             mapping = aes(x = theta, y = tan_theta), 
-             size = 4) + # 関数曲線上の点
-  geom_segment(data = segment_tan_df, 
-               mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-               linetype = "dashed") + # 単位円との対応線
-  theme(legend.position = "none") + # 凡例を非表示
-  scale_x_continuous(breaks = 0:12/6*pi, labels = parse(text = rad_label_vec)) + 
-  coord_fixed(ratio = 1, clip = "off", xlim = c(min(theta_vals), max(theta_vals)), ylim = c(-threshold, threshold)) + # 描画領域
-  labs(x = expression(theta), y = expression(tan~theta))
-tan_graph
-```
-
-\ 
-
-　2つのグラフを並べて描画します。
-
-```{r, fig.width=10, fig.height=6}
-# グラフを並べて描画
-patchwork::wrap_plots(
-  circle_graph, tan_graph, 
-  nrow = 1, ncol = 2
-)
-```
-
-\ 
-
-
-## アニメーションの作成
-
-　次は、角度を変化させたアニメーションで確認します。\
-\
-
-
-### 単位円と三角関数の関係
-
-　角度の変化と単位円、sin関数・cos関数・tan関数の関係をアニメーションで可視化します。\
-\
-
-　フレーム数を指定して、角度として用いる値を作成します。
-
-```{r}
-# フレーム数を指定
-frame_num <- 100
-
-# 角度として使う値を作成
-alpha_i <- seq(from = 0, to = 360, length.out = frame_num+1)[1:frame_num]
-theta_i <- alpha_i / 180 * pi
-head(alpha_i); head(theta_i)
-```
-
-　フレーム数`frame_num`を指定して、$0^{\circ} \leq \alpha < 360^{\circ}$と$0 \leq \theta < 2 \pi$の範囲でそれぞれ`frame_num`個の等間隔の値を作成します。\
-
-<details><summary>・コード(クリックで展開)</summary>
-
-　順番に値を取り出して作図し、グラフを書き出します。
-
-```{r, eval=FALSE}
-# 一時保存フォルダを指定
-dir_path <- "trigonometric/figure/tmp_folder"
-
-# 角度ごとに作図
-for(i in 1:frame_num) {
-  
-  # i番目の値を取得
-  alpha <- alpha_i[i]
-  theta <- theta_i[i]
-  
-  # 曲線上の点の描画用
-  point_df <- tibble::tibble(
-    theta = theta, 
-    sin_theta = sin(theta), 
-    cos_theta = cos(theta), 
-    tan_theta = tan(theta)
-  )
-  
-  # 半径の描画用
-  radius_df <- tibble::tibble(
-    xstart = c(0, 0), 
-    ystart = c(0, 0), 
-    xend = c(1, cos(theta)), 
-    yend = c(0, sin(theta))
-  )
-  
-  # 角度マークの描画用
-  d <- 0.1
-  angle_df <- tibble::tibble(
-    deg = seq(from = 0, to = alpha, by = 1), 
-    rad = deg / 180 * pi, 
-    x = cos(rad) * d, 
-    y = sin(rad) * d
-  )
-  
-  # 角度ラベルの描画用
-  d <- 0.2
-  angle_label_df <- tibble::tibble(
-    deg = 0.5 * alpha, 
-    rad = deg / 180 * pi, 
-    x = cos(rad) * d, 
-    y = sin(rad) * d
-  )
-  
-  # 三角関数との対応用
-  l <- 2
-  segment_circle_df <- tibble::tibble(
-    xstart = c(cos(theta), cos(theta), cos(theta), 1), 
-    ystart = c(sin(theta), sin(theta), sin(theta), tan(theta)), 
-    xend = c(l, cos(theta), 1, l), 
-    yend = c(sin(theta), -l, tan(theta), tan(theta))
-  )
-  
-  # 
-  fnc_df <- tibble::tibble(
-    xstart = c(cos(theta), 0, 1), 
-    ystart = c(0, 0, 0), 
-    xend = c(cos(theta), cos(theta), 1), 
-    yend = c(sin(theta), 0, tan(theta)), 
-    fnc = c("sin", "cos", "tan")
-  )
-  
-  # 関数ラベルを作成
-  fnc_label_df <- tibble::tibble(
-    x = -Inf, 
-    y = Inf, 
-    fnc_label = paste0(
-      "list(", 
-      "theta*degree==", round(alpha, digits = 2), 
-      ", theta==", round(alpha/180, digits = 2), "*pi", 
-      ", sin~theta==", round(sin(theta), digits = 2), 
-      ", cos~theta==", round(cos(theta), digits = 2), 
-      ", tan~theta==", round(tan(theta), digits = 2), 
-      ")"
-    )
-  )
-  
-  # 単位円のグラフを作成
-  d <- 0.9
-  l <- 1.5
-  circle_graph <- ggplot() + 
-    geom_path(data = curve_df, 
-              mapping = aes(x = cos_theta, y = sin_theta), 
-              size = 1) + # 単位円
-    geom_segment(data = radius_df, 
-                 mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend)) + # 半径
-    geom_path(data = angle_df, 
-              mapping = aes(x = x, y = y)) + # 角度マーク
-    geom_text(data = angle_label_df, 
-              mapping = aes(x = x, y = y), 
-              label = "theta", parse = TRUE) + # 角度ラベル
-    geom_text(data = rad_label_df, 
-              mapping = aes(x = x, y = y, angle = alpha+90), 
-              label = "|", size = 2) + # ラジアン目盛
-    geom_text(data = rad_label_df, 
-              mapping = aes(x = x*d, y = y*d, label = rad_label, hjust = x*0.5+0.5, vjust = y*0.5+0.5), 
-              parse = TRUE, size = 2.5) + # ラジアン目盛ラベル
-    geom_segment(data = segment_circle_df, 
-                 mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-                 linetype = "dotted") + # 関数との対応線
-    geom_vline(xintercept = 1, linetype = "dotdash") + # x=1の軸線
-    geom_segment(data = fnc_df, 
-                 mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend, color = fnc), 
-                 size = 1) + # 単位円における関数の値
-    geom_point(data = point_df, 
-               mapping = aes(x = cos_theta, y = sin_theta), 
-               size = 4) + # 関数曲線上の点
-    geom_label(data = fnc_label_df, 
-               mapping = aes(x = x, y = y, label = fnc_label), 
-               parse = TRUE, hjust = 0, vjust = 1, size = 2.5) + # 関数ラベル
-    scale_color_manual(breaks = c("sin", "cos", "tan"), values = c("pink", "red", "greenyellow")) + # 単位円における関数の色
-    theme(legend.position = "none") + # 凡例を非表示
-    coord_fixed(ratio = 1, clip = "off", xlim = c(-l, l), c(-l, l)) + # アスペクト比
-    labs(title = "sine, cosine and tangent curves", 
-         x = expression(cos~theta), y = expression(sin~theta))
-  
-  # 閾値外の値を欠損値に置換
-  threshold <- 5
-  tan_curve_df <- curve_df |> 
-    dplyr::select(theta, tan_theta) |> 
-    dplyr::mutate(
-      tan_theta = dplyr::if_else(
-        (tan_theta >= -threshold & tan_theta <= threshold), 
-        true = tan_theta, 
-        false = NA_real_
-      )
-    )
-  
-  # x軸(角度)・単位円との対応用
-  l <- 1.6
-  segment_sin_tan_df <- tibble::tibble(
-    xstart = c(theta, theta, theta, theta), 
-    ystart = c(sin(theta), sin(theta), tan(theta), tan(theta)), 
-    xend = c(theta, min(theta_vals)-l, theta, min(theta_vals)-l), 
-    yend = c(-l, sin(theta), -l, tan(theta))
-  )
-  
-  # サイン波・タンジェント波を作図
-  l <- 1.5
-  sin_tan_graph <- ggplot() + 
-    geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = sin_theta), 
-            color = "pink", size = 1) + # サイン関数
-    geom_point(data = point_df, 
-               mapping = aes(x = theta, y = sin_theta), 
-               size = 4) + # サイン関数曲線上の点
-    geom_line(data = tan_curve_df, 
-              mapping = aes(x = theta, y = tan_theta), 
-              color = "greenyellow", size = 1) + # コサイン関数
-    geom_point(data = point_df, 
-               mapping = aes(x = theta, y = tan_theta), 
-               size = 4) + # コサイン関数曲線上の点
-    geom_segment(data = segment_sin_tan_df, 
-                 mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-                 linetype = "dotted") + # 単位円との対応線
-    theme(legend.position = "none") + # 凡例を非表示
-    scale_x_continuous(breaks = 0:12/6*pi, labels = parse(text = rad_label_vec)) + 
-    coord_fixed(ratio = 1, clip = "off", xlim = c(0, 2*pi), ylim = c(-l, l)) + # 描画領域
-    labs(x = expression(theta), y = expression(list(sin~theta, tan~theta)))
-  
-  # y軸(角度)・単位円との対応用
-  l <- 1.6
-  segment_cos_df <- tibble::tibble(
-    xstart = c(cos(theta), cos(theta)), 
-    ystart = c(theta, theta), 
-    xend = c(-l, cos(theta)), 
-    yend = c(theta, min(theta_vals)-l)
-  )
-
-  # コサイン波を作図
-  l <- 1.5
-  cos_graph <- ggplot() + 
-    geom_path(data = curve_df, 
-              mapping = aes(x = cos_theta, y = theta), 
-              color = "red", size = 1) + # 関数
-    geom_point(data = point_df, 
-               mapping = aes(x = cos_theta, y = theta), 
-               size = 4) + # 関数曲線上の点
-    geom_segment(data = segment_cos_df, 
-                 mapping = aes(x = xstart, y = ystart, xend = xend, yend = yend), 
-                 linetype = "dotted") + # 単位円との対応線
-    theme(legend.position = "none") + # 凡例を非表示
-    scale_y_reverse(breaks = 0:12/6*pi, labels = parse(text = rad_label_vec)) + # y軸を反転
-    coord_fixed(ratio = 1, clip = "off", xlim = c(-l, l), ylim = c(2*pi, 0)) + # 描画領域
-    labs(x = expression(cos~theta), y = expression(theta))
-  
-  # グラフを並べて描画
-  graph <- patchwork::wrap_plots(
-    circle_graph, sin_tan_graph, cos_graph, patchwork::plot_spacer(), 
-    nrow = 2, ncol = 2
-  )
-  
-  # ファイルを書き出し
-  file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png") # widthはframe_numの桁数
-  ggplot2::ggsave(filename = file_path, plot = graph, width = 1000, height = 1000, units = "px", dpi = 100)
-  
-  # 途中経過を表示
-  #print(paste0(i, " / ", frame_num))
-}
-```
-
-　変数の値(角度)ごとに同様に処理します。作成したグラフを`ggsave()`で保存します。\
-　保存用のフォルダは空である必要があります。また、画像ファイルの読み込み時に、文字列基準で書き出した順番になるようなファイル名である必要があります。\
-　(初回の作図では、`angle_df`が1行しか値を持たないため、`geom_path()`で描画できずメッセージが表示されます。)\
-
-　アニメーション(gif画像)を作成します。
-
-```{r, eval=FALSE}
-# ファイル名を取得
-file_name_vec <- list.files(dir_path)
-
-# ファイルパスを作成
-file_path_vec <- paste0(dir_path, "/", file_name_vec)
-
-# gif画像を作成
-file_path_vec |> 
-  magick::image_read() |> 
-  magick::image_animate(fps = 1, dispose = "previous") |> 
-  magick::image_write_gif(path = "trigonometric/figure/curves.gif", delay = 0.1) -> tmp_path
-```
-
-　`list.files()`で`dir_path`フォルダ内のファイル名を取得して、ファイルパスを作成します。\
-　`image_read()`で画像を読み込んで、`image_animate()`でgifファイルに変換して、`image_write_gif()`でgifファイルを書き出します。`delay`引数に1秒当たりのフレーム数の逆数を指定します。\
-
-</details>
-
-\ 
-
-![](../figure/curves/curves.gif)
-
-　描画範囲外の変数(角度)に関しても周期的に推移します。\
-\
-
-　この記事では、三角関数を可視化して確認しました。次の記事では、sin関数について可視化します。\
 \
 
 
@@ -10595,7 +9715,7 @@ function_line_df <- tibble::tibble(
     tan(theta), ifelse(test = sin_flg, yes = NA, no = -tan(theta))
   ), 
   type = c(
-    "main", ifelse(test = sin_flg, yes = NA, no = "sub"), 
+    "main", "sub", 
     "main", 
     "main", 
     "main", "sub"
@@ -11122,7 +10242,7 @@ anim_function_line_df <- tibble::tibble(
     tan(theta_i), ifelse(test = sin_flg_i, yes = NA, no = -tan(theta_i))
   ), 
   type = c(
-    rep("main", times = frame_num), ifelse(test = sin_flg_i, yes = NA, no = "sub"), 
+    rep("main", times = frame_num), rep("sub", times = frame_num), 
     rep("main", times = frame_num), 
     rep("main", times = frame_num), 
     rep("main", times = frame_num), rep("sub", times = frame_num)
@@ -20576,6 +19696,1755 @@ paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pa
 \ 
 
 　この記事では、cot関数を可視化しました。次の記事では、ここまでで扱った6つの関数を可視化します。\
+\
+
+
+# 円関数(三角関数)の可視化
+
+　三角関数(trigonometric functions)・円関数(circular functions)の6つの関数(sin関数・cos関数・tan関数・cot関数・sec関数・csc関数)をグラフで確認します。各関数についてはそれぞれの記事を参照してください。\
+　(この記事では信仰上の理由により、三角関数ではなく円関数と呼びます。)\
+\
+
+　Rを使って作図を行います。\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　利用するパッケージを読み込みます。
+
+```{r, eval=FALSE}
+# 利用パッケージ
+library(tidyverse)
+library(gganimate)
+library(patchwork)
+library(magick)
+```
+
+```{r, echo=FALSE}
+### 資料作成用:(チェック用)
+
+library(ggplot2)
+```
+
+　この記事では、基本的に`パッケージ名::関数名()`の記法を使うので、パッケージを読み込む必要はありません。ただし、作図コードがごちゃごちゃしないようにパッケージ名を省略しているため、`ggplot2`を読み込む必要があります。\
+　また、ネイティブパイプ演算子`|>`を使っています。`magrittr`パッケージのパイプ演算子`%>%`に置き換えても処理できますが、その場合は`magrittr`も読み込む必要があります。\
+
+</details>
+
+\ 
+
+
+## 定義式の確認
+
+　まずは、4つの円関数の定義式を確認します。\
+\
+
+　円関数は、それぞれsin関数またはcos関数を用いて、次の式で定義されます。
+
+$$
+\begin{aligned}
+\tan x
+   &= \frac{\sin x}{\cos x}
+\\
+\cot x
+   &= \frac{1}{\tan x}
+    = \frac{\cos x}{\sin x}
+\\
+\sec x
+   &= \frac{1}{\cos x}
+\\
+\csc x
+   &= \frac{1}{\sin x}
+\end{aligned}
+$$
+
+　ただし、$i$ を整数として $x = i \pi$ のとき $\sin x = \tan x = 0$ なので、$\csc x, \cot x$ は定義できません。また、$x = \frac{2 i + 1}{2} \pi$ のとき $\cos x = 0$ なので、$\tan x, \sec x$ は定義できません。$\pi$ は円周率で、変数 $x$ は弧度法の角度(ラジアン)です。\
+\
+
+
+## 円関数の作図
+
+　次に、6つの円関数のグラフを作成します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　変数の範囲を指定します。
+
+```{r}
+# 変数(ラジアン)の範囲を指定
+theta_vec <- seq(from = -2.5*pi, to = 2.5*pi, length.out = 1000)
+head(theta_vec)
+```
+
+　曲線の座標計算用の変数(ラジアン) $\theta$ を作成して`theta_vec`とします。円周率 $\pi$ は`pi`で扱えます。\
+
+　関数曲線の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("sin", "cos", "tan", "csc", "sec", "cot")
+
+# 閾値を指定
+threshold <- 4
+
+# 関数曲線の座標を計算
+function_curve_df <- tibble::tibble(
+  t = theta_vec |> 
+    rep(times = length(fnc_level_vec)), # 関数の数に応じて変数を複製
+  f_t = c(
+    sin(theta_vec), 
+    cos(theta_vec), 
+    tan(theta_vec), 
+    1/sin(theta_vec), 
+    1/cos(theta_vec), 
+    1/tan(theta_vec)
+  ), 
+  fnc = c("sin", "cos", "tan", "csc", "sec", "cot") |> 
+    rep(each = length(theta_vec)) |> 
+    factor(levels = fnc_level_vec), # 色用
+  fnc_pair = c("sin", "cos", "tan", "sin", "cos", "tan") |> 
+    rep(each = length(theta_vec)) |> 
+    factor(levels = c("sin", "cos", "tan")), # 色用
+  fnc_type = c("original", "original", "original", "reciprocal", "reciprocal", "reciprocal") |> 
+    rep(each = length(theta_vec)) # 線種用
+) |> 
+  dplyr::mutate(
+    f_t = dplyr::if_else(
+      (f_t >= -threshold & f_t <= threshold), true = f_t, false = NA_real_
+    ) # 閾値外の値を欠損値に置換
+  )
+function_curve_df
+```
+
+　変数 $\theta$ の値と関数 $f(\theta)$ の値をデータフレームに格納します。csc関数は`sin()`、sec関数は`cos()`、cot関数は`tan()`を使って計算できます。\
+　$\theta = i \pi$ や $\theta = \frac{2 i + 1}{2} \pi$ ($i$ は整数)付近で $-\infty$ または $\infty$ に近付くので、閾値`threshold`を指定しておき、`-threshold`未満または`threshold`より大きい場合は(数値型の)欠損値`NA`に置き換えます。\
+
+　x軸の角度目盛の描画用のベクトルを作成します。
+
+```{r}
+# 半周期の目盛の数(分母の値)を指定
+denom <- 2
+
+# 目盛の通し番号(分子の値)を作成
+numer_vec <- seq(
+  from = floor(min(theta_vec) / pi * denom), 
+  to   = ceiling(max(theta_vec) / pi * denom), 
+  by = 1
+)
+
+# 目盛ラベル用の文字列を作成
+label_vec <- paste0(c("", "-")[(numer_vec < 0)+1], "frac(", abs(numer_vec), ", ", denom, ")~pi")
+head(numer_vec); head(label_vec)
+```
+
+　角度(ラジアン) $\theta$ に関する軸目盛ラベルを $\frac{i}{n} \pi$ ($i, n$ は整数)の形で表示することにします。\
+　$n$ を`denom`として整数を指定します。$n$ は、半周期 $\pi$ の範囲における目盛の数に対応します。`theta_vec`に対して、$\theta = \frac{\pi}{n} i$ を $i$ について整理した $i = \frac{n}{\pi} \theta$ を計算して、最小値(の小数部分を`floor()`で切り捨てた値)から最大値(の小数部分を`ceiling()`で切り上げた値)までの整数を作成して`numer_vec`とします。\
+　`numer_vec, denom`を使って目盛ラベル用の文字列を作成します。ギリシャ文字などの記号や数式を表示する場合は、`expression()`の記法を用います。オブジェクト(プログラム上の変数)の値を使う場合は、文字列として作成しておき`parse()`の`text`引数に渡します。`frac(分子, 分母)`で分数、`~`でスペースを表示します。\
+
+　漸近線の描画用のベクトルを作成します。
+
+```{r}
+# 漸近線のプロット位置を作成
+asymptote_even_vec <- seq(
+  from = floor(min(theta_vec) / pi) + 0.5, 
+  to   = floor(max(theta_vec) / pi) + 0.5, 
+  by = 1
+) * pi
+asymptote_odd_vec <- seq(
+  from = floor(min(theta_vec) / pi) + 1, 
+  to   = floor(max(theta_vec) / pi), 
+  by = 1
+) * pi
+
+# 漸近線の座標を格納
+asymptote_df <- tibble::tibble(
+  value = c(
+    asymptote_even_vec, 
+    asymptote_odd_vec
+  ), 
+  type = c(
+    rep("even", times = length(asymptote_even_vec)), 
+    rep("odd", times = length(asymptote_odd_vec))
+  ) # 線種用
+)
+asymptote_df
+```
+
+　$\theta = i \pi$ ($\pi$ の倍数)のとき $\csc x, \cot x$、$\theta = \frac{2 i + 1}{2} \pi$ ($\pi$ の倍数でない $\frac{\pi}{2}$ の倍数)のとき $\tan x, \sec x$ が発散するので、`theta_vec`の範囲内の $i \pi, \frac{2 i}{2} \pi$ の値を(上手いこと)作成して、データフレームに格納します。\
+
+　円関数のグラフを作成します。
+
+```{r, fig.width=12, fig.height=6, dpi=100}
+# 軸目盛のプロット位置を計算
+break_vec <- numer_vec / denom * pi
+
+# 関数曲線を作図
+curve_graph <- ggplot() + 
+  geom_vline(data = asymptote_df, 
+             mapping = aes(xintercept = value, linetype = type)) + # 漸近線
+  geom_line(data = function_curve_df, 
+            mapping = aes(x = t, y = f_t, color = fnc), na.rm = TRUE, 
+            size = 1, alpha = 0.8) + # 関数曲線
+  scale_x_continuous(breaks = break_vec, labels = round(break_vec, digits = 2), 
+                     sec.axis = sec_axis(trans = ~., 
+                                         breaks = break_vec, labels = parse(text = label_vec))) + # 目盛ラベル
+  scale_linetype_manual(breaks = c("even", "odd"), 
+                        values = c("dotdash", "twodash"), 
+                        labels = c(expression(i*pi), expression(frac(2*i+1, 2)*pi)), 
+                        name = "asymptote") + # (2種類の漸近線用)
+  coord_fixed(ratio = 1) + # アスペクト比
+  labs(title = "circular functions", 
+       color = "function", 
+       x = expression(theta), 
+       y = expression(f(theta)))
+#curve_graph
+```
+
+```{r, fig.width=12, fig.height=6, dpi=100}
+# 関数曲線を作図
+curve_pair_graph <- ggplot() + 
+  geom_vline(data = asymptote_df, 
+             mapping = aes(xintercept = value), 
+             linetype = "dotdash") + # 漸近線
+  geom_line(data = function_curve_df, 
+            mapping = aes(x = t, y = f_t, color = fnc_pair, linetype = fnc_type), na.rm = TRUE, 
+            size = 1, alpha = 0.8) + # 関数曲線
+  scale_x_continuous(breaks = break_vec, labels = round(break_vec, digits = 2), 
+                     sec.axis = sec_axis(trans = ~., 
+                                         breaks = break_vec, labels = parse(text = label_vec))) + # 目盛ラベル
+  scale_linetype_manual(breaks = c("original", "reciprocal"), 
+                        values = c("solid", "dashed"), 
+                        labels = c(expression(f(x)), expression(frac(1, f(x)))), 
+                        name = "function") + # (2種類の漸近線用)
+  coord_fixed(ratio = 1) + # アスペクト比
+  labs(title = "circular functions", 
+       color = "function", 
+       x = expression(theta), 
+       y = expression(f(theta)))
+#curve_pair_graph
+```
+
+</details>
+
+```{r, echo=FALSE, fig.width=12, fig.height=6, dpi=100}
+### 資料作成用:(出力)
+
+curve_graph
+curve_pair_graph
+```
+
+　x軸を変数(ラジアン) $\theta$、y軸を各関数 $f(\theta)$ として曲線を描画します。また、基本となる関数 $\sin \theta, \cos, \theta, \tan \theta$ を実線、それぞれの逆数 $\csc \theta, \sec \theta, \cot \theta$ を破線で示します。\
+　x軸が $i \pi$ の点($0$ の前後 $\pi$ 間隔) $\frac{2 i + 1}{2} \pi$ の点($\frac{\pi}{2}$ の前後 $\pi$ 間隔)に漸近線を破線で描画します。\
+　元の関数と逆数とで何となくひっくり返したような形で、元の関数が0のとき漸近線(不連続)になるのが分かります。\
+\
+
+
+## 単位円の作図
+
+　続いて、円関数の可視化に利用する単位円(unit circle)のグラフを確認します。円やラジアン(弧度法の角度)、度数法と弧度法の関係については「円周の作図」を参照してください。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　単位円の描画用のデータフレームを作成します。
+
+```{r}
+# 半径を指定
+r <- 1
+
+# 円周の座標を計算
+circle_df <- tibble::tibble(
+  t = seq(from = 0, to = 2*pi, length.out = 601), # ラジアン
+  x = r * cos(t), 
+  y = r * sin(t)
+)
+circle_df
+```
+
+　単位円の円周の座標計算用のラジアンとして $0 \leq t \leq 2 \pi$ の範囲の値を作成して、x軸の値 $x = \cos t$ とy軸の値 $y = \sin t$ を計算します。\
+
+　角度目盛の描画用のデータフレームを作成します。
+
+```{r}
+# 半円の目盛の数(分母の値)を指定
+denom <- 6
+
+# 角度目盛の描画用
+d <- 1.1
+radian_lable_df <- tibble::tibble(
+  nomer = seq(from = 0, to = 2*denom-1, by = 1), # 目盛の通し番号(分子の値)を作成
+  t_deg = nomer / denom * 180, # 度数法
+  t_rad = nomer / denom * pi,  # 弧度法
+  x = r * cos(t_rad), 
+  y = r * sin(t_rad), 
+  label_x = d * x, 
+  label_y = d * y, 
+  rad_label = paste0("frac(", nomer, ", ", denom, ")~pi"), # ラジアンラベル
+  h = 1 - (x * 0.5 + 0.5), 
+  v = 1 - (y * 0.5 + 0.5)
+)
+radian_lable_df
+```
+
+　目盛指示線や目盛グリッド用の座標を`x, y`列、目盛ラベル用の座標を`label_x, label_y`列とします。ラベルの表示位置を`d`で調整します。\
+
+　円周と角度目盛のグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# グラフサイズを指定
+axis_size <- 1.5
+
+# 円周を作図
+circle_graph <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               linetype = "dotted") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), 
+            label = "|", size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "unit circle", 
+       subtitle = parse(text = paste0("r==", r)), 
+       x = expression(x == r~cos~theta), 
+       y = expression(y == r~sin~theta))
+#circle_graph
+```
+
+</details>
+
+```{r, echo=FALSE, fig.width=6, fig.height=6, dpi=100}
+### 資料作成用:(出力)
+
+circle_graph
+```
+
+　このグラフ上に円関数の値を直線として描画します。\
+\
+
+
+## なす角と円関数の関係
+
+　次は、単位円上におけるなす角と円関数(sin・cos・tan・cot・sec・csc)の関係をグラフで可視化します。関数の値を線分の長さと座標の正負に対応させます。\
+\
+
+
+### グラフの作成
+
+　変数を固定した円関数をグラフで確認します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　変数の値を指定して、円周上の点の描画用のデータフレームを作成します。
+
+```{r}
+# なす角(変数)を指定
+theta <- 1/6 * pi
+
+# 単位円上の点の座標を計算
+point_df <- tibble::tibble(
+  t = theta, 
+  sin_t = sin(theta), 
+  cos_t = cos(theta)
+)
+point_df
+```
+
+　単位円におけるなす角(ラジアン) $\theta$ を`theta`として値を指定します。ただし、`theta`が`0`のとき、計算結果に`Inf`や`-Inf`が含まれるため、意図しないグラフになります(理論上は`pi`などのときにも発散しますが、プログラム上の誤差により`Inf`になりません)。発散時の対策については「アニメーションの作成」を参照してください。\
+
+　$\theta$ の値と $\sin \theta, \cos \theta$ の値をデータフレームに格納します。\
+
+　なす角マークの描画用のデータフレームを作成します。
+
+```{r}
+# なす角マークの座標を計算
+d <- 0.15
+angle_mark_df <- tibble::tibble(
+  t = seq(from = 0, to = theta, length.out = 100), 
+  x = d * cos(t), 
+  y = d * sin(t)
+)
+angle_mark_df
+```
+
+　なす角 $\theta$ を示すなす角マークを描画するために、$0 \leq t \leq \theta$ のラジアンを作成して、円弧の座標を計算します。サイズの調整用の値(半径)を`d`とします。\
+
+　なす角ラベルの描画用のデータフレームを作成します。
+
+```{r}
+# なす角ラベルの座標を計算
+d <- 0.21
+angle_label_df <- tibble::tibble(
+  t = 0.5 * theta, 
+  x = d * cos(t), 
+  y = d * sin(t)
+)
+angle_label_df
+```
+
+　なす角マークの中点にラベルを配置するために、$t = \frac{\theta}{2}$ のラジアンを作成して、円弧上の点の座標を計算します。表示位置の調整用の値(原点からのノルム)を`d`とします。\
+
+</details>
+
+\ 
+
+　ここまでは、共通の処理です。ここからは、2つの方法で図示します。\
+\
+
+
+#### パターン1
+
+　1つ目の方法では、原点と円周上の点を結ぶ線分を斜辺として各関数を可視化します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　半径と円関数を示す線分の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("r", "sin", "cos", "tan", "cot", "sec", "csc")
+
+# 反転フラグを設定
+sin_flag <- sin(theta) >= 0
+cos_flag <- cos(theta) >= 0
+
+# 関数直線の線分の座標を計算
+function_line_df <- tibble::tibble(
+  fnc = c(
+    "r", "r", "r", "r", "r", 
+    "sin", "sin", 
+    "cos", "cos", 
+    "tan", "tan", 
+    "cot", "cot", "cot", "cot", 
+    "sec", "sec", 
+    "csc", "csc"
+  ) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x_from = c(
+    0, 0, 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 0, 
+    0, cos(theta), 
+    0, 0, 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    0, 0, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 0), 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 
+    0, ifelse(test = cos_flag, yes = NA, no = 0)
+  ), 
+  y_from = c(
+    0, 0, 0, ifelse(test = cos_flag, yes = NA, no = 0), 0, 
+    0, 0, 
+    0, sin(theta), 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 
+    0, 1, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 1), 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 
+    0, ifelse(test = cos_flag, yes = NA, no = 0)
+  ), 
+  x_to = c(
+    1, cos(theta), 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 0, 
+    0, cos(theta), 
+    cos(theta), cos(theta), 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    1/tan(theta), 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    ifelse(test = cos_flag, yes = 1/tan(theta), no = -1/tan(theta)), ifelse(test = cos_flag, yes = NA, no = 1/tan(theta))
+  ), 
+  y_to = c(
+    0, sin(theta), 1, ifelse(test = cos_flag, yes = NA, no = 1), 1, 
+    sin(theta), sin(theta), 
+    0, sin(theta), 
+    tan(theta), ifelse(test = sin_flag, yes = NA, no = -tan(theta)), 
+    0, 1, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 1), 
+    ifelse(test = sin_flag, yes = tan(theta), no = -tan(theta)), ifelse(test = sin_flag, yes = NA, no = tan(theta)), 
+    1, ifelse(test = cos_flag, yes = NA, no = 1)
+  ), 
+  width = c(
+    "normal", "normal", "thin", "thin", "thin", 
+    "normal", "normal", 
+    "bold", "normal", 
+    "normal", "normal", 
+    "thin", "normal", "thin", "normal", 
+    "bold", "bold", 
+    "thin", "thin"
+  ), # 太さ用
+  type = c(
+    "main", "main", "sub", "sub", "sub", 
+    "main", "main", 
+    "main", "main", 
+    "main", "sub", 
+    "main", "main", "sub", "sub", 
+    "main", "sub", 
+    "main", "sub"
+  ) # 線種用
+)
+function_line_df
+```
+
+　関数を区別するための`fnc`列の因子レベルを`fnc_level_vec`として指定しておきます。因子レベルは、線分の描画順(重なり順)や色付け順に影響します。\
+　各線分の始点の座標を`x_from, y_from`列、終点の座標を`x_to, y_to`列として、完成図を見ながら頑張って指定します。詳しくはそれぞれの関数の記事を参照してください。\
+
+　関数名(ラベル)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルの座標を計算
+function_label_df <- tibble::tibble(
+  fnc = c(
+    "sin", 
+    "cos", 
+    "tan", "tan", 
+    "cot", "cot", 
+    "sec", "sec", 
+    "csc", "csc"
+  ) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x = c(
+    0, 
+    0.5 * cos(theta), 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    0.5 / tan(theta), ifelse(test = cos_flag, yes = NA, no = -0.5/tan(theta)), 
+    0.5, ifelse(test = sin_flag, yes = NA, no = 0.5), 
+    0.5 / ifelse(test = cos_flag, yes = tan(theta), no = -tan(theta)), ifelse(test = cos_flag, yes = NA, no = 0.5/tan(theta))
+  ), 
+  y = c(
+    0.5 * sin(theta), 
+    0, 
+    0.5 * tan(theta), ifelse(test = sin_flag, yes = NA, no = -0.5*tan(theta)), 
+    1, ifelse(test = cos_flag, yes = NA, no = 1), 
+    0.5 * ifelse(test = sin_flag, yes = tan(theta), no = -tan(theta)), ifelse(test = sin_flag, yes = NA, no = 0.5*tan(theta)), 
+    0.5, ifelse(test = cos_flag, yes = NA, no = 0.5)
+  ), 
+  angle = c(
+    90, 
+    0, 
+    90, 90, 
+    0, 0, 
+    0, 0, 
+    0, 0
+  ), 
+  h = c(
+    0.5, 
+    0.5, 
+    0.5, 0.5, 
+    0.5, 0.5, 
+    1.2, 1.2, 
+    -0.2,-0.2
+  ), 
+  v = c(
+    -0.5, 
+    1, 
+    1, 1, 
+    -0.5, -0.5, 
+    0.5, 0.5, 
+    0.5, 0.5
+  ), 
+  fnc_label = c(
+    "sin~theta", 
+    "cos~theta", 
+    "tan~theta", "-tan~theta", 
+    "cot~theta", "-cot~theta", 
+    "sec~theta", "-sec~theta", 
+    "csc~theta", "-csc~theta"
+  ) # 関数ラベル
+)
+function_label_df
+```
+
+　この例では、関数を示す線分の中点に関数名を表示するため、中点の座標とラベル用の文字列などを格納します。\
+　ラベルの表示角度を`angle`列、表示角度に応じた左右の表示位置を`h`列、上下の表示位置を`v`列として値を指定します。\
+
+　変数と関数の値(ラベル)の表示用の文字列を作成します。
+
+```{r}
+# 変数ラベル用の文字列を作成
+variable_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ", tan~theta==", round(tan(theta), digits = 2), 
+  ", cot~theta==", round(1/tan(theta), digits = 2), 
+  ", sec~theta==", round(1/cos(theta), digits = 2), 
+  ", csc~theta==", round(1/sin(theta), digits = 2), 
+  ")"
+)
+variable_label
+```
+
+　`==`で等号、`list(変数1, 変数2)`で複数の(数式上の)変数を並べて表示します。(プログラム上の)変数の値を使う場合は、文字列として作成しておき`parse()`の`text`引数に渡します。\
+
+　単位円上に円関数の線分を重ねたグラフを作成します。
+
+```{r, fig.width=8, fig.height=8, dpi=100}
+# グラフサイズ用の値を設定
+axis_lower <- 1.5
+x_min <- min(-axis_lower, 1/tan(theta))
+x_max <- max(axis_lower, 1/tan(theta))
+y_min <- min(-axis_lower, tan(theta))
+y_max <- max(axis_lower, tan(theta))
+
+# 単位円上に関数直線を作図
+fnc_line_graph <- ggplot() + 
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               color = "white") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), label = "|", 
+            size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  geom_path(data = angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # なす角マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y), label = "theta", parse = TRUE, 
+            size = 5) + # なす角ラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_t, y = sin_t), 
+             size = 4) + # 円周上の点
+  geom_hline(yintercept = 1, linetype = "dashed") + # 補助線
+  geom_vline(xintercept = 1, linetype = "dashed") + # 補助線
+  geom_segment(data = function_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                             color = fnc, size = width, linetype = type), na.rm = TRUE) + # 関数直線
+  geom_text(data = function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
+                          hjust = h, vjust = v, angle = angle), 
+            parse = TRUE, na.rm = TRUE, show.legend = FALSE) + # 関数ラベル
+  scale_color_manual(breaks = fnc_level_vec, 
+                     values = c("black", scales::hue_pal()(length(fnc_level_vec)-1))) + # (半径直線を黒色にしたい)
+  scale_size_manual(breaks = c("normal", "bold", "thin"), 
+                    values = c(1, 1.6, 0.8), guide = "none") + # (線が重なる対策)
+  scale_linetype_manual(breaks = c("main", "sub"), 
+                        values = c("solid", "twodash"), guide = "none") + # (補助線を描き分けたい)
+  coord_fixed(ratio = 1, 
+              xlim = c(x_min, x_max), ylim = c(y_min, y_max)) + # 描画領域
+  labs(title = "circular functions", 
+       subtitle = parse(text = variable_label), 
+       color = "function", 
+       x = "x", y = "y")
+#fnc_line_graph
+```
+
+　`geom_segment()`で線分を描画して、各関数の値を直線で示します。\
+　`geom_label()`でラベル(文字列)を描画します。\
+
+</details>
+
+```{r, echo=FALSE, fig.width=8, fig.height=8, dpi=100}
+### 資料作成用:(出力)
+
+fnc_line_graph
+```
+
+　「x軸線の正の部分(原点 $(0, 0)$ と点 $(0, 1)$ を結ぶ線分)」と「原点と円周上の点を結ぶ線分」のなす角を $\theta$ とします。単位円の円周上の点の座標は $(\cos \theta, \sin \theta)$ なので、sin関数はy軸の値(高さ)、cos関数はx軸の値(横幅)に対応します。他の関数についても円周上の点(なす角)によって決まります。詳しくはそれぞれの関数の記事を参照してください。\
+\
+
+
+#### パターン2
+
+　2つ目の方法では、原点と円周上の点を結ぶ線分を底辺として各関数を可視化します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　半径と円関数を示す線分の描画用のデータフレームを作成します。
+
+```{r}
+# 関数直線の線分の座標を計算
+function_line_df <- tibble::tibble(
+  fnc = c(
+    "r", "r", 
+    "sin", 
+    "cos", 
+    "tan", 
+    "cot", 
+    "sec", 
+    "csc"
+  ) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x_from = c(
+    0, 0, 
+    cos(theta), 
+    0, 
+    cos(theta), 
+    cos(theta), 
+    0, 
+    0
+  ), 
+  y_from = c(
+    0, 0, 
+    0, 
+    sin(theta), 
+    sin(theta), 
+    sin(theta), 
+    0, 
+    0
+  ), 
+  x_to = c(
+    1, cos(theta), 
+    cos(theta), 
+    cos(theta), 
+    1/cos(theta), 
+    0, 
+    1/cos(theta), 
+    0
+  ), 
+  y_to = c(
+    0, sin(theta), 
+    sin(theta), 
+    sin(theta), 
+    0, 
+    1/sin(theta), 
+    0, 
+    1/sin(theta)
+  )
+)
+function_line_df
+```
+
+　「パターン1」のときと同様に、半径と関数の線分の座標を格納します。\
+
+　関数名(ラベル)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルの座標を計算
+function_label_df <- tibble::tibble(
+  fnc = c("sin", "cos", "tan", "cot", "sec", "csc") |> 
+    factor(levels = fnc_level_vec), # 色用
+  x = c(
+    cos(theta), 
+    0.5 * cos(theta), 
+    0.5 * (1/cos(theta) + cos(theta)), 
+    0.5 * cos(theta), 
+    0.5 / cos(theta), 
+    0
+  ), 
+  y = c(
+    0.5 * sin(theta), 
+    sin(theta), 
+    0.5 * sin(theta), 
+    0.5 * (1/sin(theta) + sin(theta)), 
+    0, 
+    0.5 / sin(theta)
+  ), 
+  angle = c(90, 0, 0, 0, 0, 90), 
+  h = c(0.5, 0.5, -0.2, -0.2, 0.5, 0.5), 
+  v = c(-0.5, -0.5, 0.5, 0.5, 1, 1), 
+  fnc_label = c("sin~theta", "cos~theta", "tan~theta", "cot~theta", "sec~theta", "csc~theta") # 関数ラベル
+)
+function_label_df
+```
+
+　線分の中点の座標とラベル用の文字列などを格納します。\
+
+　単位円上に円関数の線分を重ねたグラフを作成します。
+
+```{r, fig.width=8, fig.height=8, dpi=100}
+# グラフサイズ用の値を設定
+axis_lower <- 1.5
+x_min <- min(-axis_lower, 1/cos(theta))
+x_max <- max(axis_lower, 1/cos(theta))
+y_min <- min(-axis_lower, 1/sin(theta))
+y_max <- max(axis_lower, 1/sin(theta))
+
+# 単位円上に関数直線を作図
+fnc_line_graph <- ggplot() + 
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               color = "white") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), label = "|", 
+            size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  geom_path(data = angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # なす角マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y), label = "theta", parse = TRUE, 
+            size = 5) + # なす角ラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_t, y = sin_t), 
+             size = 4) + # 円周上の点
+  geom_hline(yintercept = 0, linetype = "dashed") + # 補助線
+  geom_vline(xintercept = 0, linetype = "dashed") + # 補助線
+  geom_segment(data = function_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # 関数直線
+  geom_text(data = function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
+                          hjust = h, vjust = v, angle = angle), 
+            parse = TRUE, show.legend = FALSE) + # 関数ラベル
+  scale_color_manual(breaks = fnc_level_vec, 
+                     values = c("black", scales::hue_pal()(length(fnc_level_vec)-1))) + # (半径直線を黒色にしたい)
+  coord_fixed(ratio = 1, 
+              xlim = c(x_min, x_max), ylim = c(y_min, y_max)) + # 描画領域
+  labs(title = "circular functions", 
+       subtitle = parse(text = variable_label), 
+       color = "function", 
+       x = "x", y = "y")
+#fnc_line_graph
+```
+
+</details>
+
+```{r, echo=FALSE, fig.width=8, fig.height=8, dpi=100}
+### 資料作成用:(出力)
+
+fnc_line_graph
+```
+
+　こちらの図は、原点と点 $(\cos \theta, \sin \theta)$ を結ぶ線分を底辺、x軸線やy軸線の一部を斜辺としたときのパターン1の図と言えます。文字通り首を捻って見てください。相似関係が分かりやすいように補助線を入れた図については、それぞれの関数の記事を参照してください。\
+\
+
+
+### アニメーションの作成
+
+　続いて、変数の値を変化させた円関数をアニメーションで確認します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　フレーム数を指定して、変数として用いる値を作成します。
+
+```{r}
+# フレーム数を指定
+frame_num <- 180
+
+# なす角(変数)の範囲を指定
+theta_i <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+head(theta_i)
+```
+
+　フレーム数`frame_num`を指定して、単位円におけるなす角(ラジアン) $\theta$ の値を等間隔に`frame_num`個作成します。最小値(`form`引数)と最大値(`to`引数)の範囲を $2 \pi$ の倍数にし`frame_num + 1`個の等間隔の値を作成して、最後の値を除くと最後のフレームと最初のフレームのグラフが繋がります。\
+
+　フレーム切替用のラベルの文字列ベクトルを作成します。
+
+```{r}
+# 変数ラベル用の文字列を作成
+frame_label_vec <- paste0(
+  "θ = ", round(theta_i/pi, digits = 2), " π", 
+  ", sin θ = ", round(sin(theta_i), digits = 2), 
+  ", cos θ = ", round(cos(theta_i), digits = 2), 
+  ", tan θ = ", round(tan(theta_i), digits = 2), 
+  ", cot θ = ", round(1/tan(theta_i), digits = 2), 
+  ", sec θ = ", round(1/cos(theta_i), digits = 2), 
+  ", csc θ = ", round(1/sin(theta_i), digits = 2)
+)
+head(frame_label_vec)
+```
+
+　この例では、フレームごとの変数と関数の値を表示するために、`theta_i`を用いた文字列をフレーム切替用のラベル列として使います。フレーム番号として、通し番号を用いても作図できます。\
+
+　円周上の点の描画用のデータフレームを作成します。
+
+```{r}
+# 単位円上の点の座標を計算
+anim_point_df <- tibble::tibble(
+  t = theta_i, 
+  sin_t = sin(theta_i), 
+  cos_t = cos(theta_i), 
+  frame_label = factor(frame_label_vec, levels = frame_label_vec) # フレーム切替用ラベル
+)
+anim_point_df
+```
+
+　$\theta$ の値と $\sin \theta, \cos \theta$ の値をフレームラベルと共に格納します。\
+
+　なす角マークの描画用のデータフレームを作成します。
+
+```{r}
+# なす角マークの座標を計算
+d <- 0.15
+anim_angle_mark_df <- tibble::tibble(
+  frame_i = 1:frame_num # フレーム番号
+) |> 
+  dplyr::group_by(frame_i) |> # ラジアンの作成用
+  dplyr::summarise(
+    t = seq(from = 0, to = theta_i[frame_i], length.out = 100), .groups = "drop"
+  ) |> # なす角以下のラジアンを作成
+  dplyr::mutate(
+    x = d * cos(t), 
+    y = d * sin(t), 
+    frame_label = frame_label_vec[frame_i] |> 
+      factor(levels = frame_label_vec) # フレーム切替用ラベル
+  )
+anim_angle_mark_df
+```
+
+　フレーム番号(とフレームラベル)を格納しフレーム列でグループ化して、フレーム(変数の値)ごとに`summarise()`を使って`0`からなす角`theta_n[frame_i]`までの値(ラジアン)を作成して、円弧の座標を計算します。\
+
+　なす角ラベルの描画用のデータフレームを作成します。
+
+```{r}
+# なす角ラベルの座標を計算
+d <- 0.21
+anim_angle_label_df <- tibble::tibble(
+  frame_i = 1:frame_num, # フレーム番号
+  t = 0.5 * theta_i, 
+  x = d * cos(t), 
+  y = d * sin(t), 
+  frame_label = factor(frame_label_vec, levels = frame_label_vec) # フレーム切替用ラベル
+)
+anim_angle_label_df
+```
+
+　フレームごとに、なす角マークの中点にラベルを配置するように、円弧上の点の座標を計算します。\
+\
+
+</details>
+
+　ここまでは、共通の処理です。ここからは、「グラフの作成」のときと同様に2つの方法で図示します。\
+\
+
+
+#### パターン1
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　半径と円関数を示す線分の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("r", "sin", "cos", "tan", "cot", "sec", "csc")
+
+# 反転フラグを設定
+sin_flag_i <- sin(theta_i) >= 0
+cos_flag_i <- cos(theta_i) >= 0
+
+# 関数直線の線分の座標を計算
+anim_function_line_df <- tibble::tibble(
+  fnc = c(
+    "r", "r", "r", "r", "r", 
+    "sin", "sin", 
+    "cos", "cos", 
+    "tan", "tan", 
+    "cot", "cot", "cot", "cot", 
+    "sec", "sec", 
+    "csc", "csc"
+  ) |> 
+    rep(each = frame_num) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x_from = c(
+    rep(0, times = frame_num), rep(0, times = frame_num), 1/tan(theta_i), ifelse(test = cos_flag_i, yes = NA, no = -1/tan(theta_i)), rep(0, times = frame_num), 
+    rep(0, times = frame_num), cos(theta_i), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    rep(1, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 1), 
+    rep(0, times = frame_num), rep(0, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0), ifelse(test = cos_flag_i, yes = NA, no = 0), 
+    rep(0, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 0), 
+    rep(0, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0)
+  ), 
+  y_from = c(
+    rep(0, times = frame_num), rep(0, times = frame_num), rep(0, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0), rep(0, times = frame_num), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    rep(0, times = frame_num), sin(theta_i), 
+    rep(0, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 0), 
+    rep(0, times = frame_num), rep(1, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0), ifelse(test = cos_flag_i, yes = NA, no = 1), 
+    rep(0, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 0), 
+    rep(0, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0)
+  ), 
+  x_to = c(
+    rep(1, times = frame_num), cos(theta_i), 1/tan(theta_i), ifelse(test = cos_flag_i, yes = NA, no = -1/tan(theta_i)), rep(0, times = frame_num), 
+    rep(0, times = frame_num), cos(theta_i), 
+    cos(theta_i), cos(theta_i), 
+    rep(1, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 1), 
+    1/tan(theta_i), 1/tan(theta_i), ifelse(test = cos_flag_i, yes = NA, no = -1/tan(theta_i)), ifelse(test = cos_flag_i, yes = NA, no = -1/tan(theta_i)), 
+    rep(1, times = frame_num), ifelse(test = sin_flag_i, yes = NA, no = 1), 
+    ifelse(test = cos_flag_i, yes = 1/tan(theta_i), no = -1/tan(theta_i)), ifelse(test = cos_flag_i, yes = NA, no = 1/tan(theta_i))
+  ), 
+  y_to = c(
+    rep(0, times = frame_num), sin(theta_i), rep(1, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 1), rep(1, times = frame_num), 
+    sin(theta_i), sin(theta_i), 
+    rep(0, times = frame_num), sin(theta_i), 
+    tan(theta_i), ifelse(test = sin_flag_i, yes = NA, no = -tan(theta_i)), 
+    rep(0, times = frame_num), rep(1, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 0), ifelse(test = cos_flag_i, yes = NA, no = 1), 
+    ifelse(test = sin_flag_i, yes = tan(theta_i), no = -tan(theta_i)), ifelse(test = sin_flag_i, yes = NA, no = tan(theta_i)), 
+    rep(1, times = frame_num), ifelse(test = cos_flag_i, yes = NA, no = 1)
+  ), 
+  width = c(
+    "normal", "normal", "thin", "thin", "thin", 
+    "normal", "normal", 
+    "bold", "normal", 
+    "normal", "normal", 
+    "thin", "normal", "thin", "normal", 
+    "bold", "bold", 
+    "thin", "thin"
+  ) |> 
+    rep(each = frame_num), # 太さ用
+  type = c(
+    "main", "main", "sub", "sub", "sub", 
+    "main", "main", 
+    "main", "main", 
+    "main", "sub", 
+    "main", "main", "sub", "sub", 
+    "main", "sub", 
+    "main", "sub"
+  ) |> 
+    rep(each = frame_num), # 太さ用
+  label_flag = c(
+    FALSE, FALSE, FALSE, FALSE, FALSE, 
+    TRUE, FALSE, 
+    TRUE, FALSE, 
+    TRUE, FALSE, 
+    FALSE, TRUE, FALSE, FALSE, 
+    TRUE, FALSE, 
+    TRUE, FALSE
+  ) |> 
+    rep(each = frame_num), # # 関数ラベル用
+  frame_label = frame_label_vec |> 
+    rep(times = 19) |> # (線分の数)
+    factor(levels = frame_label_vec) # フレーム切替用ラベル
+) |> 
+  dplyr::mutate(
+    x_from = dplyr::case_when(x_from == Inf ~ 1e+10, x_from == -Inf ~ -1e+10, TRUE ~ x_from), 
+    x_to   = dplyr::case_when(x_to == Inf ~ 1e+10, x_to == -Inf ~ -1e+10, TRUE ~ x_to)
+  ) # 発散した場合は大きな値に置換
+anim_function_line_df
+```
+
+　線分ごとに`frame_num`個の座標を格納します。\
+　関数ラベルを表示する線分を1つ`label_flag`列に指定します。ラベルを表示する線分を`TRUE`、それ以外を`FALSE`とします。\
+
+　関数名(ラベル)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルの座標を計算
+anim_function_label_df <- anim_function_line_df |> 
+  dplyr::filter(label_flag) |> # ラベル付けする線分を抽出
+  dplyr::group_by(fnc, frame_label) |> # 中点の計算用
+  dplyr::summarise(
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), .groups = "drop"
+  ) |> # 線分の中点に配置
+  tibble::add_column(
+    angle = c(90, 0, 90, 0, 0, 0) |> 
+      rep(each = frame_num), 
+    h = c(0.5, 0.5, 0.5, 0.5, 1.2, -0.2) |> 
+      rep(each = frame_num), 
+    v = c(-0.5, 1, 1, -0.5, 0.5, 0.5) |> 
+      rep(each = frame_num), 
+    fnc_label = c("sin~theta", "cos~theta", "tan~theta", "cot~theta", "sec~theta", "csc~theta") |> 
+      rep(each = frame_num) # 関数ラベル
+  )
+anim_function_label_df
+```
+
+　線分の座標`anim_function_line_df`から`label_flag`列が`TRUE`の行(線分)を取り出して、関数列とフレーム列でグループ化して、関数(線分)とフレームごとに中点の座標を`median()`で計算します。\
+　また、ラベル用の文字列などの列を追加します。\
+
+　単位円上に円関数の線分を重ねたアニメーションを作成します。
+
+```{r, eval=TRUE}
+# グラフサイズ用の値を指定
+axis_size <- 2
+
+# 単位円上の関数直線のアニメーションを作図
+graphs <- ggplot() + 
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               color = "white") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), label = "|", 
+            size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  geom_path(data = anim_angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # なす角マーク
+  geom_text(data = anim_angle_label_df, 
+            mapping = aes(x = x, y = y), label = "theta", parse = TRUE, 
+            size = 5) + # なす角ラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_point(data = anim_point_df, 
+             mapping = aes(x = cos_t, y = sin_t), 
+             size = 4) + # 円周上の点
+  geom_hline(yintercept = 1, linetype = "dashed") + # 補助線
+  geom_vline(xintercept = 1, linetype = "dashed") + # 補助線
+  geom_segment(data = anim_function_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                             color = fnc, size = width, linetype = type), na.rm = TRUE) + # 関数直線
+  geom_text(data = anim_function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
+                          hjust = h, vjust = v, angle = angle), 
+            parse = TRUE, na.rm = TRUE, show.legend = FALSE) + # 関数ラベル
+  gganimate::transition_manual(frames = frame_label) + # フレーム
+  scale_color_manual(breaks = fnc_level_vec, 
+                     values = c("black", scales::hue_pal()(length(fnc_level_vec)-1))) + # (半径直線を黒色にしたい)
+  scale_size_manual(breaks = c("normal", "bold", "thin"), 
+                    values = c(1, 1.6, 0.8), guide = "none") + # (線が重なる対策)
+  scale_linetype_manual(breaks = c("main", "sub"), 
+                        values = c("solid", "twodash"), guide = "none") + # (補助線を描き分けたい)
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "circular functions", 
+       subtitle = "{current_frame}", 
+       color = "function", 
+       x = "x", y = "y")
+
+# gif画像を作成
+anim <- gganimate::animate(plot = graphs, nframes = frame_num, fps = 100, width = 800, height = 800)
+#anim
+```
+
+　`gganimate`パッケージを利用して、アニメーション(gif画像)を作成します。\
+　`transition_manual()`のフレーム制御の引数`frames`にフレーム(変数)ラベル列`frame_label`を指定して、グラフを作成します。\
+　`animate()`の`plot`引数にグラフオブジェクト、`nframes`引数にフレーム数`frame_num`を指定して、gif画像を作成します。また、`fps`引数に1秒当たりのフレーム数を指定できます。\
+
+</details>
+
+```{r, echo=FALSE}
+### 資料作成用:(出力)
+
+anim
+```
+
+　$\theta = 0, \pi$ のとき $\sin \theta = 0$ なので、原点と円周上の点を結ぶ線分が水平になり直線 $y = 1$ と平行なため交点ができず、$\cot \theta, \csc \theta$ を描画(定義)できないのが分かります。また、$\theta = \frac{1}{2} \pi, \frac{3}{2} \pi$ のとき $\cos \theta = 0$ なので、原点と円周上の点を結ぶ線分が垂直になり直線 $x = 1$ と平行なため交点ができず、$\tan \theta, \sec \theta$ を描画(定義)できないのが分かります。\
+\
+
+
+#### パターン2
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　半径と円関数を示す線分の描画用のデータフレームを作成します。
+
+```{r}
+# 関数直線の線分の座標を計算
+anim_function_line_df <- tibble::tibble(
+  fnc = c(
+    "r", "r", 
+    "sin", "cos", "tan", "cot", "sec", "csc"
+  ) |> 
+    rep(each = frame_num) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x_from = c(
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    cos(theta_i), 
+    rep(0, times = frame_num), 
+    cos(theta_i), 
+    cos(theta_i), 
+    rep(0, times = frame_num), 
+    rep(0, times = frame_num)
+  ), 
+  y_from = c(
+    rep(0, times = frame_num), rep(0, times = frame_num), 
+    rep(0, times = frame_num), 
+    sin(theta_i), 
+    sin(theta_i), 
+    sin(theta_i), 
+    rep(0, times = frame_num), 
+    rep(0, times = frame_num)
+  ), 
+  x_to = c(
+    rep(1, times = frame_num), cos(theta_i), 
+    cos(theta_i), 
+    cos(theta_i), 
+    1/cos(theta_i), 
+    rep(0, times = frame_num), 
+    1/cos(theta_i), 
+    rep(0, times = frame_num)
+  ), 
+  y_to = c(
+    rep(0, times = frame_num), sin(theta_i), 
+    sin(theta_i), 
+    sin(theta_i), 
+    rep(0, times = frame_num), 
+    1/sin(theta_i), 
+    rep(0, times = frame_num), 
+    1/sin(theta_i)
+  ), 
+  frame_label = frame_label_vec |> 
+    rep(times = 8) |> # (線分の数)
+    factor(levels = frame_label_vec), # フレーム切替用ラベル
+) |> 
+  dplyr::mutate(
+    y_to = dplyr::if_else(condition = y_to == Inf, true = 1e+10, false = y_to)
+  ) # 発散した場合は大きな値に置換
+anim_function_line_df
+```
+
+　「パターン1」のときと同様に、半径と関数の線分の座標を格納します。\
+
+　関数名(ラベル)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルの座標を計算
+anim_function_label_df <- anim_function_line_df |> 
+  dplyr::filter(fnc != "r") |> # 関数を抽出
+  dplyr::group_by(fnc, frame_label) |> # 中点の計算用
+  dplyr::summarise(
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), .groups = "drop"
+  ) |> # 線分の中点に配置
+  tibble::add_column(
+    angle = c(90, 0, 0, 0, 0, 90) |> 
+      rep(each = frame_num), 
+    h = c(0.5, 0.5, -0.2, -0.2, 0.5, 0.5) |> 
+      rep(each = frame_num), 
+    v = c(-0.5, -0.5, 0.5, 0.5, 1, 1) |> 
+      rep(each = frame_num), 
+    fnc_label = c("sin~theta", "cos~theta", "tan~theta", "cot~theta", "sec~theta", "csc~theta") |> 
+      rep(each = frame_num) # 関数ラベル
+  )
+anim_function_label_df
+```
+
+　関数ごとに1つの行(線分)を取り出して、それぞれ中点の座標を計算して、ラベル用の文字列などを格納します。\
+
+　単位円上に円関数の線分を重ねたアニメーションを作成します。
+
+```{r, eval=TRUE}
+# グラフサイズ用の値を指定
+axis_size <- 2
+
+# 単位円上の関数直線のアニメーションを作図
+graphs <- ggplot() + 
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               color = "white") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), label = "|", 
+            size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  geom_path(data = anim_angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # なす角マーク
+  geom_text(data = anim_angle_label_df, 
+            mapping = aes(x = x, y = y), label = "theta", parse = TRUE, 
+            size = 5) + # なす角ラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_point(data = anim_point_df, 
+             mapping = aes(x = cos_t, y = sin_t), 
+             size = 4) + # 円周上の点
+  geom_hline(yintercept = 0, linetype = "dashed") + # 補助線
+  geom_vline(xintercept = 0, linetype = "dashed") + # 補助線
+  geom_segment(data = anim_function_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+               size = 1) + # 関数直線
+  geom_text(data = anim_function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
+                          hjust = h, vjust = v, angle = angle), 
+            parse = TRUE, show.legend = FALSE) + # 関数ラベル
+  gganimate::transition_manual(frames = frame_label) + # フレーム
+  scale_color_manual(breaks = fnc_level_vec, 
+                     values = c("black", scales::hue_pal()(length(fnc_level_vec)-1))) + # (半径直線を黒色にしたい)
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), ylim = c(-axis_size, axis_size)) + # 描画領域
+  labs(title = "circular functions", 
+       subtitle = "{current_frame}", 
+       color = "function", 
+       x = "x", y = "y")
+
+# gif画像を作成
+anim <- gganimate::animate(plot = graphs, nframes = frame_num, fps = 100, width = 800, height = 800)
+#anim
+```
+
+</details>
+
+```{r, echo=FALSE}
+### 資料作成用:(出力)
+
+anim
+```
+
+　こちらの図だと、$\theta = 0, \pi$ のとき、原点と円周上の点を結ぶ線分の垂線が垂直になり直線 $x = 0$ と平行なため交点ができず、$\cot \theta, \csc \theta$ を描画(定義)できないのが分かります。また、$\theta = \frac{1}{2} \pi, \frac{3}{2} \pi$ のとき、原点と円周上の点を結ぶ線分の垂線が水平になり直線 $y = 0$ と平行なため交点ができず、$\tan \theta, \sec \theta$ を描画(定義)できないのが分かります。\
+\
+
+
+## なす角と関数曲線の関係
+
+　最後は、単位円上におけるなす角と円関数(sin・cos・tan・cot・sec・csc)の曲線の関係をグラフで可視化します。\
+\
+
+
+### グラフの作成
+
+　変数を固定した円関数をグラフで確認します。\
+\
+
+<details><summary>・作図コード(クリックで展開)</summary>
+
+　変数の値を指定します。
+
+```{r}
+# 単位円上の点用のラジアンを指定
+theta <- 5/4 * pi
+theta
+```
+
+　単位円におけるなす角(ラジアン) $\theta$ を`theta`として値を指定します。ただし、`theta`が`0`のとき、計算結果に`Inf`や`-Inf`が含まれるため、意図しないグラフになります。発散時の対策については「アニメーションの作成」を参照してください。\
+
+　「なす角と円関数の関係」の「パターン1」のコードで3つのデータフレーム(`point_df`・`angle_mark_df`・`angle_label_df`)を作成します。\
+
+```{r, echo=FALSE}
+### 資料作成用:(再掲)
+
+# 単位円上の点の座標を計算
+point_df <- tibble::tibble(
+  t = theta, 
+  sin_t = sin(theta), 
+  cos_t = cos(theta)
+)
+
+# なす角マークの座標を計算
+d <- 0.15
+angle_mark_df <- tibble::tibble(
+  t = seq(from = 0, to = theta, length.out = 100), 
+  x = d * cos(t), 
+  y = d * sin(t)
+)
+
+# なす角ラベルの座標を計算
+d <- 0.21
+angle_label_df <- tibble::tibble(
+  t = 0.5 * theta, 
+  x = d * cos(t), 
+  y = d * sin(t)
+)
+```
+
+　半径と円関数を示す線分の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルのレベルを指定
+fnc_level_vec <- c("r", "sin", "cos", "tan", "cot", "sec", "csc")
+
+# 反転フラグを設定
+sin_flag <- sin(theta) >= 0
+cos_flag <- cos(theta) >= 0
+
+# 関数直線の線分の座標を計算
+function_line_df <- tibble::tibble(
+  fnc = c(
+    "r", "r", "r", "r", 
+    "sin", "sin", 
+    "cos", "cos", "cos", 
+    "tan", "tan", 
+    "cot", "cot", "cot", "cot", "cot", 
+    "sec", "sec", "sec", 
+    "csc", "csc", "csc"
+  ) |> 
+    factor(levels = fnc_level_vec), # 色用
+  x_from = c(
+    0, 0, 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 
+    0, cos(theta), 
+    0, 0, 0, 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    0, 0, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 0), 0, 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 0, 
+    0, ifelse(test = cos_flag, yes = NA, no = 0), 0
+  ), 
+  y_from = c(
+    0, 0, 0, ifelse(test = cos_flag, yes = NA, no = 0), 
+    0, 0, 
+    0, sin(theta), 0, 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 
+    0, 1, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 1), 0, 
+    0, ifelse(test = sin_flag, yes = NA, no = 0), 0, 
+    0, ifelse(test = cos_flag, yes = NA, no = 0), 0
+  ), 
+  x_to = c(
+    1, cos(theta), 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 
+    0, cos(theta), 
+    cos(theta), cos(theta), 0, 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 
+    1/tan(theta), 1/tan(theta), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), ifelse(test = cos_flag, yes = NA, no = -1/tan(theta)), 0, 
+    1, ifelse(test = sin_flag, yes = NA, no = 1), 0, 
+    ifelse(test = cos_flag, yes = 1/tan(theta), no = -1/tan(theta)), ifelse(test = cos_flag, yes = NA, no = 1/tan(theta)), 0
+  ), 
+  y_to = c(
+    0, sin(theta), 1, ifelse(test = cos_flag, yes = NA, no = 1), 
+    sin(theta), sin(theta), 
+    0, sin(theta), cos(theta), 
+    tan(theta), ifelse(test = sin_flag, yes = NA, no = -tan(theta)), 
+    0, 1, ifelse(test = cos_flag, yes = NA, no = 0), ifelse(test = cos_flag, yes = NA, no = 1), 1/tan(theta), 
+    ifelse(test = sin_flag, yes = tan(theta), no = -tan(theta)), ifelse(test = sin_flag, yes = NA, no = tan(theta)), 1/cos(theta), 
+    1, ifelse(test = cos_flag, yes = NA, no = 1), 1/sin(theta)
+  ), 
+  width = c(
+    "normal", "normal", "thin", "thin", 
+    "normal", "normal", 
+    "bold", "normal", "thin", 
+    "normal", "normal", 
+    "thin", "normal", "thin", "normal", "thin", 
+    "bold", "bold", "thin", 
+    "thin", "thin", "thin"
+  ), # 太さ用
+  type = c(
+    "main", "main", "main", "main", 
+    "main", "main", 
+    "main", "main", "sub", 
+    "main", "sub", 
+    "main", "main", "sub", "sub", "sub", 
+    "main", "sub", "sub", 
+    "main", "sub", "sub"
+    ), # 線種用
+  label_flag = c(
+    FALSE, FALSE, FALSE, FALSE, 
+    TRUE, FALSE, 
+    TRUE, FALSE, FALSE, 
+    TRUE, FALSE, 
+    TRUE, FALSE, FALSE, FALSE, FALSE, 
+    TRUE, FALSE, FALSE, 
+    TRUE, FALSE, FALSE
+  ) # 関数ラベル用
+)
+function_line_df
+```
+
+　「なす角と円関数の関係」のときのコードに、cos・cot・sec・csc関数の線分の1つを垂直線に回転した線分の座標を追加します。\
+
+　関数名(ラベル)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数ラベルの座標を計算
+function_label_df <- function_line_df |> 
+  dplyr::filter(label_flag) |> # ラベル付けする線分を抽出
+  dplyr::group_by(fnc) |> # 中点の計算用
+  dplyr::summarise(
+    x = median(c(x_from, x_to)), 
+    y = median(c(y_from, y_to)), .groups = "drop"
+  ) |> # 線分の中点に配置
+  tibble::add_column(
+    angle = c(90, 0, 90, 0, 0, 0), 
+    h = c(0.5, 0.5, 0.5, 0.5, 1.2, -0.2), 
+    v = c(-0.5, 1, 1, -0.5, 0.5, 0.5), 
+    fnc_label = c("sin~theta", "cos~theta", "tan~theta", "cot~theta", "sec~theta", "csc~theta") # 関数ラベル
+  )
+function_label_df
+```
+
+　関数ごとに1つの行(線分)を取り出して、それぞれ中点の座標を計算して、ラベル用の文字列などを格納します。\
+
+　関数直線を垂直線になるように回転する軌道の描画用のデータフレームを作成します。
+
+```{r}
+# sec・csc直線の角度を設定
+if(cos(theta) >= 0) {
+  theta_sec <- acos(cos(theta))
+} else {
+  theta_sec <- pi + acos(cos(theta))
+}
+if(sin(theta) >= 0) {
+  theta_csc <- asin(sin(theta))
+} else {
+  theta_csc <- pi + asin(sin(theta))
+}
+
+# 軸変換曲線の座標を計算
+num <- 100
+adapt_curve_df <- tibble::tibble(
+  fnc = c(
+    rep("cos", times = num), 
+    rep("cot", times = num), 
+    rep("sec", times = num), 
+    rep("csc", times = num)
+  ), # 色用
+  rad = c(
+    seq(from = 0, to = 0.5*pi, length.out = num), 
+    seq(from = 0, to = 0.5*pi, length.out = num), 
+    seq(from = theta_sec, to = ifelse(test = cos(theta) >= 0, yes = 0.5*pi, no = 1.5*pi), length.out = num), 
+    seq(from = theta_csc, to = ifelse(test = sin(theta) >= 0, yes = 0.5*pi, no = 1.5*pi), length.out = num)
+  ), 
+  d = c(
+    rep(cos(theta), times = num), 
+    rep(1/tan(theta), times = num), 
+    rep(abs(1/cos(theta)), times = num), 
+    rep(abs(1/sin(theta)), times = num)
+  ), 
+  x = d * cos(rad), 
+  y = d * sin(rad)
+)
+adapt_curve_df
+```
+
+　軸を変換する軌道として、半径が各関数の絶対値 $|f(\theta)|$ の円弧を描画します。全体値 $|x|$ は`abs()`で計算できます。詳しくはそれぞれの関数の記事を参照してください。\
+
+　単位円における点と関数曲線上の点を結ぶ補助線(の一部)の描画用のデータフレームを作成します。
+
+```{r}
+# グラフサイズ用の値を設定
+axis_lower <- 1.5
+axis_upper <- 4
+x_size <- c(1/sin(theta), 1/tan(theta)) |> # csc・cot
+  abs() |> # 絶対値
+  ceiling() |> # 切り上げ
+  max(axis_lower) |> # 下限
+  min(axis_upper) # 上限
+y_size <- c(1/cos(theta), 1/sin(theta), 1/tan(theta)) |> # sec・csc・cot
+  abs() |> # 絶対値
+  ceiling() |> # 切り上げ
+  max(axis_lower) |> # 下限
+  min(axis_upper) # 上限
+
+# 関数曲線との対応線の座標を計算
+l <- 0.5
+segment_circle_df <- tibble::tibble(
+  fnc = c("sin", "cos", "tan", "sec", "csc", "cot") |> 
+    factor(levels = fnc_level_vec), # 色用
+  #x = c(0, 0, 0, 0, 0, 0), # y軸線上に並べる場合
+  x = c(cos(theta), 0, 1, 0, 0, 0), 
+  y = c(sin(theta), cos(theta), tan(theta), 1/cos(theta), 1/sin(theta), 1/tan(theta)), 
+  x_to = x_size+l, 
+  y_to = y
+)
+segment_circle_df
+```
+
+　単位円図における点からy軸線の反対側へ水平線を引くように線分の座標を指定します。\
+
+　単位円上に円関数の線分を重ねたグラフを作成します。
+
+```{r, fig.width=6, fig.height=6, dpi=100}
+# 変数ラベル用の文字列を作成
+variable_label <- paste0(
+  "list(", 
+  "theta==", round(theta/pi, digits = 2), "*pi", 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ")"
+)
+
+# 単位円上に関数直線を作図
+circle_graph <- ggplot() + 
+  geom_segment(data = radian_lable_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               color = "white") + # 角度目盛グリッド
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = x, y = y, angle = t_deg+90), label = "|", 
+            size = 2) + # 角度目盛指示線
+  geom_text(data = radian_lable_df, 
+            mapping = aes(x = label_x, y = label_y, label = rad_label, 
+                          hjust = h, vjust = v), parse = TRUE) + # 角度目盛ラベル
+  geom_path(data = angle_mark_df, 
+            mapping = aes(x = x, y = y), 
+            size = 0.5) + # なす角マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y), label = "theta", parse = TRUE, 
+            size = 5) + # なす角ラベル
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y), 
+            size = 1) + # 円周
+  geom_point(data = point_df, 
+             mapping = aes(x = cos_t, y = sin_t), 
+             size = 4) + # 円周上の点
+  geom_hline(yintercept = 1, linetype = "dashed") + # 補助線
+  geom_vline(xintercept = 1, linetype = "dashed") + # 補助線
+  geom_segment(data = function_line_df, 
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                             color = fnc, size = width, linetype = type), na.rm = TRUE) + # 関数直線
+  geom_text(data = function_label_df, 
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
+                          hjust = h, vjust = v, angle = angle), 
+            parse = TRUE, na.rm = TRUE, show.legend = FALSE) + # 関数ラベル
+  geom_path(data = adapt_curve_df, 
+            mapping = aes(x = x, y = y, color = fnc), 
+            size = 1, linetype = "dotted", show.legend = FALSE) + # 変換曲線
+  geom_point(data = segment_circle_df, 
+             mapping = aes(x = x, y = y, color = fnc), 
+             size = 4, alpha = 0.5) + # 変換点
+  geom_segment(data = segment_circle_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y, color = fnc), 
+               size = 1, linetype = "dotted", show.legend = FALSE) + # 関数曲線との対応線
+  scale_color_manual(breaks = fnc_level_vec, 
+                     values = c("black", scales::hue_pal()(length(fnc_level_vec)-1))) + # (半径直線を黒色にしたい)
+  scale_size_manual(breaks = c("normal", "bold", "thin"), 
+                    values = c(1, 1.6, 0.8), guide = "none") + # (線が重なる対策)
+  scale_linetype_manual(breaks = c("main", "sub"), 
+                        values = c("solid", "twodash"), guide = "none") + # (補助線を描き分けたい)
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-x_size, x_size), ylim = c(-y_size, y_size)) + # 描画領域
+  labs(title = "circular functions", 
+       subtitle = parse(text = variable_label), 
+       color = "function", 
+       x = "x", y = "y")
+circle_graph
+```
+
+　「なす角と円関数の関係」のときと同様に、単位円と関数直線を描画します。\
+\
+
+　関数曲線の描画用のデータフレームを作成します。
+
+```{r}
+# 関数曲線用のラジアンを指定
+theta_vec <- seq(from = 0, to = 2*pi, length.out = 1000)
+
+# 円関数を計算
+function_curve_df <- tibble::tibble(
+  fnc = c("sin", "cos", "tan", "cot", "sec", "csc") |> 
+    rep(each = length(theta_vec)) |> 
+    factor(levels = fnc_level_vec), # 色用
+  t = theta_vec |> 
+    rep(times = 6), # (関数の数)
+  f_t = c(
+    sin(theta_vec), 
+    cos(theta_vec), 
+    tan(theta_vec), 
+    1/tan(theta_vec), 
+    1/cos(theta_vec), 
+    1/sin(theta_vec)
+  )
+) |> 
+  dplyr::mutate(
+    f_t = dplyr::if_else(
+      (f_t >= -y_size & f_t <= y_size), true = f_t, false = NA_real_
+    ) # 閾値外の値を欠損値に置換
+  )
+function_curve_df
+```
+
+　「円関数の作図」のときと同様に、各円関数を計算します。\
+
+　関数曲線上の点と単位円における点を結ぶ補助線(の一部)の描画用のデータフレームを作成します。
+
+```{r}
+# 関数直線との対応線の座標を計算
+l <- 0.7
+segment_curve_df <- tibble::tibble(
+  fnc = c("sin", "cos", "tan", "cot", "sec", "csc") |> 
+    factor(levels = fnc_level_vec), 
+  x = theta, 
+  y = c(sin(theta), cos(theta), tan(theta), 1/tan(theta), 1/cos(theta), 1/sin(theta)), 
+  x_to = -l, 
+  y_to = y
+)
+segment_curve_df
+```
+
+　曲線上の点からy軸線へ水平線を引くように線分の座標を指定します。\
+
+　x軸目盛の設定用のベクトルを作成します。
+
+```{r}
+# 半周期の目盛の数(分母の値)を指定
+denom <- 6
+
+# 目盛の通し番号(分子の値)を作成
+numer_vec <- seq(from = 0, to = 2*pi / pi * denom, by = 1)
+
+# 目盛ラベル用の文字列を作成
+label_vec <- paste0(c("", "-")[(numer_vec < 0)+1], "frac(", abs(numer_vec), ", ", denom, ")~pi")
+head(numer_vec); head(label_vec)
+```
+
+　「円関数の作図」のときと同様にして、目盛ラベル用の値と文字列を作成します。\
+
+　関数曲線のグラフを作成します。
+
+```{r, fig.width=10, fig.height=5, dpi=100}
+# 変数ラベル用の文字列を作成
+variable_label <- paste0(
+  "list(", 
+  "theta==", round(theta, digits = 2), 
+  ", sin~theta==", round(sin(theta), digits = 2), 
+  ", cos~theta==", round(cos(theta), digits = 2), 
+  ", tan~theta==", round(tan(theta), digits = 2), 
+  ", cot~theta==", round(1/tan(theta), digits = 2), 
+  ", sec~theta==", round(1/cos(theta), digits = 2), 
+  ", csc~theta==", round(1/sin(theta), digits = 2), 
+  ")"
+)
+
+# 関数曲線を作図
+curve_graph <- ggplot() + 
+  geom_vline(xintercept = theta, linetype = "dashed") + # 変数垂線
+  geom_line(data = function_curve_df, 
+            mapping = aes(x = t, y = f_t, color = fnc), na.rm = TRUE, 
+            size = 1) + # 関数曲線
+  geom_point(data = segment_curve_df, 
+             mapping = aes(x = x, y = y, color = fnc), 
+             size = 4, alpha = 0.5) + # 曲線上の点
+  geom_segment(data = segment_curve_df, 
+               mapping = aes(x = x, y = y, xend = x_to, yend = y, color = fnc), 
+               size = 1, linetype = "dotted") + # 関数直線との対応線
+  scale_x_continuous(breaks = numer_vec/denom*pi, 
+                     labels = parse(text = label_vec)) + # 角度目盛ラベル
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(0, 2*pi), ylim = c(-y_size, y_size)) + # 描画領域
+  theme(legend.position = "none") + # 図の体裁
+  labs(title = "", 
+       subtitle = parse(text = variable_label), 
+       x = expression(theta), 
+       y = expression(f(theta)))
+curve_graph
+```
+
+　「円関数の作図」のときと同様に、関数曲線を描画します。\
+\
+
+　2つのグラフを並べて描画します。
+
+```{r, fig.width=16, fig.height=8, dpi=100}
+# 並べて描画
+graph <- patchwork::wrap_plots(circle_graph, curve_graph, guides = "collect")
+#graph
+```
+
+　`patchwork`パッケージの`wrap_plots()`を使ってグラフを並べます。\
+
+</details>
+
+```{r, echo=FALSE, fig.width=16, fig.height=8, dpi=100}
+### 資料作成用:(出力)
+
+graph
+```
+
+　2つのグラフで、単位円図における各関数を表す線分の「長さと座標の正負」と曲線上の点の「y軸の値」が対応するのが分かります。また、なす角の値とx軸の値が一致します。\
+\
+
+
+### アニメーションの作成
+
+　続いて、変数の値を変化させた円関数をアニメーションで確認します。詳しくは「circular.R」を参照してください。\
+\
+
+
+#### 1周
+
+　円周上を1周した際の円関数の線分と曲線上の点の関係を可視化します。\
+\
+
+![](../figure/curves/circular_1cycle.gif)
+
+　$\sin \theta = 0$ となる $\theta = 0, \pi, 2 \pi$ とき、cot関数とcsc関数の線分の象限($\cot \theta, \csc \theta$ の符号)が変わり、cot関数とcsc関数の曲線が不連続になるのが分かります。また、$\cos \theta = 0$ となる $\theta = \frac{1}{2} \pi, \frac{3}{2} \pi$ とき、tan関数とsec関数の線分の象限($\tan \theta, \sec \theta$ の符号)が変わり、tan関数とsec関数の曲線が不連続になるのが分かります。\
+\
+
+
+#### n周
+
+　円周上を複数回周回した際の円関数の線分と曲線上の点の関係を可視化します。\
+\
+
+![](../figure/curves/circular_ncycle.gif)
+
+　単位円上の点が1周する $2 \pi$ (tan関数の場合は半周する $\pi$)の間隔で、それぞれの関数の曲線が同じ形になるのが分かります。\
+\
+
+　この記事では、6つの円関数を可視化しました。\
 \
 
 
