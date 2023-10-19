@@ -16,7 +16,6 @@ library(ggplot2)
 ### ・作図 -----
 
 # パラメータを指定
-a <- 1
 a <- 2.5
 
 # 周回数を指定
@@ -33,7 +32,7 @@ spiral_df <- tibble::tibble(
   r = a * t, # ノルム
   x = r * cos(t), # x座標
   y = r * sin(t), # y座標
-  sign_t_flag = t >= 0 # 角度の正負
+  sgn_t_flag = t >= 0 # 角度の正負
 )
 
 
@@ -45,7 +44,6 @@ axis_size <- c(spiral_df[["x"]], spiral_df[["y"]]) |>
 axis_size
 
 # 目盛間隔を設定
-step_val <- 12.5
 step_val <- 25
 
 # 軸線数を設定
@@ -59,10 +57,10 @@ if(axis_size%%step_val == 0) {
   circle_num <- axis_size %/% step_val + 1
   
   # グラフサイズを拡大
-  axis_size  <- max(axis_size, circle_num*step_val)
+  axis_size <- max(axis_size, circle_num*step_val)
 }
 
-# 円形の軸線の座標を作成
+# ノルム軸線の座標を作成
 coord_circle_df <- tidyr::expand_grid(
   r = 1:circle_num * step_val, 
   t = seq(from = 0, to = 2*pi, length.out = 361), 
@@ -75,11 +73,11 @@ coord_circle_df <- tidyr::expand_grid(
 # 半円における目盛数(分母の値)を指定
 denom <- 6
 
-# 斜線の軸線(角度目盛ラベル)の座標を作成
+# 角度軸線の座標を作成
 coord_oblique_df <- tibble::tibble(
   i = seq(from = 0, to = 2*denom-1, by = 1), # 目盛位置番号(分子の値)
   t = i / denom * pi, 
-  r = max(coord_circle_df[["r"]]), 
+  r = axis_size, # ノルム軸線の最大値
   x = r * cos(t), 
   y = r * sin(t), 
   t_label = paste0("frac(", i, ", ", denom, ")~pi"), # 角度ラベル
@@ -91,9 +89,8 @@ coord_oblique_df <- tibble::tibble(
 # ラベル用の文字列を作成
 fnc_label <- paste0(
   "list(", 
-  "r == a * theta", ", ", 
-  "a == ", a, ", ", 
-  "theta == frac(i, n) ~ pi", 
+  "r == a * theta, ", 
+  "a == ", a, 
   ")"
 )
 
@@ -102,10 +99,10 @@ add_size <- 4
 ggplot() + 
   geom_path(data = coord_circle_df, 
             mapping = aes(x = x, y = y, group = r), 
-            color = "white") + # 円形の軸線
+            color = "white") + # ノルム軸線
   geom_segment(data = coord_oblique_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y, group = i), 
-               color = "white") + # 斜線の軸線
+               color = "white") + # 角度軸線
   geom_text(data = coord_oblique_df, 
             mapping = aes(x = x, y = y, label = t_label, hjust = h, vjust = v), 
             parse = TRUE) + # 角度目盛ラベル
@@ -121,12 +118,12 @@ ggplot() +
        y = expression(y == r ~ sin~theta))
 
 
-### ・角度の影響の可視化 -----
+### ・角度と座標の関係 -----
 
 # フレーム数を指定
 frame_num <- 300
 
-# 曲線上の点用のラジアンを作成
+# 螺旋上の点用のラジアンを作成
 t_vals <- seq(from = min(t_vec), to = max(t_vec), length.out = frame_num+1)[1:frame_num]
 
 # 螺旋上の点の座標を作成
@@ -139,13 +136,16 @@ angle_point_df <- tibble::tibble(
   var_label = paste0(
     "list(", 
     "a == ", a, ", ", 
-    "r == ", round(r, digits = 2), ", ", 
-    "theta == ", round(t/pi, digits = 2), " * pi", 
+    "theta == ", round(t/pi, digits = 2), " * pi, ", 
+    "r == ", round(r, digits = 2), 
     ")"
   ) # 変数ラベル
 )
 
-# 補助線上の点の座標を作成
+# 反転フラグを設定
+neg_flag <- FALSE
+
+# 角度線の座標を作成
 angle_oblique_df <- dplyr::bind_rows(
   # 角度用の斜線
   tibble::tibble(
@@ -161,27 +161,34 @@ angle_oblique_df <- dplyr::bind_rows(
     frame_i = 1:frame_num, 
     t = t_vals, 
     r = a * t, 
+    x = dplyr::case_when(
+      neg_flag == FALSE ~ NA, 
+      r <  0 ~ axis_size * cos(t), 
+      r >= 0 ~ -axis_size * cos(t)
+    ), 
+    y = dplyr::case_when(
+      neg_flag == FALSE ~ NA, 
+      r <  0 ~ axis_size * sin(t), 
+      r >= 0 ~ -axis_size * sin(t)
+    ), 
     type = "negation"
-  ) |> 
-    dplyr::mutate(
-      x = dplyr::if_else(r < 0, true = axis_size*cos(t), false = -axis_size*cos(t)), 
-      y = dplyr::if_else(r < 0, true = axis_size*sin(t), false = -axis_size*sin(t))
-    )
+  )
 )
 
-# 補助線上の点の座標を作成
+# 角度線上の点の座標を作成
 r_min <- a * min(t_vec)
 r_max <- a * max(t_vec)
 point_df <- tidyr::expand_grid(
   frame_i = 1:frame_num, 
-  lap_i   = (-lap_num):(lap_num-1)
-) |> 
+  lap_i   = (-lap_num):(lap_num-1) # 点番号
+) |> # フレームごとに点を複製
   dplyr::mutate(
-    t = t_vals[frame_i] %% (2*pi), # 単位円相当のラジアンに変換
-    r = a * (lap_i*2*pi + t), 
+    tmp_t = t_vals[frame_i] %% (2*pi), # 単位円相当のラジアン
+    t = lap_i * 2*pi + tmp_t, 
+    r = a * t, 
     x = r * cos(t), 
     y = r * sin(t),   
-    sign_t_flag = r/a >= 0 # 角度の正負
+    sgn_t_flag = t >= 0 # 角度の正負
   ) |> 
   dplyr::filter(r >= r_min, r <= r_max) # 螺旋上の点を抽出
 
@@ -191,15 +198,18 @@ add_size <- 4
 anim <- ggplot() + 
   geom_path(data = coord_circle_df, 
             mapping = aes(x = x, y = y, group = r), 
-            color = "white") + # 円形の軸線
+            color = "white") + # ノルム軸線
   geom_segment(data = coord_oblique_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y, group = i), 
-               color = "white") + # 斜線の軸線
+               color = "white") + # 角度軸線
+  geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                             xend = c(Inf, 0), yend = c(0, Inf)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
   geom_text(data = coord_oblique_df, 
             mapping = aes(x = x, y = y, label = t_label, hjust = h, vjust = v), 
             parse = TRUE) + # 角度目盛ラベル
   geom_path(data = spiral_df, 
-            mapping = aes(x = x, y = y, color = sign_t_flag), 
+            mapping = aes(x = x, y = y, color = sgn_t_flag), 
             linewidth = 0.5) + # 螺旋
   geom_segment(data = angle_oblique_df,
                mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = type),
@@ -208,7 +218,7 @@ anim <- ggplot() +
              mapping = aes(x = x, y = y), 
              size = 5) + # 螺旋上の点
   geom_point(data = point_df, 
-             mapping = aes(x = x, y = y, color = sign_t_flag), 
+             mapping = aes(x = x, y = y, color = sgn_t_flag), 
              size = 4, shape = "circle open") + # 角度用の補助線上の点
   geom_text(data = angle_point_df, 
             mapping = aes(x = -Inf, y = Inf, label = var_label), 
@@ -237,7 +247,7 @@ gganimate::animate(
 )
 
 
-# パラメータの影響 -------------------------------------------------------------------
+# パラメータと形状の関係 -------------------------------------------------------------------
 
 # フレーム数を指定
 frame_num <- 101
@@ -305,7 +315,7 @@ step_val <- 12.5
 # 軸線数を設定
 circle_num <- axis_size %/% step_val
 
-# 円形の軸線の座標を作成
+# ノルム軸線の座標を作成
 coord_circle_df <- tidyr::expand_grid(
   r = 1:circle_num * step_val, 
   t = seq(from = 0, to = 2*pi, length.out = 361), 
@@ -318,7 +328,7 @@ coord_circle_df <- tidyr::expand_grid(
 # 半円における目盛数(分母の値)を指定
 denom <- 6
 
-# 斜線の軸線(角度目盛ラベル)の座標を作成
+# 角度軸線の座標を作成
 coord_oblique_df <- tibble::tibble(
   i = seq(from = 0, to = 2*denom-1, by = 1), # 目盛位置番号(分子の値)
   t = i / denom * pi, 
@@ -335,10 +345,10 @@ coord_oblique_df <- tibble::tibble(
 anim <- ggplot() + 
   geom_path(data = coord_circle_df, 
             mapping = aes(x = x, y = y, group = r), 
-            color = "white") + # 円形の軸線
+            color = "white") + # ノルム軸線
   geom_segment(data = coord_oblique_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y, group = i), 
-               color = "white") + # 斜線の軸線
+               color = "white") + # 角度軸線
   geom_path(data = anim_spiral_df, 
             mapping = aes(x = x, y = y, color = t/pi), 
             linewidth = 1) + # 螺旋
@@ -380,11 +390,11 @@ frame_num <- 300
 a <- 0.1
 
 # 周回数を指定
-lap_num <- 3
+lap_num <- 2.5
 
 # ラジアンを作成
-t_vec <- seq(from = 0*lap_num*2*pi, to = lap_num*2*pi, length.out = 1000) # 曲線用
-t_vals <- seq(from = min(t_vec), to = max(t_vec), length.out = frame_num+1)[1:frame_num] # 曲線上の点用
+t_vec <- seq(from = 0, to = lap_num*2*pi, length.out = 1000) # 螺旋用
+t_vals <- seq(from = min(t_vec), to = max(t_vec), length.out = frame_num+1)[1:frame_num] # 螺旋上の点用
 
 # 螺旋の座標を作成
 spiral_df <- tibble::tibble(
@@ -408,7 +418,7 @@ step_val <- 0.5
 # 軸線数を設定
 circle_num <- axis_size %/% step_val
 
-# 円形の軸線の座標を作成
+# ノルム軸線の座標を作成
 coord_circle_df <- tidyr::expand_grid(
   r = 1:circle_num * step_val, 
   t = seq(from = 0, to = 2*pi, length.out = 361), 
@@ -421,11 +431,11 @@ coord_circle_df <- tidyr::expand_grid(
 # 半円における目盛数(分母の値)を指定
 denom <- 6
 
-# 斜線の軸線(角度目盛ラベル)の座標を作成
+# 角度軸線の座標を作成
 coord_oblique_df <- tibble::tibble(
   i = seq(from = 0, to = 2*denom-1, by = 1), # 目盛位置番号(分子の値)
   t = i / denom * pi, 
-  r = max(coord_circle_df[["r"]]), 
+  r = circle_num * step_val, # ノルム軸線の最大値
   x = r * cos(t), 
   y = r * sin(t), 
   h = 1 - (x/r * 0.5 + 0.5), 
@@ -480,10 +490,10 @@ for(i in 1:frame_num) {
   spiral_graph <- ggplot() + 
     geom_path(data = coord_circle_df, 
               mapping = aes(x = x, y = y, group = r), 
-              color = "white") + # 円形の軸線
+              color = "white") + # ノルム軸線
     geom_segment(data = coord_oblique_df, 
                  mapping = aes(x = 0, y = 0, xend = x, yend = y, group = i), 
-                 color = "white") + # 斜線の軸線
+                 color = "white") + # 角度軸線
     geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
                                xend = c(Inf, 0), yend = c(0, Inf)), 
                  arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
@@ -610,7 +620,7 @@ for(i in 1:frame_num) {
   
   # ファイルを書き出し
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = graph, width = 2000, height = 1000, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1600, height = 900, units = "px", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
@@ -620,7 +630,7 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読み込み
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "spiral/figure/archimedes/curves_var.gif", delay = 1/30) -> tmp_path # gifファイル書き出し
+  magick::image_write_gif(path = "spiral/figure/curve/archimedes_curves_variable.gif", delay = 1/30) -> tmp_path # gifファイル書き出し
 
 
 # パラメータと螺旋とsin・cos関数の関係 ----------------------------------------------------
@@ -636,14 +646,14 @@ frame_num <- 101
 a_vals <- seq(from = -1, to = 1, length.out = frame_num)
 
 # 周回数を指定
-lap_num <- 2
+lap_num <- 3
 
 # 点数を指定
 point_num <- lap_num * 4 + 1
 
 # ラジアンを作成
-t_vec <- seq(from = -lap_num*pi, to = lap_num*pi, length.out = 1000) # 曲線用
-t_vals <- seq(from = min(t_vec), to = max(t_vec), length.out = point_num) # 曲線上の点用
+t_vec <- seq(from = -lap_num*pi, to = lap_num*pi, length.out = 1000) # 螺旋用
+t_vals <- seq(from = min(t_vec), to = max(t_vec), length.out = point_num) # 螺旋上の点用
 
 
 # グラフサイズを設定
@@ -657,12 +667,12 @@ axis_size <- c(
 axis_size
 
 # 目盛間隔を設定
-step_val <- 2
+step_val <- 2.5
 
 # 軸線数を設定
 circle_num <- axis_size %/% step_val
 
-# 円形の軸線の座標を作成
+# ノルム軸線の座標を作成
 coord_circle_df <- tidyr::expand_grid(
   r = 1:circle_num * step_val, 
   t = seq(from = 0, to = 2*pi, length.out = 361), 
@@ -675,11 +685,11 @@ coord_circle_df <- tidyr::expand_grid(
 # 半円における目盛数(分母の値)を指定
 denom <- 6
 
-# 斜線の軸線(角度目盛ラベル)の座標を作成
+# 角度軸線の座標を作成
 coord_oblique_df <- tibble::tibble(
   i = seq(from = 0, to = 2*denom-1, by = 1), # 目盛位置番号(分子の値)
   t = i / denom * pi, 
-  r = max(coord_circle_df[["r"]]), 
+  r = circle_num * step_val, # ノルム軸線の最大値
   x = r * cos(t), 
   y = r * sin(t), 
   h = 1 - (x/r * 0.5 + 0.5), 
@@ -729,10 +739,10 @@ for(i in 1:frame_num) {
   spiral_graph <- ggplot() + 
     geom_path(data = coord_circle_df, 
               mapping = aes(x = x, y = y, group = r), 
-              color = "white") + # 円形の軸線
+              color = "white") + # ノルム軸線
     geom_segment(data = coord_oblique_df, 
                  mapping = aes(x = 0, y = 0, xend = x, yend = y, group = i), 
-                 color = "white") + # 斜線の軸線
+                 color = "white") + # 角度軸線
     geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
                                xend = c(Inf, 0), yend = c(0, Inf)), 
                  arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
@@ -760,6 +770,9 @@ for(i in 1:frame_num) {
   
   # sin曲線を作図
   sin_graph <- ggplot() + 
+    geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                               xend = c(Inf, 0), yend = c(0, Inf)), 
+                 arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # θ・y軸線
     geom_hline(data = point_df, 
                mapping = aes(yintercept = y, color = t/pi), 
                linetype = "dotted") + # y軸の補助線
@@ -783,6 +796,9 @@ for(i in 1:frame_num) {
   
   # cos曲線を作図
   cos_graph <- ggplot() + 
+    geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                               xend = c(Inf, 0), yend = c(0, Inf)), 
+                 arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・θ軸線
     geom_vline(data = point_df, 
                mapping = aes(xintercept = x, color = t/pi), 
                linetype = "dotted") + # x軸の補助線
@@ -796,13 +812,13 @@ for(i in 1:frame_num) {
                     labels = parse(text = rad_label_vec)) + # ラジアン目盛ラベル
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
-                ylim = c(t_min, t_max)) + 
-    theme(axis.text.y = element_text(size = 6)) + 
+                ylim = c(t_max, t_min)) + 
+    theme(axis.text.y = element_text(size = 6, angle = -30, hjust = 1, vjust = 1)) + 
     labs(title = "cosine curve", 
          color = expression(frac(theta, pi)), 
          x = expression(r ~ cos~theta), 
          y = expression(theta))
-  
+  cos_graph
   
   # 並べて描画
   graph <- patchwork::wrap_plots(
@@ -824,6 +840,6 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読み込み
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "spiral/figure/archimedes/curves_param.gif", delay = 1/10) -> tmp_path # gifファイル書き出し
+  magick::image_write_gif(path = "spiral/figure/curve/archimedes_curves_param.gif", delay = 1/10) -> tmp_path # gifファイル書き出し
 
 
