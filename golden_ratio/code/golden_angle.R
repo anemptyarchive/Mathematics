@@ -337,6 +337,7 @@ ggplot() +
   coord_fixed(ratio = 1) + 
   labs(title = "golden angle", 
        subtitle = parse(text = var_label), 
+       color = expression(i),
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
@@ -491,6 +492,7 @@ anim <- ggplot() +
   coord_fixed(ratio = 1, clip = "off") + 
   labs(title = "golden angle", 
        subtitle = "", # (変数ラベルの表示用)
+       color = expression(i),
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
@@ -555,6 +557,7 @@ anim <- ggplot() +
   coord_fixed(ratio = 1, clip = "off") + 
   labs(title = "golden angle", 
        subtitle = "", # (変数ラベルの表示用)
+       color = expression(i),
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
@@ -565,7 +568,7 @@ gganimate::animate(plot = anim, nframes = n, fps = 10, width = 800, height = 800
 ### ・角度と点の分布の関係 -----
 
 # フレーム数を指定
-frame_num <- 360
+frame_num <- 300
 
 # 角度を作成
 beta_deg_vals <- seq(from = 0, to = 360, length.out = frame_num+1)[1:frame_num]
@@ -626,10 +629,206 @@ anim <- ggplot() +
   coord_fixed(ratio = 1, clip = "off") + 
   labs(title = "golden angle", 
        subtitle = "", # (変数ラベルの表示用)
+       color = expression(i),
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
 # gif画像を作成
 gganimate::animate(plot = anim, nframes = n, fps = 10, width = 800, height = 800)
+
+
+# 黄金角と点の分布とsin・cos曲線の関係 ----------------------------------------------------
+
+# 一時ファイルの書き出し先を指定
+dir_path <- "golden_ratio/figure/tmp_folder"
+
+
+# フレーム数を指定
+frame_num <- 90
+
+# 角度の範囲を指定
+beta_vals <- seq(from = 0, to = pi, length.out = frame_num+1)[1:frame_num]
+
+# 半径を指定
+r <- 2
+
+# 点数を指定
+n <- 6
+
+# 周回数を確認:(円周用の点数用)
+(n - 1)*max(beta_vals) /2/pi
+
+
+# ノルム軸線(円周)の座標を計算
+norm_axis_df <- tibble::tibble(
+  theta = seq(from = 0, to = 2*pi, length.out = 361), 
+  x     = r * cos(theta), 
+  y     = r * sin(theta)
+)
+
+# 半円における目盛数(分母の値)を指定
+denom <- 6
+
+# 角度目盛線の座標を作成
+angle_axis_df <- tibble::tibble(
+  i     = 0:(2*denom-1),  # 目盛位置番号(分子の値)
+  theta = i / denom * pi, # 目盛値
+  x     = r * cos(theta), 
+  y     = r * sin(theta)
+)
+
+# 半周期における目盛数を指定
+line_num <- 1
+
+# ラジアン軸目盛ラベル用の文字列を作成
+theta_min <- 0
+theta_max <- (n - 1) * max(beta_vals)
+rad_break_vec <- seq(from = theta_min, to = ceiling(theta_max/pi)*pi, by = pi/line_num)
+rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
+
+
+# グラフサイズを指定:(x・y軸に対してθ軸が過大な場合)
+axis_size <- 5
+
+# 角度ごとにグラフを書き出し
+for(j in 1:frame_num) {
+  
+  # 角度を取得
+  beta <- beta_vals[j]
+  
+  # 円周上の点の座標を作成
+  point_df <- tibble::tibble(
+    i     = 1:n, # 点番号(離散値)
+    theta = (i - 1) * beta, 
+    x     = r * cos(theta), 
+    y     = r * sin(theta)
+  )
+  
+  # 円周の座標を作成
+  circle_df <- tibble::tibble(
+    i     = seq(from = 1, to = n, length.out = 2001), # 点番号(連続値)
+    theta = (i - 1) * beta, 
+    x     = r * cos(theta), 
+    y     = r * sin(theta)
+  )
+  
+  
+  # ラベル用の文字列を作成
+  fnc_label <- paste0(
+    "list(", 
+    "r == ", r, ", ", 
+    "n == ", n, ", ", 
+    "beta == ", round(beta/pi, digits = 2), " * pi", 
+    ")"
+  )
+  
+  # 円周上の点を作図
+  circle_graph <- ggplot() + 
+    geom_path(data = norm_axis_df, 
+              mapping = aes(x = x, y = y, group = r), 
+              color = "white") + # ノルム軸線
+    geom_segment(data = angle_axis_df, 
+                 mapping = aes(x = 0, y = 0, xend = x, yend = y, group = factor(i)), 
+                 color = "white") + # 角度目盛線
+    geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                               xend = c(Inf, 0), yend = c(0, Inf)), 
+                 arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
+    geom_vline(data = point_df, 
+               mapping = aes(xintercept = x, color = i), 
+               linetype = "dotted") + # x軸の補助線
+    geom_hline(data = point_df, 
+               mapping = aes(yintercept = y, color = i), 
+               linetype = "dotted") + # y軸の補助線
+    geom_path(data = circle_df, 
+              mapping = aes(x = x, y = y, color = i), 
+              linewidth = 1) + # 円周
+    geom_point(data = point_df, 
+               mapping = aes(x = x, y = y, color = i), 
+               size = 4) + # 円周上の点
+    coord_fixed(ratio = 1, 
+                xlim = c(-axis_size, axis_size), 
+                ylim = c(-axis_size, axis_size)) + 
+    #theme(legend.position = "left") + 
+    labs(title = "golden angle", 
+         subtitle = parse(text = fnc_label), 
+         color = expression(i),
+         x = expression(x == r ~ cos~theta), 
+         y = expression(y == r ~ sin~theta))
+  
+  
+  # sin曲線を作図
+  sin_graph <- ggplot() + 
+    geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                               xend = c(Inf, 0), yend = c(0, Inf)), 
+                 arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # θ・y軸線
+    geom_hline(data = point_df, 
+               mapping = aes(yintercept = y, color = i), 
+               linetype = "dotted") + # y軸の補助線
+    geom_line(data = circle_df, 
+              mapping = aes(x = theta, y = y, color = i), 
+              linewidth = 1) + # 曲線
+    geom_point(data = point_df, 
+               mapping = aes(x = theta, y = y, color = i), 
+               size = 4) + # 曲線上の点
+    scale_x_continuous(breaks = rad_break_vec,
+                       labels = parse(text = rad_label_vec)) + # θ軸目盛ラベル
+    coord_fixed(ratio = 1, 
+                xlim = c(theta_min, theta_max), 
+                ylim = c(-axis_size, axis_size)) + 
+    #theme(legend.position = "none") + 
+    labs(title = "sine curve", 
+         color = expression(i), 
+         x = expression(theta), 
+         y = expression(r ~ sin~theta))
+  
+  
+  # cos曲線を作図
+  cos_graph <- ggplot() + 
+    geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                               xend = c(Inf, 0), yend = c(0, Inf)), 
+                 arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・θ軸線
+    geom_vline(data = point_df, 
+               mapping = aes(xintercept = x, color = i), 
+               linetype = "dotted") + # x軸の補助線
+    geom_path(data = circle_df, 
+              mapping = aes(x = x, y = theta, color = i), 
+              linewidth = 1) + # 曲線
+    geom_point(data = point_df, 
+               mapping = aes(x = x, y = theta, color = i), 
+               size = 4) + # 曲線上の点
+    scale_y_reverse(breaks = rad_break_vec,
+                    labels = parse(text = rad_label_vec)) + # θ軸目盛ラベル
+    coord_fixed(ratio = 1, 
+                xlim = c(-axis_size, axis_size), 
+                ylim = c(theta_max, theta_min)) + 
+    #theme(legend.position = "none") + 
+    labs(title = "cosine curve", 
+         color = expression(i), 
+         x = expression(r ~ cos~theta), 
+         y = expression(theta))
+  
+  
+  # 並べて描画
+  graph <- patchwork::wrap_plots(
+    circle_graph, sin_graph, 
+    cos_graph, 
+    nrow = 2, ncol = 2, 
+    guides = "collect"
+  ) & 
+    theme(legend.position = "left")
+  
+  # ファイルを書き出し
+  file_path <- paste0(dir_path, "/", stringr::str_pad(j, width = nchar(frame_num), pad = "0"), ".png")
+  ggplot2::ggsave(filename = file_path, plot = graph, width = 1200, height = 1200, units = "px", dpi = 100)
+  
+  # 途中経過を表示
+  message("\r", j, " / ", frame_num, appendLF = FALSE)
+}
+
+# gif画像を作成
+paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
+  magick::image_read() |> # 画像ファイルを読込
+  magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
+  magick::image_write_gif(path = "golden_ratio/figure/golden_angle/curves_angle.gif", delay = 1/10) -> tmp_path # gifファイル書出
 
 
