@@ -5,7 +5,7 @@
 library(tidyverse)
 library(gganimate)
 
-# チェック用
+# パッケージ名の省略用
 library(ggplot2)
 
 
@@ -274,6 +274,7 @@ phi <- (1 + sqrt(5)) * 0.5
 
 # 黄金角を計算
 beta <- 2*pi * (1 - 1/phi)
+beta <- (3 - sqrt(5)) * pi
 
 
 # 円周の座標を作成
@@ -295,7 +296,7 @@ angle_axis_df <- tibble::tibble(
 )
 
 
-### ・黄金角と点の分布の関係 -----
+### ・黄金角と点の間隔の関係 -----
 
 # 点数を指定
 n <- 300
@@ -303,7 +304,7 @@ n <- 300
 # 円周上の点の座標を作成
 point_df <- tibble::tibble(
   i     = 1:n, # 点番号
-  theta = (i - 1) * beta, # ラジアン
+  theta = i * beta, # ラジアン
   x     = r * cos(theta), 
   y     = r * sin(theta)
 )
@@ -342,7 +343,7 @@ ggplot() +
        y = expression(y == r ~ sin~theta))
 
 
-### ・角度と座標の関係 -----
+### ・点間の角度と点の位置の関係 -----
 
 # 点数を指定
 n <- 10
@@ -472,7 +473,7 @@ anim <- ggplot() +
             mapping = aes(x = x, y = y)) + # 黄金角マーク
   geom_text(data = angle_label_df, 
             mapping = aes(x = x, y = y), 
-            label = "b", size = 6) + # 黄金角ラベル
+            label = "beta", parse = TRUE, size = 6) + # 黄金角ラベル
   geom_segment(data = pre_point_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y), 
                linewidth = 1) + # 前点との半径線
@@ -500,39 +501,39 @@ anim <- ggplot() +
 gganimate::animate(plot = anim, nframes = n*inter_num, fps = 10, width = 800, height = 800)
 
 
-### ・点の数と座標の関係 -----
+### ・点番号と点の位置の関係 -----
 
 # 点数(フレーム数)を指定
 n <- 100
 
 # 円周上の点の座標を作成
 trace_point_df <- tibble::tibble(
-  i     = 1:n, # 点番号
-  theta = (i - 1) * beta, 
-  x     = r * cos(theta), 
-  y     = r * sin(theta)
+  frame_i = 1:n # フレーム番号
 ) |> 
   dplyr::reframe(
-    frame_i = i:n, .by = dplyr::everything()
+    i = 1:frame_i, .by = dplyr::everything()
   ) |> # 過去フレームの点を複製
-  dplyr::arrange(frame_i)
+  dplyr::mutate(
+    theta = (i - 1) * beta, 
+    x     = r * cos(theta), 
+    y     = r * sin(theta)
+  )
 
 # ラベル用の文字列を作成
 anim_label_df <- tibble::tibble(
-  i     = 1:n, 
-  theta = (i - 1) * beta, 
+  frame_i = 1:n, 
+  i       = frame_i, 
+  theta   = (i - 1) * beta, 
   var_label = paste0(
     "list(", 
     "r == ", r, ", ", 
-    "theta == i * beta ~~ (i == list(1, ldots, n)), ", 
+    "theta == i * beta, ", 
     "n == ", n, ", ", 
-    "beta == ", round(beta/pi, digits = 2), " * pi, ", 
-    "beta*degree == ", round(beta/pi*180, digits = 2), "*degree, ", 
     "i == ", i, ", ", 
+    "beta == ", round(beta/pi, digits = 2), " * pi, ", 
     "theta == ", round(theta/pi, digits = 2), " * pi", 
     ")"
   ), 
-  frame_i = i
 )
 
 
@@ -565,16 +566,16 @@ anim <- ggplot() +
 gganimate::animate(plot = anim, nframes = n, fps = 10, width = 800, height = 800)
 
 
-### ・角度と点の分布の関係 -----
+### ・点間の角度と点の間隔の関係 -----
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 360
 
-# 角度を作成
-beta_deg_vals <- seq(from = 0, to = 360, length.out = frame_num+1)[1:frame_num]
-beta_rad_vals <- seq(from = 0, to = 2*pi, length.out = frame_num+1)[1:frame_num]
-beta_rad_vals <- beta_deg_vals/180 * pi
-beta_deg_vals <- beta_rad_vals/pi * 180
+# 点間の範囲を指定
+# beta_deg_vals <- seq(from = 0, to = 360, length.out = frame_num+1)[1:frame_num] # 度数法の角度を作成
+# beta_rad_vals <- beta_deg_vals/180 * pi # 弧度法の角度に変換
+beta_rad_vals <- seq(from = 0, to = 2*pi, length.out = frame_num+1)[1:frame_num] # 弧度法の角度を作成
+beta_deg_vals <- beta_rad_vals/pi * 180 # 度数法の角度に変換
 
 # 点数を指定
 n <- 100
@@ -593,13 +594,13 @@ anim_point_df <- tidyr::expand_grid(
 
 # ラベル用の文字列を作成
 anim_label_df <- tibble::tibble(
-  frame_i = 1:frame_num, 
+  frame_i  = 1:frame_num, 
   beta_rad = beta_rad_vals, 
   beta_deg = beta_deg_vals, 
   var_label = paste0(
     "list(", 
     "r == ", r, ", ", 
-    "theta == i * beta ~~ (i == list(1, ldots, n)), ", 
+    "theta == i * beta, ", 
     "n == ", n, ", ", 
     "beta == ", round(beta_rad/pi, digits = 2), " * pi, ", 
     "beta*degree == ", round(beta_deg, digits = 2), "*degree", 
@@ -634,10 +635,10 @@ anim <- ggplot() +
        y = expression(y == r ~ sin~theta))
 
 # gif画像を作成
-gganimate::animate(plot = anim, nframes = n, fps = 10, width = 800, height = 800)
+gganimate::animate(plot = anim, nframes = n, fps = 6, width = 800, height = 800)
 
 
-# 黄金角と点の分布とsin・cos曲線の関係 ----------------------------------------------------
+# 角度と点の分布とsin・cos曲線の関係 ----------------------------------------------------
 
 # 一時ファイルの書き出し先を指定
 dir_path <- "golden_ratio/figure/tmp_folder"
