@@ -269,11 +269,7 @@ ggplot() +
 # 半径を指定
 r <- 2
 
-# 黄金数を計算
-phi <- (1 + sqrt(5)) * 0.5
-
 # 黄金角を計算
-beta <- 2*pi * (1 - 1/phi)
 beta <- (3 - sqrt(5)) * pi
 
 
@@ -354,42 +350,42 @@ inter_num <- 10
 # 点間を補完して変化する点の座標を作成
 anim_point_df <- tibble::tibble(
   i     = 1:n, # 点番号
-  theta = (i - 1) * beta # ラジアン
+  theta = (i - 1) * beta # 各点のラジアン
 ) |> 
   dplyr::reframe(
-    theta = seq(from = theta, to = theta+beta, length.out = inter_num+1)[1:inter_num], .by = dplyr::everything()
-  ) |> # 次点間のラジアンを作成
+    theta    = seq(from = theta, to = theta+beta, length.out = inter_num+1)[1:inter_num], # 次点間のラジアン
+    inter_id = 1:inter_num, # 補完番号
+    .by = dplyr::everything()
+  ) |> # 次点間を補完
   dplyr::mutate(
-    inter_id = dplyr::row_number(), .by = i
-  ) |> # 補完番号を割当
-  dplyr::mutate(
-    frame_i = (i - 1) * inter_num + inter_id, 
+    frame_i = (i - 1) * inter_num + inter_id, # フレーム番号
     x = r * cos(theta), 
     y = r * sin(theta), 
     var_label = paste0(
       "list(", 
       "r == ", r, ", ", 
-      "theta == i * beta ~~ (i == list(1, ldots, n)), ", 
+      "theta == i * beta, ", 
       "n == ", n, ", ", 
+      "i == ", i, ", ", 
       "beta == ", round(beta/pi, digits = 2), " * pi, ", 
       "beta*degree == ", round(beta/pi*180, digits = 2), "*degree, ", 
-      "i == ", i, ", ", 
       "theta == ", round(theta/pi, digits = 2), " * pi", 
       ")"
-    )
-  ) |> # フレーム番号を補完フレームに対応
+    ) # 変数ラベル
+  ) |> 
   dplyr::arrange(frame_i)
 
-# 黄金角分遅れて変化する点の座標を作成
+# パラメータ分遅れて変化する点の座標を作成
 delay_point_df <- anim_point_df |> 
+  dplyr::select(!c(x, y, var_label)) |> 
   dplyr::mutate(
-    theta = theta - beta, # 黄金数分戻す
+    theta = theta - beta, # パラメータ分戻す
     x     = r * cos(theta), 
     y     = r * sin(theta)
   )
 
-# 前の点の座標を作成
-pre_point_df <- tibble::tibble(
+# 現在の点の座標を作成
+current_point_df <- tibble::tibble(
   i     = 1:n, 
   theta = (i - 1) * beta, 
   x     = r * cos(theta), 
@@ -421,41 +417,30 @@ trace_point_df <- tibble::tibble(
   ) |> # フレーム番号を補完フレームに対応
   dplyr::arrange(frame_i)
 
-# 黄金角ラベルの座標を作成
+# 角ラベルの座標を作成
 d <- 0.15
 angle_label_df <- anim_point_df |> 
+  dplyr::select(!c(x, y, var_label)) |> 
   dplyr::mutate(
-    theta = theta - 0.5*beta, # 黄金数の半分戻す
+    theta = theta - 0.5*beta, # パラメータの半分戻す
     x     = d * cos(theta), 
     y     = d * sin(theta)
   )
 
-# 黄金角マークの座標を作成
+# 角マークの座標を作成
 d <- 0.1
-angle_arc_df <- tibble::tibble(
-  i     = 1:n, 
-  theta = (i - 1) * beta
-) |> 
-  dplyr::reframe(
-    theta = seq(from = theta, to = theta+beta, length.out = inter_num+1)[1:inter_num], .by = dplyr::everything()
-  ) |> # 次点間のラジアンを作成
-  dplyr::mutate(
-    inter_id = dplyr::row_number(), .by = i
-  ) |> # 補完番号を割当
-  dplyr::mutate(
-    frame_i = (i - 1) * inter_num + inter_id
-  ) |> # フレーム番号を補完フレームに対応
+angle_arc_df <- anim_point_df |> 
+  dplyr::select(!c(x, y, var_label)) |> 
   dplyr::reframe(
     theta = seq(from = theta, to = theta-beta, length.out = 100), .by = dplyr::everything()
-  ) |> # 前点間のラジアンを作成
+  ) |> # パラメータ分戻した範囲のラジアンを作成
   dplyr::mutate(
     x = d * cos(theta), 
     y = d * sin(theta)
-  ) |> 
-  dplyr::arrange(frame_i)
+  )
 
 
-# アニメーションを作図
+# 円周上の点のアニメーションを作図
 anim <- ggplot() + 
   geom_segment(data = angle_axis_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y, group = factor(i)), 
@@ -469,14 +454,9 @@ anim <- ggplot() +
   geom_point(data = trace_point_df,
              mapping = aes(x = x, y = y, color = i),
              size = 4) + # 過去の点
-  geom_path(data = angle_arc_df, 
-            mapping = aes(x = x, y = y)) + # 黄金角マーク
-  geom_text(data = angle_label_df, 
-            mapping = aes(x = x, y = y), 
-            label = "beta", parse = TRUE, size = 6) + # 黄金角ラベル
-  geom_segment(data = pre_point_df, 
+  geom_segment(data = current_point_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y), 
-               linewidth = 1) + # 前点との半径線
+               linewidth = 1) + # 現在の点との半径線
   geom_segment(data = delay_point_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y), 
                linewidth = 1, linetype = "dashed") + # 遅れて変化する点との半径線
@@ -486,6 +466,11 @@ anim <- ggplot() +
   geom_point(data = anim_point_df, 
              mapping = aes(x = x, y = y, color = i), 
              size = 6) + # 変化する点
+  geom_path(data = angle_arc_df, 
+            mapping = aes(x = x, y = y)) + # 角マーク
+  geom_text(data = angle_label_df, 
+            mapping = aes(x = x, y = y), 
+            label = "beta", parse = TRUE, size = 6) + # 角ラベル
   geom_text(data = anim_point_df, 
             mapping = aes(x = -Inf, y = Inf, label = var_label), 
             parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル
