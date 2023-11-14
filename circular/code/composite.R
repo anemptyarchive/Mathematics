@@ -3,11 +3,315 @@
 
 # 利用パッケージ
 library(tidyverse)
+library(gganimate)
 library(patchwork)
 library(magick)
 
 # パッケージ名の省略用
 library(ggplot2)
+
+
+# 円周上の点の関係 ----------------------------------------------------------------
+
+# パラメータを指定
+A_vals     <- c(3, 2, 1)
+a_vals     <- c(1.5, -2, 3)
+alpha_vals <- c(0, 0, 0.5) * pi
+
+# 関数の数を設定
+fnc_num <- length(a_vals)
+
+# 1周期分の変数(ラジアン)を作成
+theta_vec <- seq(from = 0, to = 2*pi/min(abs(a_vals)), length.out = 1000)
+
+# 円周上の点用の変数(ラジアン)を指定
+theta_val <- 2/3 * pi
+
+
+# 関数ごとの円周上の点の座標を作成
+point_each_df <- tibble::tibble(
+  fnc_i = 1:fnc_num, # 関数番号
+  theta = theta_val, 
+  # パラメータ
+  A     = A_vals, 
+  a     = a_vals, 
+  alpha = alpha_vals, 
+  # 原点が中心の円周上
+  x = A * cos(a*theta + alpha), 
+  y = A * sin(a*theta + alpha)
+) |> 
+  dplyr::mutate(
+    # 累積点が中心の円周上
+    sum_x = cumsum(x), 
+    sum_y = cumsum(y), 
+    # 円周の中心(1つ前の累積点)
+    O_x   = dplyr::lag(sum_x, n = 1, default = 0), 
+    O_y   = dplyr::lag(sum_y, n = 1, default = 0)
+  )
+
+# 作図用に加工
+point_df <- dplyr::bind_rows(
+  # 関数ごとの点
+  point_each_df |> 
+    dplyr::select(fnc_i, theta, x, y, O_x, O_y) |> 
+    dplyr::mutate(O_x = 0, O_y = 0, graph_label = "each"), 
+  # 関数の累積和の点
+  point_each_df |> 
+    dplyr::select(fnc_i, theta, x = sum_x, y = sum_y, O_x, O_y) |> 
+    dplyr::mutate(graph_label = "sum")
+)
+
+# 関数の総和の円周上の点の座標を作成
+point_sum_df <- point_each_df |> 
+  dplyr::summarise(
+    x = sum(x), 
+    y = sum(y), 
+    .by = theta
+  ) |> 
+  dplyr::mutate(graph_label = "sum")
+
+# 関数ごとの円周の座標を作成
+circle_each_df <- tidyr::expand_grid(
+  fnc_i = 1:fnc_num, # 関数番号
+  theta = theta_vec
+) |> # 関数ごとに変数を複製
+  dplyr::mutate(
+    # 円周の中心(1つ前の累積点)
+    O_x = point_each_df[["O_x"]][fnc_i], 
+    O_y = point_each_df[["O_y"]][fnc_i], 
+    # パラメータ
+    A     = A_vals[fnc_i], 
+    a     = a_vals[fnc_i], 
+    alpha = alpha_vals[fnc_i], 
+    # 原点が中心の円周
+    x = A * cos(a*theta + alpha), 
+    y = A * sin(a*theta + alpha), 
+    # 累積点が中心の円周
+    sum_x = O_x + x, 
+    sum_y = O_y + y
+  )
+
+# 作図用に加工
+circle_df <- dplyr::bind_rows(
+  # 関数ごとの円周
+  circle_each_df |> 
+    dplyr::select(fnc_i, theta, x, y, O_x, O_y) |> 
+    dplyr::mutate(O_x = 0, O_y = 0, graph_label = "each"), 
+  # 関数の累積和の円周
+  circle_each_df |> 
+    dplyr::select(fnc_i, theta, x = sum_x, y = sum_y, O_x, O_y) |> 
+    dplyr::mutate(graph_label = "sum")
+)
+
+# グラフサイズを設定
+axis_size <- c(
+  circle_df[["x"]], circle_df[["y"]]
+) |>
+  abs() |>
+  max() |>
+  ceiling()
+
+# ラベル用の文字列を作成
+param_label_vec <- paste0(
+  "list(", 
+  "A[", 1:fnc_num, "] == ", round(A_vals, digits = 2), ", ", 
+  "a[", 1:fnc_num, "] == ", round(a_vals, digits = 2), ", ", 
+  "alpha[", 1:fnc_num, "] == ", round(alpha_vals/pi, digits = 2), " * pi", 
+  ")"
+) |> 
+  (\(str) {parse(text = str)})() # 数式表示用
+
+# 円周上の点の関係を作図
+ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y, color = factor(fnc_i))) + # 円周
+  geom_segment(data = point_df, 
+               mapping = aes(x = O_x, y = O_y, xend = x, yend = y, color = factor(fnc_i)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # ベクトル
+  geom_segment(data = point_sum_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # ベクトルの和
+  scale_color_hue(labels = param_label_vec) + # 凡例表示用
+  facet_wrap(graph_label ~ .) + # グラフを分割
+  theme(legend.text.align = 0) + 
+  coord_fixed(ratio = 1, 
+              xlim = c(-axis_size, axis_size), 
+              ylim = c(-axis_size, axis_size)) + 
+  labs(title = "composite wave", 
+       color = "parameter", 
+       x = expression(x == O[x] + A[i] ~ cos(a[i]*theta + alpha[i])), 
+       y = expression(y == O[y] + A[i] ~ sin(a[i]*theta + alpha[i])))
+
+
+# 変数と円周上の点の関係 -----------------------------------------------------------
+
+# フレーム数を指定
+frame_num <- 100
+
+# パラメータを指定
+A_vals     <- c(3, 2, 1)
+a_vals     <- c(1.5, -2, 3)
+alpha_vals <- c(0, 0, 0.5) * pi
+
+# 関数の数を設定
+fnc_num <- length(a_vals)
+
+# 1周期分の変数(ラジアン)を作成
+theta_vec <- seq(from = 0, to = 2*pi/min(abs(a_vals)), length.out = 1000)
+
+# 円周上の点用の変数(ラジアン)を作成
+theta_vals <- seq(from = min(theta_vec), to = max(theta_vec), length.out = frame_num+1)[1:frame_num]
+
+
+# 関数ごとの円周上の点の座標を作成
+point_each_df <- tidyr::expand_grid(
+  frame_i = 1:frame_num, # フレーム番号
+  fnc_i   = 1:fnc_num    # 関数番号
+) |> # フレームごとにパラメータを複製
+  dplyr::mutate(
+    theta = theta_vals[frame_i], 
+    # パラメータ
+    A     = A_vals[fnc_i], 
+    a     = a_vals[fnc_i], 
+    alpha = alpha_vals[fnc_i], 
+    # 原点が中心の円周上
+    x = A * cos(a*theta + alpha), 
+    y = A * sin(a*theta + alpha)
+  ) |> 
+  dplyr::mutate(
+    # 累積点が中心の円周上
+    sum_x = cumsum(x), 
+    sum_y = cumsum(y), 
+    # 円周の中心(1つ前の累積点)
+    O_x   = dplyr::lag(sum_x, n = 1, default = 0), 
+    O_y   = dplyr::lag(sum_y, n = 1, default = 0), 
+    .by = frame_i
+  )
+
+# 作図用に加工
+point_df <- dplyr::bind_rows(
+  # 関数ごとの点
+  point_each_df |> 
+    dplyr::select(frame_i, fnc_i, theta, x, y, O_x, O_y) |> 
+    dplyr::mutate(O_x = 0, O_y = 0, graph_label = "each"), 
+  # 関数の累積和の点
+  point_each_df |> 
+    dplyr::select(frame_i, fnc_i, theta, x = sum_x, y = sum_y, O_x, O_y) |> 
+    dplyr::mutate(graph_label = "sum")
+) |> 
+  dplyr::mutate(
+    graph_label = factor(graph_label, levels = c("each", "sum")) # 配置順を指定
+  )
+
+# 関数の総和の円周上の点の座標を作成
+point_sum_df <- point_each_df |> 
+  dplyr::summarise(
+    x = sum(x), 
+    y = sum(y), 
+    .by = c(frame_i, theta)
+  ) |> 
+  dplyr::mutate(graph_label = "sum")
+
+# 関数ごとの円周の座標を作成
+circle_each_df <- tidyr::expand_grid(
+  frame_i = 1:frame_num, # フレーム番号
+  fnc_i   = 1:fnc_num, # 関数番号
+  theta   = theta_vec
+) |> # フレーム・関数ごとに変数を複製
+  dplyr::left_join(
+    # 円周の中心(1つ前の累積点)
+    point_each_df |> 
+      dplyr::select(frame_i, fnc_i, O_x, O_y), 
+    by = c("frame_i", "fnc_i")
+  ) |> 
+  dplyr::mutate(
+    # パラメータ
+    A     = A_vals[fnc_i], 
+    a     = a_vals[fnc_i], 
+    alpha = alpha_vals[fnc_i], 
+    # 原点が中心の円周
+    x = A * cos(a*theta + alpha), 
+    y = A * sin(a*theta + alpha), 
+    # 累積点が中心の円周
+    sum_x = O_x + x, 
+    sum_y = O_y + y
+  )
+
+# 作図用に加工
+circle_df <- dplyr::bind_rows(
+  # 関数ごとの円周
+  circle_each_df |> 
+    dplyr::select(frame_i, fnc_i, theta, x, y, O_x, O_y) |> 
+    dplyr::mutate(O_x = 0, O_y = 0, graph_label = "each"), # 作図用に値を追加
+  # 関数の累積和の円周
+  circle_each_df |> 
+    dplyr::select(frame_i, fnc_i, theta, x = sum_x, y = sum_y, O_x, O_y) |> 
+    dplyr::mutate(graph_label = "sum") # 作図用に値を追加
+) |> 
+  dplyr::mutate(
+    graph_label = factor(graph_label, levels = c("each", "sum")) # 配置順を指定
+  )
+
+# グラフサイズを設定
+axis_size <- c(
+  circle_df[["x"]], circle_df[["y"]]
+) |>
+  abs() |>
+  max() |>
+  ceiling()
+
+# ラベル用の文字列を作成
+param_label_vec <- paste0(
+  "list(", 
+  "A[", 1:fnc_num, "] == ", round(A_vals, digits = 2), ", ", 
+  "a[", 1:fnc_num, "] == ", round(a_vals, digits = 2), ", ", 
+  "alpha[", 1:fnc_num, "] == ", round(alpha_vals/pi, digits = 2), " * pi", 
+  ")"
+) |> 
+  (\(str) {parse(text = str)})() # 数式表示用
+
+# 円周上の点の関係のアニメーションを作図
+anim <- ggplot() + 
+  geom_path(data = circle_df, 
+            mapping = aes(x = x, y = y, color = factor(fnc_i))) + # 円周
+  geom_segment(data = point_df, 
+               mapping = aes(x = O_x, y = O_y, xend = x, yend = y, color = factor(fnc_i)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # ベクトル
+  geom_segment(data = point_sum_df, 
+               mapping = aes(x = 0, y = 0, xend = x, yend = y), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # ベクトル和
+  geom_text(data = point_df, 
+            mapping = aes(x = O_x, y = -Inf, color = factor(fnc_i)), 
+            label = "|", size = 4, show.legend = FALSE) + # x軸方向のベクトルの始点用の小細工
+  geom_segment(data = point_df, 
+               mapping = aes(x = O_x, y = -Inf, xend = x, yend = -Inf, color = factor(fnc_i)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x軸方向のベクトル
+  geom_segment(data = point_sum_df, 
+               mapping = aes(x = 0, y = -Inf, xend = x, yend = -Inf), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x軸方向のベクトル和
+  geom_text(data = point_df, 
+            mapping = aes(x = -Inf, y = O_y, color = factor(fnc_i)), 
+            label = "|", angle = 90, size = 4, show.legend = FALSE) + # y軸方向のベクトルの始点用の小細工
+  geom_segment(data = point_df, 
+               mapping = aes(x = -Inf, y = O_y, xend = -Inf, yend = y, color = factor(fnc_i)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # y軸方向のベクトル
+  geom_segment(data = point_sum_df, 
+               mapping = aes(x = -Inf, y = 0, xend = -Inf, yend = y), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # y軸方向のベクトル和
+  gganimate::transition_manual(frames = frame_i) + # フレーム切替
+  scale_color_hue(labels = param_label_vec) + # 凡例表示用
+  facet_wrap(graph_label ~ .) + # グラフを分割
+  theme(legend.text.align = 0) + 
+  coord_fixed(ratio = 1, clip = "off", 
+              xlim = c(-axis_size, axis_size), 
+              ylim = c(-axis_size, axis_size)) + 
+  labs(title = "composite wave", 
+       color = "parameter", 
+       x = expression(x == O[x] + A[i] ~ cos(a[i]*theta + alpha[i])), 
+       y = expression(y == O[y] + A[i] ~ sin(a[i]*theta + alpha[i])))
+
+# gif画像を作成
+gganimate::animate(plot = anim, nframe = frame_num, fps = 10, width = 800, height = 400)
 
 
 # 変数と合成波の関係 ---------------------------------------------------------------
