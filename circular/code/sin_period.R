@@ -242,7 +242,7 @@ for(i in 1:frame_num) {
       a   = c(1, a), 
       d   = c(d1, da)
     ), 
-    t   = seq(from = 0, to = theta, length.out = 300)
+    t = seq(from = 0, to = theta, length.out = 300)
   ) |> # 関数ごとにラジアンを複製
     dplyr::mutate(
       x = d * cos(a * t),
@@ -511,11 +511,11 @@ for(i in 1:frame_num) {
       a   = c(1, a), 
       d   = c(d1, da)
     ), 
-    t   = seq(from = 0, to = theta, length.out = 300)
+    t = seq(from = 0, to = theta, length.out = 300)
   ) |> # 関数ごとにラジアンを複製
     dplyr::mutate(
-      x = d * cos(t),
-      y = d * sin(t)
+      x = d * cos(a * t),
+      y = d * sin(a * t)
     )
   
   # 角ラベルの座標を作成
@@ -526,8 +526,8 @@ for(i in 1:frame_num) {
     a   = c(1, a), 
     d   = c(d1, da), 
     t   = 0.5 * c(theta, theta), 
-    x   = d * cos(t),
-    y   = d * sin(t), 
+    x   = d * cos(a * t),
+    y   = d * sin(a * t), 
     angle_label = c("theta", "a * theta")
   )
   
