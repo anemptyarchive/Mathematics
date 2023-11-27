@@ -11,7 +11,7 @@ library(magick)
 library(ggplot2)
 
 
-# 関数曲線 ------------------------------------------------------------------
+# 曲線の作図 -------------------------------------------------------------------
 
 # 振幅パラメータを指定
 A <- 2
@@ -21,21 +21,21 @@ theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 1000)
 
 # 曲線の座標を作成
 curve_df <- tibble::tibble(
-  theta   = theta_vec, 
-  sin_t   = sin(theta), 
-  a_sin_t = A * sin(theta)
+  theta = theta_vec, 
+  sin_t = sin(theta), 
+  f_t   = A * sin(theta)
 )
 
 
-# 半周期における目盛数を指定
-line_num <- 1
+# 範囲πにおける目盛数を指定
+tick_num <- 1
 
 # 目盛ラベルの範囲を設定:(π単位で切り捨て・切り上げ)
 theta_lower <- floor(min(theta_vec) / pi) * pi
 theta_upper <- ceiling(max(theta_vec) / pi) * pi
 
 # ラジアン軸目盛用の値を作成
-rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/line_num)
+rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/tick_num)
 rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
 
 
@@ -48,17 +48,18 @@ param_label <- paste0("A == ", A)
 # sin関数曲線を作図
 ggplot() + 
   geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = sin_t, linetype = "sin t"), 
+            mapping = aes(x = theta, y = sin_t, linetype = "sin"), 
             linewidth = 1) + # 元の曲線
   geom_line(data = curve_df, 
-            mapping = aes(x = theta, y = a_sin_t, linetype = "a sin t"), 
+            mapping = aes(x = theta, y = f_t, linetype = "f"), 
             linewidth = 1) + # 変形した曲線
   scale_x_continuous(breaks = rad_break_vec, 
                      labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
-  scale_linetype_manual(breaks = c("a sin t", "sin t"), 
+  scale_linetype_manual(breaks = c("f", "sin"), 
                         values = c("solid", "dotted"), 
                         labels = c(expression(A ~ sin~theta), expression(sin~theta)), 
                         name = "function") + # 凡例表示用
+  guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + # 凡例の体裁
   theme(legend.text.align = 1) + # 図の体裁
   coord_fixed(ratio = 1, 
               ylim = c(-axis_size, axis_size)) + # 描画領域
@@ -85,36 +86,30 @@ anim_curve_df <- tidyr::expand_grid(
   theta   = theta_vec
 ) |> # フレームごとにラジアンを複製
   dplyr::mutate(
-    A       = A_vals[frame_i], 
-    sin_t   = sin(theta), 
-    a_sin_t = A * sin(theta)
+    A     = A_vals[frame_i], 
+    sin_t = sin(theta), 
+    f_t   = A * sin(theta)
   )
 
-# ラベル用の文字列を作成
+# 振幅の範囲の座標を作成
 anim_label_df <- tibble::tibble(
   frame_i = 1:frame_num, 
-  A = A_vals, 
+  A       = A_vals, 
+  y_from  = abs(A), 
+  y_to    = -y_from, 
   param_label = paste0("A == ", round(A, digits = 2))
 )
 
-# 振幅の範囲の終点の座標を作成
-anim_amplitude_df <- tibble::tibble(
-  frame_i = 1:frame_num, 
-  A       = A_vals, 
-  y_to    = abs(A)
-)
 
-
-
-# 半周期における目盛数を指定
-line_num <- 1
+# 範囲πにおける目盛数を指定
+tick_num <- 1
 
 # 目盛ラベルの範囲を設定:(π単位で切り捨て・切り上げ)
 theta_lower <- floor(min(theta_vec) / pi) * pi
 theta_upper <- ceiling(max(theta_vec) / pi) * pi
 
 # ラジアン軸目盛用の値を作成
-rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/line_num)
+rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/tick_num)
 rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
 
 
@@ -124,16 +119,16 @@ axis_size <- max(abs(A_vals))
 # sin関数曲線を作図
 anim <- ggplot() + 
   geom_line(data = anim_curve_df, 
-            mapping = aes(x = theta, y = sin_t, linetype = "sin t"), 
+            mapping = aes(x = theta, y = sin_t, linetype = "sin"), 
             linewidth = 1) + # 元の曲線
   geom_line(data = anim_curve_df, 
-            mapping = aes(x = theta, y = a_sin_t, linetype = "a sin t"), 
+            mapping = aes(x = theta, y = f_t, linetype = "f"), 
             linewidth = 1) + # 変形した曲線
   geom_segment(mapping = aes(x = 0, y = -1, xend = 0, yend = 1), 
                arrow = arrow(length = unit(10, units = "pt"), ends = "both"), 
                color = "blue", linewidth = 1) + # 元の曲線の振幅の範囲
-  geom_segment(data = anim_amplitude_df, 
-               mapping = aes(x = 0, y = -y_to, xend = 0, yend = y_to), 
+  geom_segment(data = anim_label_df, 
+               mapping = aes(x = 0, y = y_from, xend = 0, yend = y_to), 
                arrow = arrow(length = unit(10, units = "pt"), ends = "both"), 
                color = "red", linewidth = 0.5) + # 変形した曲線の振幅の範囲
   geom_text(data = anim_label_df, 
@@ -142,10 +137,11 @@ anim <- ggplot() +
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
   scale_x_continuous(breaks = rad_break_vec, 
                      labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
-  scale_linetype_manual(breaks = c("a sin t", "sin t"), 
+  scale_linetype_manual(breaks = c("f", "sin"), 
                         values = c("solid", "dotted"), 
                         labels = c(expression(A ~ sin~theta), expression(sin~theta)), 
                         name = "function") + # 凡例表示用
+  guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + 
   theme(legend.text.align = 1) + 
   coord_fixed(ratio = 1, clip = "off", 
               ylim = c(-axis_size, axis_size)) + 
@@ -168,7 +164,7 @@ dir_path <- "circular/figure/tmp_folder"
 frame_num <- 300
 
 # 振幅パラメータを指定
-A <- -2
+A <- 2
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
@@ -178,23 +174,26 @@ theta_min  <- min(theta_vals)
 theta_size <- 2 * pi
 
 
-# 半周期における目盛数を指定
-line_num <- 6
+# 範囲πにおける目盛数を指定
+tick_num <- 6
 
 # 角度軸線の座標を作成
 rad_tick_df <- tibble::tibble(
-  i = 0:(2*line_num-1), # 目盛位置番号
-  t = i/line_num * pi, # ラジアン
+  i = 0:(2*tick_num-1), # 目盛位置番号
+  t = i/tick_num * pi, # ラジアン
   r = abs(A), # 半径
   x = r * cos(t), 
   y = r * sin(t), 
-  t_label = paste0("frac(", i, ", ", line_num, ") ~ pi") # 角度ラベル
+  t_label = paste0("frac(", i, ", ", tick_num, ") ~ pi") # 角度ラベル
 )
 
 
 # 円周の座標を作成
 circle_df <- tidyr::expand_grid(
-  r = c(1, abs(A)), # 半径
+  tibble::tibble(
+    fnc = c("sin", "f"), 
+    r   = c(1, abs(A)), # 半径
+  ), 
   t = seq(from = 0, to = 2*pi, length.out = 361) # 1周期分のラジアン
 ) |> # 円周ごとにラジアンを複製
   dplyr::mutate(
@@ -212,9 +211,9 @@ for(i in 1:frame_num) {
   # 変数を取得
   theta <- theta_vals[i]
   
-  # 円周上の点の座標を作成
+  # 円周・曲線上の点の座標を作成
   fnc_point_df <- tibble::tibble(
-    fnc   = c("sin t", "a sin t"), 
+    fnc   = c("sin", "f"), 
     theta = c(theta, theta), 
     A     = c(1, A), 
     sin_t = A * sin(theta), 
@@ -239,17 +238,15 @@ for(i in 1:frame_num) {
   # 角マークの座標を作成
   d <- 0.15
   angle_mark_df <- tibble::tibble(
-    t   = seq(from = 0, to = theta, length.out = 300)
-  ) |> # 関数ごとにラジアンを複製
-    dplyr::mutate(
-      x = d * cos(t), 
-      y = d * sin(t)
-    )
+    t = seq(from = 0, to = theta, length.out = 300), 
+    x = d * cos(t), 
+    y = d * sin(t)
+  )
   
   # 角ラベルの座標を作成
   d <- 0.25
   angle_label_df <- tibble::tibble(
-    t   = 0.5 * theta, 
+    t = 0.5 * theta, 
     x = d * cos(t), 
     y = d * sin(t), 
     angle_label = "theta"
@@ -257,21 +254,21 @@ for(i in 1:frame_num) {
   
   # 円上の直線の座標を作成
   fnc_line_df <- tibble::tibble(
-    fnc    = c("sin t", "a sin t"), 
+    fnc    = c("sin", "f"), 
     x_from = c(cos(theta), A*cos(theta)), 
     y_from = c(0, 0), 
-    x_to   = c(cos(theta), A*cos(theta)), 
+    x_to   = x_from, 
     y_to   = c(sin(theta), A*sin(theta))
   )
   
   # 関数ラベルの座標を作成
   fnc_label_df <-tibble::tibble(
-    fnc = c("sin t", "a sin t"), 
+    fnc = c("sin", "f"), 
     x   = c(cos(theta), A*cos(theta)), 
     y   = 0.5 * c(sin(theta), A*sin(theta)), 
-    a = 90, 
-    h = 0.5, 
-    v = 1, 
+    a   = 90, 
+    h   = 0.5, 
+    v   = 1, 
     fnc_label = c("sin~theta", "A ~ sin~theta")
   )
   
@@ -289,11 +286,10 @@ for(i in 1:frame_num) {
                  mapping = aes(x = 0, y = 0, xend = x, yend = y), 
                  color = "white") + # 角度軸目盛線
     geom_path(data = circle_df, 
-              mapping = aes(x = x, y = y, group = r), 
+              mapping = aes(x = x, y = y, group = fnc), 
               linewidth = 1) + # 円周
     geom_segment(data = radius_df, 
-                 mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = fnc), 
-                 show.legend = FALSE) + # 半径線
+                 mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = fnc)) + # 半径線
     geom_path(data = angle_mark_df, 
               mapping = aes(x = x, y = y)) + # 角マーク
     geom_text(data = angle_label_df, 
@@ -305,20 +301,18 @@ for(i in 1:frame_num) {
     geom_text(data = fnc_label_df, 
               mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
                             angle = a, hjust = h, vjust = v), 
-              parse = TRUE, show.legend = FALSE) + # 関数ラベル
+              parse = TRUE) + # 関数ラベル
     geom_segment(data = fnc_point_df, 
                  mapping = aes(x = -Inf, y = sin_t, xend = cos_t, yend = sin_t, color = fnc), 
                  linetype = "dotted") + # y軸の補助線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = cos_t, y = sin_t), 
                size = 4) + # 関数点
-    scale_color_manual(breaks = c("sin t", "a sin t"), 
-                       values = c("blue", "red"), 
-                       labels = parse(text = c("sin~theta", "A ~ sin~theta")), 
-                       name = "function") + # 関数ごとに色分け
-    scale_linetype_manual(breaks = c("r", "sin t", "a sin t"), 
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue")) + # 関数ごとに色分け
+    scale_linetype_manual(breaks = c("r", "sin", "f"), 
                           values = c("solid", "solid", "dashed")) + # 関数ごとに線分け
-    theme(legend.text.align = 1) + 
+    guides(color = "none", linetype = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
@@ -336,14 +330,14 @@ for(i in 1:frame_num) {
   rad_break_vec <- seq(
     from = floor((theta-theta_size) / pi) * pi, 
     to   = ceiling(theta / pi) * pi, 
-    by   = pi/line_num
+    by   = pi/tick_num
   )
   rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
   
   # 曲線の座標を作成
   fnc_curve_df <- tidyr::expand_grid(
     tibble::tibble(
-      fnc = c("sin t", "a sin t"), 
+      fnc = c("sin", "f"), 
       A   = c(1, A)
     ), 
     theta = theta_vec
@@ -376,12 +370,13 @@ for(i in 1:frame_num) {
                mapping = aes(x = theta, y = sin_t), 
                size = 4) + # 曲線上の点
     scale_x_continuous(breaks = rad_break_vec, 
-                       labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("sin t", "a sin t"), 
-                       values = c("blue", "red"), 
-                       labels = parse(text = c("sin~theta", "A ~ sin~theta")), 
+                       labels = parse(text = rad_label_vec), 
+                       minor_breaks = FALSE) + # ラジアン軸目盛
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = c("A ~ sin~theta", "sin~theta")), 
                        name = "function") + # 関数ごとに色分け
-    guides(color = "none") + 
+    theme(legend.text.align = 1) + 
     coord_fixed(ratio = 1, 
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
@@ -432,14 +427,14 @@ theta <- 1/3 * pi
 theta_vec <- seq(from = 0, to = 2*pi, length.out = 1000)
 
 
-# 半周期における目盛数を指定
-line_num <- 6
+# 範囲πにおける目盛数を指定
+tick_num <- 6
 
 # ラジアン軸目盛用の値を作成
 rad_break_vec <- seq(
   from = floor(min(theta_vec) / pi) * pi, 
   to   = ceiling(max(theta_vec) / pi) * pi, 
-  by   = pi/line_num
+  by   = pi/tick_num
 )
 rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
 
@@ -453,9 +448,9 @@ for(i in 1:frame_num) {
   # パラメータを取得
   A <- A_vals[i]
   
-  # 円周上の点の座標を作成
+  # 円周・曲線上の点の座標を作成
   fnc_point_df <- tibble::tibble(
-    fnc   = c("sin t", "a sin t"), 
+    fnc   = c("sin", "f"), 
     theta = c(theta, theta), 
     A     = c(1, A), 
     sin_t = A * sin(theta), 
@@ -466,7 +461,10 @@ for(i in 1:frame_num) {
   
   # 円周の座標を作成
   circle_df <- tidyr::expand_grid(
-    r = c(1, abs(A)), # 半径
+    tibble::tibble(
+      fnc = c("sin", "f"), 
+      r   = c(1, abs(A)), # 半径
+    ), 
     t = seq(from = 0, to = 2*pi, length.out = 361) # 1周期分のラジアン
   ) |> # 円周ごとにラジアンを複製
     dplyr::mutate(
@@ -490,17 +488,15 @@ for(i in 1:frame_num) {
   # 角マークの座標を作成
   d <- 0.15
   angle_mark_df <- tibble::tibble(
-    t   = seq(from = 0, to = theta, length.out = 300)
-  ) |> # 関数ごとにラジアンを複製
-    dplyr::mutate(
-      x = d * cos(t), 
-      y = d * sin(t)
-    )
+    t = seq(from = 0, to = theta, length.out = 300), 
+    x = d * cos(t), 
+    y = d * sin(t)
+  )
   
   # 角ラベルの座標を作成
   d <- 0.25
   angle_label_df <- tibble::tibble(
-    t   = 0.5 * theta, 
+    t = 0.5 * theta, 
     x = d * cos(t), 
     y = d * sin(t), 
     angle_label = "theta"
@@ -508,32 +504,32 @@ for(i in 1:frame_num) {
   
   # 円上の直線の座標を作成
   fnc_line_df <- tibble::tibble(
-    fnc    = c("sin t", "a sin t"), 
+    fnc    = c("sin", "f"), 
     x_from = c(cos(theta), A*cos(theta)), 
     y_from = c(0, 0), 
-    x_to   = c(cos(theta), A*cos(theta)), 
+    x_to   = x_from, 
     y_to   = c(sin(theta), A*sin(theta))
   )
   
   # 関数ラベルの座標を作成
   fnc_label_df <-tibble::tibble(
-    fnc = c("sin t", "a sin t"), 
+    fnc = c("sin", "f"), 
     x   = c(cos(theta), A*cos(theta)), 
     y   = 0.5 * c(sin(theta), A*sin(theta)), 
-    a = 90, 
-    h = 0.5, 
-    v = 1, 
+    a   = 90, 
+    h   = 0.5, 
+    v   = 1, 
     fnc_label = c("sin~theta", "A ~ sin~theta")
   )
   
   # 角度軸線の座標を作成
   rad_tick_df <- tibble::tibble(
-    i = 0:(2*line_num-1), # 目盛位置番号
-    t = i/line_num * pi, # ラジアン
+    i = 0:(2*tick_num-1), # 目盛位置番号
+    t = i/tick_num * pi, # ラジアン
     r = abs(A), # 半径
     x = r * cos(t), 
     y = r * sin(t), 
-    t_label = paste0("frac(", i, ", ", line_num, ") ~ pi") # 角度ラベル
+    t_label = paste0("frac(", i, ", ", tick_num, ") ~ pi") # 角度ラベル
   )
   
   # 関数ラベルを作成
@@ -553,8 +549,7 @@ for(i in 1:frame_num) {
               mapping = aes(x = x, y = y, group = r), 
               linewidth = 1) + # 円周
     geom_segment(data = radius_df, 
-                 mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = fnc), 
-                 show.legend = FALSE) + # 半径線
+                 mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = fnc)) + # 半径線
     geom_path(data = angle_mark_df, 
               mapping = aes(x = x, y = y)) + # 角マーク
     geom_text(data = angle_label_df, 
@@ -566,20 +561,18 @@ for(i in 1:frame_num) {
     geom_text(data = fnc_label_df, 
               mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
                             angle = a, hjust = h, vjust = v), 
-              parse = TRUE, show.legend = FALSE) + # 関数ラベル
+              parse = TRUE) + # 関数ラベル
     geom_segment(data = fnc_point_df, 
                  mapping = aes(x = -Inf, y = sin_t, xend = cos_t, yend = sin_t, color = fnc), 
                  linetype = "dotted") + # y軸の補助線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = cos_t, y = sin_t), 
                size = 4) + # 関数点
-    scale_color_manual(breaks = c("sin t", "a sin t"), 
-                       values = c("blue", "red"), 
-                       labels = parse(text = c("sin~theta", "A ~ sin~theta")), 
-                       name = "function") + # 関数ごとに色分け
-    scale_linetype_manual(breaks = c("r", "sin t", "a sin t"), 
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue")) + # 関数ごとに色分け
+    scale_linetype_manual(breaks = c("r", "sin", "f"), 
                           values = c("solid", "solid", "dashed")) + # 関数ごとに線分け
-    theme(legend.text.align = 1) + 
+    guides(color = "none", linetype = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
@@ -593,7 +586,7 @@ for(i in 1:frame_num) {
   # 曲線の座標を作成
   fnc_curve_df <- tidyr::expand_grid(
     tibble::tibble(
-      fnc = c("sin t", "a sin t"), 
+      fnc = c("sin", "f"), 
       A   = c(1, A)
     ), 
     theta = theta_vec
@@ -626,15 +619,16 @@ for(i in 1:frame_num) {
                mapping = aes(x = theta, y = sin_t), 
                size = 4) + # 曲線上の点
     scale_x_continuous(breaks = rad_break_vec, 
-                       labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("sin t", "a sin t"), 
-                       values = c("blue", "red"), 
-                       labels = parse(text = c("sin~theta", "A ~ sin~theta")), 
+                       labels = parse(text = rad_label_vec), 
+                       minor_breaks = TRUE) + # ラジアン軸目盛
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = c("A ~ sin~theta", "sin~theta")), 
                        name = "function") + # 関数ごとに色分け
-    guides(color = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(min(theta_vec), max(theta_vec)), 
                 ylim = c(-axis_size, axis_size)) + 
+    theme(legend.text.align = 1) + 
     labs(title = "sine curve: amplitude", 
          subtitle = parse(text = fnc_label), 
          x = expression(theta), 
