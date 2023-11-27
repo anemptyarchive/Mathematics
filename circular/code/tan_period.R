@@ -42,8 +42,8 @@ curve_df <- tibble::tibble(
 tick_num <- 1
 
 # 目盛の範囲を設定:(π単位で切り捨て・切り上げ)
-tick_lower <- floor(min(theta_vec) / pi) * pi
-tick_upper <- ceiling(max(theta_vec) / pi) * pi
+theta_lower <- floor(min(theta_vec) / pi) * pi
+theta_upper <- ceiling(max(theta_vec) / pi) * pi
 
 # ラジアン軸目盛用の値を作成
 rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/tick_num)
