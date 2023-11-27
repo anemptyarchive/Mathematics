@@ -14,7 +14,7 @@ library(ggplot2)
 # 曲線の作図 -------------------------------------------------------------------
 
 # 位相パラメータを指定
-alpha <- 0.5 * pi
+alpha <- 1/2 * pi
 
 # 変数(ラジアン)の範囲を指定
 theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 5000)
@@ -42,8 +42,8 @@ curve_df <- tibble::tibble(
 tick_num <- 1
 
 # 目盛ラベルの範囲を設定:(π単位で切り捨て・切り上げ)
-theta_lower <- floor(min(theta_vec - alpha) / pi) * pi
-theta_upper <- ceiling(max(theta_vec - alpha) / pi) * pi
+theta_lower <- floor(min(theta_vec) / pi) * pi
+theta_upper <- ceiling(max(theta_vec) / pi) * pi
 
 # ラジアン軸目盛用の値を作成
 rad_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi/tick_num)
@@ -51,8 +51,8 @@ rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
 
 
 # 漸近線の描画範囲を設定:(π単位で切り捨て・切り上げ)
-theta_lower <- (floor(min(theta_vec) / pi) - 0.5) * pi
-theta_upper <- (ceiling(max(theta_vec) / pi) + 0.5) * pi
+theta_lower <- (floor(min(theta_vec + alpha) / pi) - 0.5) * pi - alpha
+theta_upper <- (ceiling(max(theta_vec + alpha) / pi) + 0.5) * pi - alpha
 
 # 漸近線用の値を作成
 asymptote_break_vec <- seq(from = theta_lower, to = theta_upper, by = pi)
@@ -79,7 +79,7 @@ ggplot() +
             linewidth = 1) + # 変形した曲線
   scale_linetype_manual(breaks = c("f", "tan"), 
                         values = c("solid", "dotted"), 
-                        labels = c(expression(A ~ tan(theta)), expression(tan~theta)), 
+                        labels = c(expression(A ~ tan~theta), expression(tan~theta)), 
                         name = "function") + # 凡例表示用
   scale_x_continuous(breaks = rad_break_vec, 
                      labels = parse(text = rad_label_vec), 
@@ -135,8 +135,8 @@ anim_curve_df <- tidyr::expand_grid(
 anim_asymptote_df <- tibble::tibble(
   frame_i = 1:frame_num, 
   alpha   = alpha_vals, 
-  t_lower = (floor(min(theta_vec - alpha) / pi) - 0.5) * pi, 
-  t_upper = (ceiling(max(theta_vec - alpha) / pi) + 0.5) * pi
+  t_lower = (floor(min(theta_vec + alpha) / pi) - 0.5) * pi - alpha, 
+  t_upper = (ceiling(max(theta_vec + alpha) / pi) + 0.5) * pi - alpha
 ) |> 
   dplyr::reframe(
     t = seq(from = t_lower, to = t_upper, by = pi), .by = frame_i
@@ -151,7 +151,7 @@ anim_label_df <- tibble::tibble(
   alpha   = alpha_vals, 
   x_from  = 0, 
   x_to    = -alpha, 
-  x_med   = -0.5 * alpha, 
+  x_med   = 0.5 * x_to, 
   y       = 0, 
   param_label = paste0("alpha == ", round(alpha/pi, digits = 2), " * pi")
 )
