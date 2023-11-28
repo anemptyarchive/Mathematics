@@ -19,6 +19,7 @@ a <- 2
 # 変数(ラジアン)の範囲を指定
 theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 1000)
 
+
 # 曲線の座標を作成
 curve_df <- tibble::tibble(
   theta = theta_vec, 
@@ -53,12 +54,12 @@ ggplot() +
   geom_line(data = curve_df, 
             mapping = aes(x = theta, y = f_t, linetype = "f"), 
             linewidth = 1) + # 変形した曲線
-  scale_x_continuous(breaks = rad_break_vec, 
-                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   scale_linetype_manual(breaks = c("f", "sin"), 
                         values = c("solid", "dotted"), 
                         labels = c(expression(sin(a * theta)), expression(sin~theta)), 
                         name = "function") + # 凡例表示用
+  scale_x_continuous(breaks = rad_break_vec, 
+                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + # 凡例の体裁
   theme(legend.text.align = 0) + # 図の体裁
   coord_fixed(ratio = 1, 
@@ -79,6 +80,7 @@ a_vals <- seq(from = -5, to = 5, length.out = frame_num)
 
 # ラジアンの範囲を指定
 theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 1000)
+
 
 # 曲線の座標を作成
 anim_curve_df <- tidyr::expand_grid(
@@ -133,14 +135,14 @@ anim <- ggplot() +
                color = "red", linewidth = 0.5) + # 変形した曲線の1周期の範囲
   geom_text(data = anim_label_df, 
             mapping = aes(x = -Inf, y = Inf, label = param_label), 
-            parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル
+            parse = TRUE, hjust = 0, vjust = -0.5) + # パラメータラベル:(subtitleの代用)
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
-  scale_x_continuous(breaks = rad_break_vec, 
-                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   scale_linetype_manual(breaks = c("f", "sin"), 
                         values = c("solid", "dotted"), 
                         labels = c(expression(sin(a * theta)), expression(sin~theta)), 
                         name = "function") + # 凡例表示用
+  scale_x_continuous(breaks = rad_break_vec, 
+                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + 
   theme(legend.text.align = 0) + 
   coord_fixed(ratio = 1, clip = "off", 
@@ -168,7 +170,7 @@ frame_num <- 300
 a <- 2
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 theta_min  <- min(theta_vals)
 
 # 曲線用のラジアンのサイズを指定
@@ -184,8 +186,7 @@ rad_tick_df <- tibble::tibble(
   t = i/tick_num * pi, # ラジアン
   r = 1, # 半径
   x = r * cos(t), 
-  y = r * sin(t), 
-  t_label = paste0("frac(", i, ", ", tick_num, ") ~ pi") # 角度ラベル
+  y = r * sin(t)
 )
 
 
@@ -198,7 +199,7 @@ unit_circle_df <- tibble::tibble(
 
 
 # グラフサイズを指定
-axis_size <- 1.5
+axis_size <- 2
 
 # 変数ごとに作図
 for(i in 1:frame_num) {
@@ -232,27 +233,28 @@ for(i in 1:frame_num) {
   
   # 角マークの座標を作成
   d1 <- 0.2
-  da <- 0.25
+  da <- 0.3
+  ds <- 0.005
   angle_mark_df <- tidyr::expand_grid(
     tibble::tibble(
       fnc = c("sin", "f"), 
       a   = c(1, a), 
-      d   = c(d1, da)
+      d   = c(d1, da) # マークサイズの調整用
     ), 
-    t = seq(from = 0, to = theta, length.out = 300)
+    t = seq(from = 0, to = theta, length.out = 600)
   ) |> # 関数ごとにラジアンを複製
     dplyr::mutate(
-      x = d * cos(a * t),
-      y = d * sin(a * t)
+      x = (d + ds*a*t) * cos(a * t),
+      y = (d + ds*a*t) * sin(a * t)
     )
   
   # 角ラベルの座標を作成
   d1 <- 0.1
-  da <- 0.35
+  da <- 0.45
   angle_label_df <- tibble::tibble(
     fnc = c("sin", "f"), 
     a   = c(1, a), 
-    d   = c(d1, da), 
+    d   = c(d1, da), # ラベル位置の調整用
     t   = 0.5 * c(theta, theta), 
     x   = d * cos(a * t),
     y   = d * sin(a * t), 
@@ -354,15 +356,20 @@ for(i in 1:frame_num) {
     )
   
   # 関数ラベルを作成
-  fnc_label <- paste0(
+  param_label <- paste0(
     "list(", 
     "a == ", round(a, digits = 2), ", ", 
     "theta == ", round(theta/pi, digits = 2), " * pi, ", 
-    "sin~theta == ", round(sin(theta), digits = 2), ", ", 
-    "sin(a * theta) == ", round(sin(a*theta), digits = 2), 
+    "a * theta == ", round(a * theta/pi, digits = 2), " * pi", 
     ")"
   )
-  
+  fnc_label_vec <- paste(
+    c("sin(a * theta)", "sin~theta"), 
+    c(sin(a*theta), sin(theta)) |> 
+      round(digits = 2), 
+    sep = " == "
+  )
+
   # 曲線上の点を作図
   curve_graph <- ggplot() + 
     geom_line(data = fnc_curve_df, 
@@ -376,19 +383,22 @@ for(i in 1:frame_num) {
     geom_point(data = fnc_point_df, 
                mapping = aes(x = theta, y = sin_t), 
                size = 4) + # 曲線上の点
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = fnc_label_vec), 
+                       name = "function") + # 関数ごとに色分け
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec), 
                        minor_breaks = FALSE) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("f", "sin"), 
-                       values = c("red", "blue"), 
-                       labels = parse(text = c("sin(a * theta)", "sin~theta")), 
-                       name = "function") + # 関数ごとに色分け
-    theme(legend.text.align = 0) + 
+    theme(legend.text.align = 0, 
+          legend.position = c(0, 1), 
+          legend.justification = c(0, 1), 
+          legend.background = element_rect(fill = alpha("white", alpha = 0.8))) + 
     coord_fixed(ratio = 1, 
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine curve: period", 
-         subtitle = parse(text = fnc_label), 
+         subtitle = parse(text = param_label), 
          x = expression(theta), 
          y = expression(f(theta)))
   
@@ -396,13 +406,12 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    curve_graph, circle_graph, 
-    guides = "collect"
+    curve_graph, circle_graph
   )
   
   # ファイルを書き出し
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1200, height = 500, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, "/", frame_num, appendLF = FALSE)
@@ -412,7 +421,7 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/sine/period_curves_variable.gif", delay = 1/30) -> tmp_path # gifファイル書出
+  magick::image_write_gif(path = "circular/figure/sine/period_curves_variable.gif", delay = 1/20) -> tmp_path # gifファイルを書出
 
 
 # パラメータと円周と曲線の関係 ----------------------------------------------------------
@@ -422,10 +431,10 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 101
+frame_num <- 201
 
 # 周期パラメータの範囲を指定
-a_vals <- seq(from = -5, to = 5, length.out = frame_num)
+a_vals <- seq(from = -9, to = 9, length.out = frame_num)
 
 # 点用のラジアンを指定
 theta <- 1/3 * pi
@@ -443,8 +452,7 @@ rad_tick_df <- tibble::tibble(
   t = i/tick_num * pi, # ラジアン
   r = 1, # 半径
   x = r * cos(t), 
-  y = r * sin(t), 
-  t_label = paste0("frac(", i, ", ", tick_num, ") ~ pi") # 角度ラベル
+  y = r * sin(t)
 )
 
 # ラジアン軸目盛用の値を作成
@@ -465,7 +473,7 @@ unit_circle_df <- tibble::tibble(
 
 
 # グラフサイズを指定
-axis_size <- 1.5
+axis_size <- 2
 
 # パラメータごとに作図
 for(i in 1:frame_num) {
@@ -499,27 +507,28 @@ for(i in 1:frame_num) {
   
   # 角マークの座標を作成
   d1 <- 0.2
-  da <- 0.25
+  da <- 0.3
+  ds <- 0.005
   angle_mark_df <- tidyr::expand_grid(
     tibble::tibble(
       fnc = c("sin", "f"), 
       a   = c(1, a), 
-      d   = c(d1, da)
+      d   = c(d1, da) # マークサイズの調整用
     ), 
-    t = seq(from = 0, to = theta, length.out = 300)
+    t = seq(from = 0, to = theta, length.out = 600)
   ) |> # 関数ごとにラジアンを複製
     dplyr::mutate(
-      x = d * cos(a * t),
-      y = d * sin(a * t)
+      x = (d + ds*a*t) * cos(a * t),
+      y = (d + ds*a*t) * sin(a * t)
     )
   
   # 角ラベルの座標を作成
   d1 <- 0.1
-  da <- 0.35
+  da <- 0.45
   angle_label_df <- tibble::tibble(
     fnc = c("sin", "f"), 
     a   = c(1, a), 
-    d   = c(d1, da), 
+    d   = c(d1, da), # ラベル位置の調整用
     t   = 0.5 * c(theta, theta), 
     x   = d * cos(a * t),
     y   = d * sin(a * t), 
@@ -610,13 +619,18 @@ for(i in 1:frame_num) {
     )
   
   # 関数ラベルを作成
-  fnc_label <- paste0(
+  param_label <- paste0(
     "list(", 
     "a == ", round(a, digits = 2), ", ", 
     "theta == ", round(theta/pi, digits = 2), " * pi, ", 
-    "sin~theta == ", round(sin(theta), digits = 2), ", ", 
-    "sin(a * theta) == ", round(sin(a*theta), digits = 2), 
+    "a * theta == ", round(a * theta/pi, digits = 2), " * pi", 
     ")"
+  )
+  fnc_label_vec <- paste(
+    c("sin(a * theta)", "sin~theta"), 
+    c(sin(a*theta), sin(theta)) |> 
+      round(digits = 2), 
+    sep = " == "
   )
   
   # 曲線上の点を作図
@@ -632,19 +646,22 @@ for(i in 1:frame_num) {
     geom_point(data = fnc_point_df, 
                mapping = aes(x = theta, y = sin_t), 
                size = 4) + # 曲線上の点
+    scale_color_manual(breaks = c("f", "sin"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = fnc_label_vec), 
+                       name = "function") + # 関数ごとに色分け
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec), 
                        minor_breaks = FALSE) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("f", "sin"), 
-                       values = c("red", "blue"), 
-                       labels = parse(text = c("sin(a * theta)", "sin~theta")), 
-                       name = "function") + # 関数ごとに色分け
-    theme(legend.text.align = 0) + 
+    theme(legend.text.align = 0, 
+          legend.position = c(0, 1), 
+          legend.justification = c(0, 1), 
+          legend.background = element_rect(fill = alpha("white", alpha = 0.8))) + 
     coord_fixed(ratio = 1, 
                 xlim = c(min(theta_vec), max(theta_vec)), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine curve: period", 
-         subtitle = parse(text = fnc_label), 
+         subtitle = parse(text = param_label), 
          x = expression(theta), 
          y = expression(f(theta)))
   
@@ -652,8 +669,7 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    curve_graph, circle_graph, 
-    guides = "collect"
+    curve_graph, circle_graph
   )
   
   # ファイルを書き出し
@@ -668,6 +684,6 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/sine/period_curves_param.gif", delay = 1/10) -> tmp_path # gifファイル書出
+  magick::image_write_gif(path = "circular/figure/sine/period_curves_param.gif", delay = 1/20) -> tmp_path # gifファイルを書出
 
 

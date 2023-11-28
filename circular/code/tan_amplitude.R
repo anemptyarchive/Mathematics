@@ -19,6 +19,7 @@ A <- 2
 # 変数(ラジアン)の範囲を指定
 theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 5000)
 
+
 # 閾値を指定
 threshold <- 4
 
@@ -64,6 +65,9 @@ param_label <- paste0("A == ", A)
 
 # tan関数曲線を作図
 ggplot() + 
+  geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                             xend = c(Inf, 0), yend = c(0, Inf)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
   geom_vline(xintercept = asymptote_break_vec, 
              linetype = "twodash") + # 漸近線
   geom_line(data = curve_df, 
@@ -72,16 +76,16 @@ ggplot() +
   geom_line(data = curve_df, 
             mapping = aes(x = theta, y = f_t, linetype = "f"), 
             linewidth = 1) + # 変形した曲線
+  scale_linetype_manual(breaks = c("f", "tan"), 
+                        values = c("solid", "dotted"), 
+                        labels = c(expression(A ~ tan~theta), expression(tan~theta)), 
+                        name = "function") + # 凡例表示用
   scale_x_continuous(breaks = rad_break_vec, 
                      labels = parse(text = rad_label_vec), 
                      sec.axis = sec_axis(trans = ~., 
                                          breaks = asymptote_break_vec, 
                                          labels = parse(text = asymptote_label_vec), 
                                          name = "asymptote")) + # ラジアン軸目盛
-  scale_linetype_manual(breaks = c("f", "tan"), 
-                        values = c("solid", "dotted"), 
-                        labels = c(expression(A ~ tan(theta)), expression(tan~theta)), 
-                        name = "function") + # 凡例表示用
   guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + # 凡例の体裁
   theme(legend.text.align = 1) + # 図の体裁
   coord_fixed(ratio = 1, 
@@ -102,6 +106,7 @@ A_vals <- seq(from = -4, to = 4, length.out = frame_num)
 
 # ラジアンの範囲を指定
 theta_vec <- seq(from = -2*pi, to = 2*pi, length.out = 5000)
+
 
 # 閾値を指定
 threshold <- 4
@@ -125,15 +130,13 @@ anim_curve_df <- tidyr::expand_grid(
     )
   ) # 閾値外の値を欠損値に置換
 
-
 # 漸近線用の値を作成
-anim_asymptote_df <- tibble::tibble(
-  frame_i = 1:frame_num, 
+asymptote_df <- tibble::tibble(
   t_lower = (floor(min(theta_vec) / pi) - 0.5) * pi, 
   t_upper = (ceiling(max(theta_vec) / pi) + 0.5) * pi
 ) |> 
   dplyr::reframe(
-    t = seq(from = t_lower, to = t_upper, by = pi), .by = frame_i
+    t = seq(from = t_lower, to = t_upper, by = pi), .by = dplyr::everything()
   ) |> # プロット位置を作成
   dplyr::filter(
     t >= min(theta_vec), t <= max(theta_vec)
@@ -143,9 +146,10 @@ anim_asymptote_df <- tibble::tibble(
 anim_label_df <- tibble::tibble(
   frame_i = 1:frame_num, 
   A       = A_vals, 
-  x       = atan(1), 
+  x       = atan(1), # 高さが1となるラジアン
   y_from  = 0, 
   y_to    = A, 
+  y_med   = 0.5 * y_to, 
   param_label = paste0("A == ", round(A, digits = 2))
 )
 
@@ -164,7 +168,10 @@ rad_label_vec <- paste0(round(rad_break_vec/pi, digits = 2), " * pi")
 
 # tan関数曲線を作図
 anim <- ggplot() + 
-  geom_vline(data = anim_asymptote_df, 
+  geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
+                             xend = c(Inf, 0), yend = c(0, Inf)), 
+               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
+  geom_vline(data = asymptote_df, 
              mapping = aes(xintercept = t), 
              linetype = "twodash") + # 漸近線
   geom_line(data = anim_curve_df, 
@@ -182,15 +189,26 @@ anim <- ggplot() +
                arrow = arrow(length = unit(10, units = "pt"), ends = "both"),
                color = "red", linewidth = 0.5) + # 変形した曲線の振幅の範囲の目安
   geom_text(data = anim_label_df, 
+            mapping = aes(x = 0.5*x, y = 0), 
+            label = "arctan(1)", parse = TRUE, vjust = 1) + # 範囲用の補助ラベル
+  geom_text(data = anim_label_df, 
+            mapping = aes(x = x, y = 0.5), 
+            label = "1", parse = TRUE, hjust = 1.5, 
+            color = "blue", size = 6) + # 元の範囲ラベル
+  geom_text(data = anim_label_df, 
+            mapping = aes(x = x, y = y_med), 
+            label = "A", parse = TRUE, hjust = -0.5, 
+            color = "red", size = 6) + # 変形した範囲ラベル
+  geom_text(data = anim_label_df, 
             mapping = aes(x = -Inf, y = Inf, label = param_label), 
-            parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル
+            parse = TRUE, hjust = 0, vjust = -0.5) + # パラメータラベル:(subtitleの代用)
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
-  scale_x_continuous(breaks = rad_break_vec, 
-                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   scale_linetype_manual(breaks = c("f", "tan"), 
                         values = c("solid", "dotted"), 
-                        labels = c(expression(A ~ tan(theta)), expression(tan~theta)), 
+                        labels = c(expression(A ~ tan~theta), expression(tan~theta)), 
                         name = "function") + # 凡例表示用
+  scale_x_continuous(breaks = rad_break_vec, 
+                     labels = parse(text = rad_label_vec)) + # ラジアン軸目盛
   guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + 
   theme(legend.text.align = 1) + 
   coord_fixed(ratio = 1, clip = "off", 
@@ -217,7 +235,7 @@ frame_num <- 300
 A <- 2
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 theta_min  <- min(theta_vals)
 
 # 曲線用のラジアンのサイズを指定
@@ -231,7 +249,7 @@ tick_num <- 6
 rad_tick_df <- tibble::tibble(
   i = 0:(2*tick_num-1), # 目盛位置番号
   t = i/tick_num * pi, # ラジアン
-  r = abs(A), # 半径
+  r = max(1, abs(A)), # 半径
   x = r * cos(t), 
   y = r * sin(t)
 )
@@ -277,7 +295,7 @@ for(i in 1:frame_num) {
     # x軸線上の線分
     tibble::tibble(
       fnc = "r", 
-      x   = abs(A), 
+      x   = max(1, abs(A)), 
       y   = 0
     ), 
     # 円周上の点との線分
@@ -287,15 +305,15 @@ for(i in 1:frame_num) {
   
   # 角マークの座標を作成
   d  <- 0.2
-  dr <- 0.001
+  ds <- 0.005
   angle_mark_df <- tibble::tibble(
-    t = seq(from = 0, to = theta, length.out = 300), 
-    x = (d + dr*t) * cos(t), 
-    y = (d + dr*t) * sin(t)
+    t = seq(from = 0, to = theta, length.out = 600), 
+    x = (d + ds*t) * cos(t), 
+    y = (d + ds*t) * sin(t)
   )
   
   # 角ラベルの座標を作成
-  d <- 0.3
+  d <- 0.35
   angle_label_df <- tibble::tibble(
     t = 0.5 * theta, 
     x = d * cos(t), 
@@ -411,13 +429,17 @@ for(i in 1:frame_num) {
     ) # 閾値外の値を欠損値に置換
   
   # 関数ラベルを作成
-  fnc_label <- paste0(
+  param_label <- paste0(
     "list(", 
     "A == ", round(A, digits = 2), ", ", 
-    "theta == ", round(theta/pi, digits = 2), " * pi, ", 
-    "tan~theta == ", round(tan(theta), digits = 2), ", ", 
-    "A ~ tan(theta) == ", round(A*tan(theta), digits = 2), 
+    "theta == ", round(theta/pi, digits = 2), " * pi", 
     ")"
+  )
+  fnc_label_vec <- paste(
+    c("A ~ tan~theta", "tan~theta"), 
+    c(A*tan(theta), tan(theta)) |> 
+      round(digits = 2), 
+    sep = " == "
   )
   
   # 曲線上の点を作図
@@ -433,19 +455,22 @@ for(i in 1:frame_num) {
     geom_point(data = fnc_point_df, 
                mapping = aes(x = theta, y = tan_t), 
                size = 4) + # 曲線上の点
+    scale_color_manual(breaks = c("f", "tan"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = fnc_label_vec), 
+                       name = "function") + # 関数ごとに色分け
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec), 
                        minor_breaks = FALSE) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("f", "tan"), 
-                       values = c("red", "blue"), 
-                       labels = parse(text = c("A ~ tan(theta)", "tan~theta")), 
-                       name = "function") + # 関数ごとに色分け
-    theme(legend.text.align = 1) + 
+    theme(legend.text.align = 0, 
+          legend.position = c(0, 1), 
+          legend.justification = c(0, 1), 
+          legend.background = element_rect(fill = alpha("white", alpha = 0.8))) + 
     coord_fixed(ratio = 1, 
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine curve: amplitude", 
-         subtitle = parse(text = fnc_label), 
+         subtitle = parse(text = param_label), 
          x = expression(theta), 
          y = expression(f(theta)))
   
@@ -453,13 +478,12 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    curve_graph, circle_graph, 
-    guides = "collect"
+    curve_graph, circle_graph
   )
   
   # ファイルを書き出し
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1200, height = 600, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, "/", frame_num, appendLF = FALSE)
@@ -469,7 +493,7 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/tangent/amplitude_curves_variable.gif", delay = 1/30) -> tmp_path # gifファイル書出
+  magick::image_write_gif(path = "circular/figure/tangent/amplitude_curves_variable.gif", delay = 1/20) -> tmp_path # gifファイルを書出
 
 
 # パラメータと円周と曲線の関係 ----------------------------------------------------------
@@ -542,7 +566,7 @@ for(i in 1:frame_num) {
     # x軸線上の線分
     tibble::tibble(
       fnc = "r", 
-      x   = abs(A), 
+      x   = max(1, abs(A)), 
       y   = 0
     ), 
     # 円周上の点との線分
@@ -552,15 +576,15 @@ for(i in 1:frame_num) {
   
   # 角マークの座標を作成
   d  <- 0.2
-  dr <- 0.001
+  ds <- 0.005
   angle_mark_df <- tibble::tibble(
-    t = seq(from = 0, to = theta, length.out = 300), 
-    x = (d + dr*t) * cos(t), 
-    y = (d + dr*t) * sin(t)
+    t = seq(from = 0, to = theta, length.out = 600), 
+    x = (d + ds*t) * cos(t), 
+    y = (d + ds*t) * sin(t)
   )
   
   # 角ラベルの座標を作成
-  d <- 0.3
+  d <- 0.35
   angle_label_df <- tibble::tibble(
     t = 0.5 * theta, 
     x = d * cos(t), 
@@ -592,7 +616,7 @@ for(i in 1:frame_num) {
   rad_tick_df <- tibble::tibble(
     i = 0:(2*tick_num-1), # 目盛位置番号
     t = i/tick_num * pi, # ラジアン
-    r = abs(A), # 半径
+    r = max(1, abs(A)), # 半径
     x = r * cos(t), 
     y = r * sin(t)
   )
@@ -607,7 +631,6 @@ for(i in 1:frame_num) {
   
   # 円周上の点を作図
   circle_graph <- ggplot() + 
-    geom_vline(xintercept = c(1, A), 
     geom_segment(data = rad_tick_df, 
                  mapping = aes(x = 0, y = 0, xend = x, yend = y), 
                  color = "white") + # 角度軸目盛線
@@ -624,6 +647,7 @@ for(i in 1:frame_num) {
     geom_text(data = angle_label_df, 
               mapping = aes(x = x, y = y, label = angle_label), 
               parse = TRUE) + # 角ラベル
+    geom_vline(xintercept = c(1, A), 
                linetype = "twodash") + # 関数直線用の補助線
     geom_segment(data = fnc_point_df, 
                  mapping = aes(x = 0, y = 0, xend = A, yend = tan_t), 
@@ -674,13 +698,17 @@ for(i in 1:frame_num) {
     ) # 閾値外の値を欠損値に置換
   
   # 関数ラベルを作成
-  fnc_label <- paste0(
+  param_label <- paste0(
     "list(", 
     "A == ", round(A, digits = 2), ", ", 
-    "theta == ", round(theta/pi, digits = 2), " * pi, ", 
-    "tan~theta == ", round(tan(theta), digits = 2), ", ", 
-    "A ~ tan(theta) == ", round(A*tan(theta), digits = 2), 
+    "theta == ", round(theta/pi, digits = 2), " * pi", 
     ")"
+  )
+  fnc_label_vec <- paste(
+    c("A ~ tan~theta", "tan~theta"), 
+    c(A*tan(theta), tan(theta)) |> 
+        round(digits = 2), 
+    sep = " == "
   )
   
   # 曲線上の点を作図
@@ -696,19 +724,22 @@ for(i in 1:frame_num) {
     geom_point(data = fnc_point_df, 
                mapping = aes(x = theta, y = tan_t), 
                size = 4) + # 曲線上の点
+    scale_color_manual(breaks = c("f", "tan"), 
+                       values = c("red", "blue"), 
+                       labels = parse(text = fnc_label_vec), 
+                       name = paste0("function")) + # 関数ごとに色分け
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec), 
                        minor_breaks = FALSE) + # ラジアン軸目盛
-    scale_color_manual(breaks = c("f", "tan"), 
-                       values = c("red", "blue"), 
-                       labels = parse(text = c("A ~ tan(theta)", "tan~theta")), 
-                       name = "function") + # 関数ごとに色分け
     coord_fixed(ratio = 1, 
                 xlim = c(min(theta_vec), max(theta_vec)), 
                 ylim = c(-axis_size, axis_size)) + 
-    theme(legend.text.align = 1) + 
+    theme(legend.text.align = 0, 
+          legend.position = c(0, 1), 
+          legend.justification = c(0, 1), 
+          legend.background = element_rect(fill = alpha("white", alpha = 0.8))) + 
     labs(title = "tangent curve: amplitude", 
-         subtitle = parse(text = fnc_label), 
+         subtitle = parse(text = param_label), 
          x = expression(theta), 
          y = expression(f(theta)))
   
@@ -716,8 +747,7 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    curve_graph, circle_graph, 
-    guides = "collect"
+    curve_graph, circle_graph
   )
   
   # ファイルを書き出し
@@ -732,6 +762,6 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/tangent/amplitude_curves_param.gif", delay = 1/10) -> tmp_path # gifファイル書出
+  magick::image_write_gif(path = "circular/figure/tangent/amplitude_curves_param.gif", delay = 1/10) -> tmp_path # gifファイルを書出
 
 
