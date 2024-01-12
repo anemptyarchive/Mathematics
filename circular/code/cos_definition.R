@@ -576,26 +576,34 @@ for(i in 1:frame_num) {
   # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
-      "cos", "cos", 
+      "cos", "cos", "cos", 
       "sin", "sin"
     ) |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
     x_from = c(
-      0, 0, 
+      0, 0, 0, 
       0, cos(theta)
     ), 
     y_from = c(
-      0, sin(theta), 
+      0, sin(theta), 0, 
       0, 0
     ), 
     x_to = c(
-      cos(theta), cos(theta), 
+      cos(theta), cos(theta), 0, 
       0,          cos(theta)
     ), 
     y_to = c(
-      0,          sin(theta), 
+      0,          sin(theta), cos(theta), 
       sin(theta), sin(theta)
-    )
+    ), 
+    w = c(
+      "normal", "normal", "bold", 
+      "thin", "normal"
+    ), # 重なり対策用, 
+    line_type = c(
+      "main", "main", "sub", 
+      "main", "main"
+    ) # 軸変換用
   )
   
   # 軸の変換曲線の座標を作成
@@ -651,10 +659,14 @@ for(i in 1:frame_num) {
                mapping = aes(x = x, y = y), 
                size = 4) + # 円周上の点
     geom_segment(data = fnc_seg_df, 
-                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
-                 linewidth = 1) + # 関数線分
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                               color = fnc, linewidth = w, linetype = line_type)) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-    scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+    scale_linetype_manual(breaks = c("main", "sub"), 
+                          values = c("solid", "dashed")) + # 軸変換用
+    scale_linewidth_manual(breaks = c("bold", "normal", "thin", "major", "minor"), 
+                           values = c(1.5, 1, 0.5, 0.5, 0.25)) + # 重なり対策用, 主・補助目盛線用
+    guides(linewidth = "none", linetype = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
