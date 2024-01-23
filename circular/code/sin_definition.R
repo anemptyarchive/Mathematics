@@ -55,10 +55,10 @@ rad_tick_df <- tibble::tibble(
 # 単位円と関数の関係 ------------------------------------------------------------
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 
 
 # 円周上の点の座標を作成
@@ -141,7 +141,7 @@ anim_fnc_seg_df <- tibble::tibble(
     TRUE, FALSE, 
     TRUE, FALSE
   ) |> 
-    rep(each = frame_num), # 関数ラベル用
+    rep(each = frame_num) # 関数ラベル用
 )
 
 # 関数ラベルの座標を作成
@@ -149,10 +149,10 @@ anim_fnc_label_df <- anim_fnc_seg_df |>
   dplyr::filter(label_flag) |> # ラベル付け線分を抽出
   dplyr::summarise(
     x = median(c(x_from, x_to)), 
-    y = median(c(y_from, y_to)), .by = c(fnc, frame_i)
+    y = median(c(y_from, y_to)), .by = c(frame_i, fnc)
   ) |> # 中点に配置
   dplyr::left_join(
-    # ラベルの設定
+    # ラベル設定を指定
     tibble::tibble(
       fnc = c("sin", "cos"), 
       fnc_label = c("sin~theta", "cos~theta"), 
@@ -218,20 +218,21 @@ anim <- ggplot() +
             parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル:(subtitleの代用)
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
   scale_color_hue(labels = fnc_label_vec, name = "function") + # 凡例表示用
-  scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+  scale_linewidth_manual(breaks = c("major", "minor"), 
+                         values = c(0.5, 0.25)) + # 主・補助目盛線用
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_size, axis_size), 
               ylim = c(-axis_size, axis_size)) + 
   labs(title = "circular functions", 
-       subtitle = "", # ラベル表示用の空行
+       subtitle = "", # (ラベル表示用の空行)
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
-# gif画像を作成
-gif <- gganimate::animate(plot = anim, nframes = frame_num, fps = 25, width = 600, height = 600)
-
-# gifファイルを書き出し
-gganimate::anim_save(animation = gif, path ="circular/figure/sine",  filename = "definition_curve.gif")
+# 動画を作成
+gganimate::animate(
+  plot = anim, nframes = frame_num, fps = 15, width = 6, height = 6, units = "in", res = 250, 
+  renderer = gganimate::av_renderer(file = "circular/figure/sine/definition_circle.mp4")
+)
 
 
 # 単位円と曲線の関係：座標 --------------------------------------------------------
@@ -241,7 +242,7 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 120
+frame_num <- 300
 
 # 曲線用のラジアンの範囲を指定
 theta_vec <- seq(from = 0, to = 2*pi, length.out = 1001)
@@ -384,7 +385,8 @@ for(i in 1:frame_num) {
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-    scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -405,6 +407,12 @@ for(i in 1:frame_num) {
     sin_t = sin(t)
   )
   
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(sin(theta), digits = 2), "))"
+  )
+  
   # 関数曲線を作図
   curve_graph <- ggplot() + 
     geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
@@ -413,21 +421,21 @@ for(i in 1:frame_num) {
     geom_line(data = fnc_curve_df, 
               mapping = aes(x = t, y = sin_t), 
               linewidth = 1) + # 関数曲線
-    geom_segment(mapping = aes(x = c(theta, theta), y = c(sin(theta), sin(theta)), 
+    geom_segment(mapping = aes(x = theta, y = sin(theta), 
                                xend = c(-Inf, theta), yend = c(sin(theta), -Inf)), 
                  linewidth = 0.8, linetype = "dotted") + # θ・y軸の目盛線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = t, y = sin_t), 
                size = 4) + # 曲線上の点
     geom_segment(data = fnc_point_df, 
-                 mapping = aes(x = t, y = 0, xend = theta, yend = sin_t, color = "sin"), 
-                 linewidth = 1) + # 関数線分
+                 mapping = aes(x = t, y = 0, xend = theta, yend = sin_t), 
+                 color = "#F8766D", linewidth = 1) + # 関数線分
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec)) + # θ軸目盛
-    guides(color = "none") + 
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(sin~theta))
   
@@ -440,17 +448,17 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 6, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/sine/definition_curves_coord.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/sine/definition_curves_coord.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
 # 単位円と曲線の関係：推移 --------------------------------------------------------
@@ -460,7 +468,7 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 240
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
@@ -514,7 +522,7 @@ for(i in 1:frame_num) {
     y = d * sin(u)
   )
   
-  # 関数線分の座標を格納
+  # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "sin", "sin", 
@@ -583,7 +591,8 @@ for(i in 1:frame_num) {
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-    scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -620,8 +629,13 @@ for(i in 1:frame_num) {
   # 曲線上の点の座標を作成
   fnc_point_df <- tibble::tibble(
     t     = theta, 
-    sin_t = sin(t), 
-    cos_t = cos(t)
+    sin_t = sin(t)
+  )
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(sin(theta), digits = 2), "))"
   )
   
   # 関数曲線を作図
@@ -629,7 +643,7 @@ for(i in 1:frame_num) {
     geom_line(data = fnc_curve_df, 
               mapping = aes(x = t, y = sin_t), 
               linewidth = 1) + # 関数曲線
-    geom_segment(mapping = aes(x = c(theta, theta), y = c(sin(theta), sin(theta)), 
+    geom_segment(mapping = aes(x = theta, y = sin(theta), 
                                xend = c(Inf, theta), yend = c(sin(theta), -Inf)), 
                  linewidth = 0.8, linetype = "dotted") + # θ・y軸の目盛線
     geom_point(data = fnc_point_df, 
@@ -637,11 +651,11 @@ for(i in 1:frame_num) {
                size = 4) + # 曲線上の点
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec)) + # θ軸目盛
-    guides(color = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(sin~theta))
   
@@ -654,16 +668,16 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 6, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/sine/definition_curves_form.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/sine/definition_curves_form.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 

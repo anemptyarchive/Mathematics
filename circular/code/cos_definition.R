@@ -55,10 +55,10 @@ rad_tick_df <- tibble::tibble(
 # 単位円と関数の関係 ------------------------------------------------------------
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 
 
 # 円周上の点の座標を作成
@@ -141,7 +141,7 @@ anim_fnc_seg_df <- tibble::tibble(
     TRUE, FALSE, 
     TRUE, FALSE
   ) |> 
-    rep(each = frame_num), # 関数ラベル用
+    rep(each = frame_num) # 関数ラベル用
 )
 
 # 関数ラベルの座標を作成
@@ -149,10 +149,10 @@ anim_fnc_label_df <- anim_fnc_seg_df |>
   dplyr::filter(label_flag) |> # ラベル付け線分を抽出
   dplyr::summarise(
     x = median(c(x_from, x_to)), 
-    y = median(c(y_from, y_to)), .by = c(fnc, frame_i)
+    y = median(c(y_from, y_to)), .by = c(frame_i, fnc)
   ) |> # 中点に配置
   dplyr::left_join(
-    # ラベルの設定
+    # ラベル設定を指定
     tibble::tibble(
       fnc = c("cos", "sin"), 
       fnc_label = c("cos~theta", "sin~theta"), 
@@ -218,30 +218,31 @@ anim <- ggplot() +
             parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル:(subtitleの代用)
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
   scale_color_hue(labels = fnc_label_vec, name = "function") + # 凡例表示用
-  scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+  scale_linewidth_manual(breaks = c("major", "minor"), 
+                         values = c(0.5, 0.25)) + # 主・補助目盛線用
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_size, axis_size), 
               ylim = c(-axis_size, axis_size)) + 
   labs(title = "circular functions", 
-       subtitle = "", # ラベル表示用の空行
+       subtitle = "", # (ラベル表示用の空行)
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
-# gif画像を作成
-gif <- gganimate::animate(plot = anim, nframes = frame_num, fps = 25, width = 600, height = 600)
+# 動画を作成
+gganimate::animate(
+  plot = anim, nframes = frame_num, fps = 15, width = 6, height = 6, units = "in", res = 250, 
+  renderer = gganimate::av_renderer(file = "circular/figure/cosine/definition_circle.mp4")
+)
 
-# gifファイルを書き出し
-gganimate::anim_save(animation = gif, path ="circular/figure/cosine",  filename = "definition_curve.gif")
 
-
-# 単位円と曲線の関係：cos：座標 --------------------------------------------------------
+# 単位円とcos曲線の関係：座標 --------------------------------------------------------
 
 # 一時書き出しフォルダを指定
 dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 120
+frame_num <- 300
 
 # 曲線用のラジアンの範囲を指定
 theta_vec <- seq(from = 0, to = 2*pi, length.out = 1001)
@@ -273,9 +274,6 @@ axis_size <- 2
 
 # 関数の描画順を指定
 fnc_level_vec <- c("cos", "sin")
-
-# 色の共通化用のベクトルを作成
-color_vec <- scales::hue_pal()(n = 2)
 
 # 変数ごとに作図
 for(i in 1:frame_num) {
@@ -324,33 +322,29 @@ for(i in 1:frame_num) {
   # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
-      "cos", "cos", "cos", 
-      "sin", "sin"
+      "cos", "cos", 
+      "sin"
     ) |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
     x_from = c(
-      0, 0, 0, 
-      0, cos(theta)
+      0, 0, 
+      cos(theta)
     ), 
     y_from = c(
-      0, sin(theta), 0, 
-      0, 0
+      0, 0, 
+      0
     ), 
     x_to = c(
-      cos(theta), cos(theta), 0, 
-      0,          cos(theta)
+      cos(theta), 0, 
+      cos(theta)
     ), 
     y_to = c(
-      0,          sin(theta), cos(theta), 
-      sin(theta), sin(theta)
+      0, cos(theta), 
+      sin(theta)
     ), 
-    w = c(
-      "normal", "normal", "bold", 
-      "thin", "normal"
-    ), # 重なり対策用, 
     line_type = c(
-      "main", "main", "sub", 
-      "main", "main"
+      "main", "sub", 
+      "main"
     ) # 軸変換用
   )
   
@@ -414,13 +408,13 @@ for(i in 1:frame_num) {
                size = 4) + # 関数点
     geom_segment(data = fnc_seg_df, 
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                               color = fnc, linewidth = w, linetype = line_type)) + # 関数線分
+                               color = fnc, linewidth = line_type, linetype = line_type)) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
                           values = c("solid", "dashed")) + # 軸変換用
-    scale_linewidth_manual(breaks = c("bold", "normal", "thin", "major", "minor"), 
-                           values = c(1.5, 1, 0.5, 0.5, 0.25)) + # 重なり対策用, 主・補助目盛線用
-    guides(linewidth = "none", linetype = "none") + 
+    scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
+                           values = c(1, 0.5, 0.5, 0.25)) + # 軸変換用, 主・補助目盛線用
+    guides(linetype = "none", linewidth = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -435,30 +429,35 @@ for(i in 1:frame_num) {
   
   ## cos関数曲線
   
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(cos(theta), digits = 2), "))"
+  )
+  
   # 関数曲線を作図
-  curve_cos_graph <- ggplot() + 
+  curve_graph <- ggplot() + 
     geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
                                xend = c(Inf, 0), yend = c(0, Inf)),
                  arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # θ・x軸線
     geom_line(data = fnc_curve_df, 
               mapping = aes(x = t, y = cos_t), 
               linewidth = 1) + # 関数曲線
-    geom_vline(xintercept = theta, 
-               linewidth = 0.8, linetype = "dotted") + # θ軸の目盛線
-    geom_segment(mapping = aes(x = theta, y = cos(theta), xend = -Inf, yend = cos(theta)), 
-                 linewidth = 0.8, linetype = "dotted") + # x軸の目盛線
+    geom_segment(mapping = aes(x = theta, y = cos(theta), 
+                               xend = c(-Inf, theta), yend = c(cos(theta), -Inf)), 
+                 linewidth = 0.8, linetype = "dotted") + # θ・y軸の目盛線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = t, y = cos_t), 
                size = 4) + # 曲線上の点
     geom_segment(data = fnc_point_df, 
                  mapping = aes(x = t, y = 0, xend = theta, yend = cos_t), 
-                 color = color_vec[1], linewidth = 1) + # 関数線分
+                 color = "#F8766D", linewidth = 1) + # 関数線分
     scale_x_continuous(breaks = rad_break_vec, 
                        labels = parse(text = rad_label_vec)) + # θ軸目盛
-    guides(color = "none") + 
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "cosine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -466,32 +465,32 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    circle_graph, curve_cos_graph
+    circle_graph, curve_graph
   )
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 6, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/cosine/definition_curves_coord.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/cosine/definition_curves_coord.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
-# 単位円と曲線の関係：cos：推移 --------------------------------------------------------
+# 単位円とcos曲線の関係：推移 --------------------------------------------------------
 
 # 一時書き出しフォルダを指定
 dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 240
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
@@ -507,9 +506,6 @@ axis_size <- 2
 # 関数の描画順を指定
 fnc_level_vec <- c("cos", "sin")
 
-# 色の共通化用のベクトルを作成
-color_vec <- scales::hue_pal()(n = 2)
-
 # 変数ごとに作図
 for(i in 1:frame_num) {
   
@@ -519,25 +515,6 @@ for(i in 1:frame_num) {
   # 曲線上の点の座標を作成
   fnc_point_df <- tibble::tibble(
     t     = theta, 
-    cos_t = cos(t)
-  )
-  
-  # 曲線用のラジアンを作成
-  theta_vec <- seq(from = max(theta_min, theta-theta_size), to = theta, length.out = 1000)
-  
-  # ラジアン軸目盛用の値を作成
-  tick_num <- 6
-  rad_break_vec <- seq(
-    from = floor((theta-theta_size) / pi) * pi, 
-    to   = ceiling(theta / pi) * pi, 
-    by   = pi/tick_num
-  )
-  tick_vec <- rad_break_vec/pi * tick_num
-  rad_label_vec <- paste0(c("", "-")[(tick_vec < 0)+1], "frac(", abs(tick_vec), ", ", tick_num, ") ~ pi")
-  
-  # 関数曲線の座標を作成
-  fnc_curve_df <- tibble::tibble(
-    t     = theta_vec, 
     cos_t = cos(t)
   )
   
@@ -576,33 +553,29 @@ for(i in 1:frame_num) {
   # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
-      "cos", "cos", "cos", 
-      "sin", "sin"
+      "cos", "cos", 
+      "sin"
     ) |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
     x_from = c(
-      0, 0, 0, 
-      0, cos(theta)
+      0, 0, 
+      cos(theta)
     ), 
     y_from = c(
-      0, sin(theta), 0, 
-      0, 0
+      0, 0, 
+      0
     ), 
     x_to = c(
-      cos(theta), cos(theta), 0, 
-      0,          cos(theta)
+      cos(theta), 0, 
+      cos(theta)
     ), 
     y_to = c(
-      0,          sin(theta), cos(theta), 
-      sin(theta), sin(theta)
+      0, cos(theta), 
+      sin(theta)
     ), 
-    w = c(
-      "normal", "normal", "bold", 
-      "thin", "normal"
-    ), # 重なり対策用, 
     line_type = c(
-      "main", "main", "sub", 
-      "main", "main"
+      "main", "sub", 
+      "main"
     ) # 軸変換用
   )
   
@@ -658,15 +631,18 @@ for(i in 1:frame_num) {
     geom_point(data = point_df, 
                mapping = aes(x = x, y = y), 
                size = 4) + # 円周上の点
+    geom_point(data = fnc_point_df, 
+               mapping = aes(x = 0, y = cos_t), 
+               size = 4) + # 関数点
     geom_segment(data = fnc_seg_df, 
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                               color = fnc, linewidth = w, linetype = line_type)) + # 関数線分
+                               color = fnc, linewidth = line_type, linetype = line_type)) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
                           values = c("solid", "dashed")) + # 軸変換用
-    scale_linewidth_manual(breaks = c("bold", "normal", "thin", "major", "minor"), 
-                           values = c(1.5, 1, 0.5, 0.5, 0.25)) + # 重なり対策用, 主・補助目盛線用
-    guides(linewidth = "none", linetype = "none") + 
+    scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
+                           values = c(1, 0.5, 0.5, 0.25)) + # 軸変換用, 主・補助目盛線用
+    guides(linetype = "none", linewidth = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -681,15 +657,39 @@ for(i in 1:frame_num) {
   
   ## cos関数曲線
   
+  # 曲線用のラジアンを作成
+  theta_vec <- seq(from = max(theta_min, theta-theta_size), to = theta, length.out = 1000)
+  
+  # ラジアン軸目盛用の値を作成
+  tick_num <- 6
+  rad_break_vec <- seq(
+    from = floor((theta-theta_size) / pi) * pi, 
+    to   = ceiling(theta / pi) * pi, 
+    by   = pi/tick_num
+  )
+  tick_vec <- rad_break_vec/pi * tick_num
+  rad_label_vec <- paste0(c("", "-")[(tick_vec < 0)+1], "frac(", abs(tick_vec), ", ", tick_num, ") ~ pi")
+  
+  # 関数曲線の座標を作成
+  fnc_curve_df <- tibble::tibble(
+    t     = theta_vec, 
+    cos_t = cos(t)
+  )
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(cos(theta), digits = 2), "))"
+  )
+  
   # 関数曲線を作図
-  curve_cos_graph <- ggplot() + 
+  curve_graph <- ggplot() + 
     geom_line(data = fnc_curve_df, 
               mapping = aes(x = t, y = cos_t), 
               linewidth = 1) + # 関数曲線
-    geom_vline(xintercept = theta, 
-               linewidth = 0.8, linetype = "dotted") + # θ軸の目盛線
-    geom_segment(mapping = aes(x = theta, y = cos(theta), xend = Inf, yend = cos(theta)), 
-                 linewidth = 0.8, linetype = "dotted") + # x軸の目盛線
+    geom_segment(mapping = aes(x = theta, y = cos(theta), 
+                               xend = c(Inf, theta), yend = c(cos(theta), -Inf)), 
+                 linewidth = 0.8, linetype = "dotted") + # θ・y軸の目盛線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = t, y = cos_t), 
                size = 4) + # 曲線上の点
@@ -699,6 +699,7 @@ for(i in 1:frame_num) {
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "cosine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -706,32 +707,32 @@ for(i in 1:frame_num) {
   
   # 並べて描画
   wrap_graph <- patchwork::wrap_plots(
-    curve_cos_graph, circle_graph
+    curve_graph, circle_graph
   )
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 500, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 6, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/cosine/definition_curves_form.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/cosine/definition_curves_form.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
-# 単位円と曲線の関係：sin・cos：座標 --------------------------------------------------------
+# 単位円とsin・cos曲線の関係：座標 --------------------------------------------------------
 
 # 一時書き出しフォルダを指定
 dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 120
+frame_num <- 300
 
 # 曲線用のラジアンの範囲を指定
 theta_vec <- seq(from = 0, to = 2*pi, length.out = 1001)
@@ -781,7 +782,7 @@ grid_df <- tidyr::expand_grid(
     arc_r = grid_size - x, 
     arc_x = x0 + arc_r * cos(u), 
     arc_y = y0 + arc_r * sin(u), 
-    grid   = dplyr::if_else(
+    grid  = dplyr::if_else(
       x%%tick_major_val == 0, true = "major", false = "minor"
     ) # 主・補助目盛の書き分け用
   )
@@ -791,7 +792,7 @@ grid_df <- tidyr::expand_grid(
 fnc_level_vec <- c("cos", "sin")
 
 # 色の共通化用のベクトルを作成
-color_vec <- scales::hue_pal()(n = 2)
+color_vec <- scales::hue_pal()(n = length(fnc_level_vec))
 
 # 変数ごとに作図
 for(i in 1:frame_num) {
@@ -900,7 +901,7 @@ for(i in 1:frame_num) {
               mapping = aes(x = x, y = y), 
               label = "theta", parse = TRUE, 
               size = 5) + # 角ラベル
-    geom_segment(mapping = aes(x = c(cos(theta), cos(theta)), y = c(sin(theta), sin(theta)), 
+    geom_segment(mapping = aes(x = cos(theta), y = sin(theta), 
                                xend = c(cos(theta), Inf), yend = c(-Inf, sin(theta))), 
                  linewidth = 0.8, linetype = "dotted") + # x・y軸の目盛線
     geom_point(data = point_df, 
@@ -910,7 +911,8 @@ for(i in 1:frame_num) {
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-    scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -924,6 +926,12 @@ for(i in 1:frame_num) {
          y = expression(y == r ~ sin~theta))
   
   ## sin関数曲線
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(sin(theta), digits = 2), "))"
+  )
   
   # 関数曲線を作図
   curve_sin_graph <- ggplot() + 
@@ -948,6 +956,7 @@ for(i in 1:frame_num) {
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(sin~theta))
   
@@ -958,7 +967,7 @@ for(i in 1:frame_num) {
     u     = seq(from = pi, to = 1.5*pi, length.out = 91), # ラジアン
     x0    = grid_size, 
     y0    = grid_size, 
-    arc_r = abs(cos(theta) - grid_size), 
+    arc_r = grid_size - cos(theta), 
     arc_x = x0 + arc_r * cos(u), 
     arc_y = y0 + arc_r * sin(u)
   )
@@ -972,19 +981,25 @@ for(i in 1:frame_num) {
               mapping = aes(x = arc_x, y = arc_y), 
               linewidth = 0.8, linetype = "dotted") + # 変換曲線
     geom_segment(mapping = aes(x = c(cos(theta), grid_size), y = c(grid_size, cos(theta)), 
-                               xend = c(cos(theta), axis_size), yend = c(axis_size, cos(theta))), 
+                               xend = c(cos(theta), Inf), yend = c(Inf, cos(theta))), 
                  linewidth = 0.8, linetype = "dotted") + # x・x軸の目盛線
-    geom_point(mapping = aes(x = c(cos(theta), axis_size), y = c(axis_size, cos(theta))), 
+    geom_point(mapping = aes(x = c(cos(theta), grid_size), y = c(grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
-    coord_fixed(ratio = 1, clip = "off", 
+    coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(x = expression(x), 
          y = expression(x))
   
   ## cos関数曲線
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(cos(theta), digits = 2), "))"
+  )
   
   # 関数曲線を作図
   curve_cos_graph <- ggplot() + 
@@ -1009,6 +1024,7 @@ for(i in 1:frame_num) {
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "cosine function", 
+         subtitle = paste0(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -1023,27 +1039,27 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 900, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 12, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/cosine/definition_curves_sin_coord.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/cosine/definition_curves_sin_coord.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
-# 単位円と曲線の関係：sin・cos：推移 --------------------------------------------------------
+# 単位円とsin・cos曲線の関係：推移 --------------------------------------------------------
 
 # 一時書き出しフォルダを指定
 dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 240
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
@@ -1075,7 +1091,7 @@ grid_df <- tidyr::expand_grid(
     arc_r = grid_size + x, 
     arc_x = x0 + arc_r * cos(u), 
     arc_y = y0 + arc_r * sin(u), 
-    grid   = dplyr::if_else(
+    grid  = dplyr::if_else(
       x%%tick_major_val == 0, true = "major", false = "minor"
     ) # 主・補助目盛の書き分け用
   )
@@ -1083,9 +1099,6 @@ grid_df <- tidyr::expand_grid(
 
 # 関数の描画順を指定
 fnc_level_vec <- c("cos", "sin")
-
-# 色の共通化用のベクトルを作成
-color_vec <- scales::hue_pal()(n = 2)
 
 # 変数ごとに作図
 for(i in 1:frame_num) {
@@ -1211,7 +1224,7 @@ for(i in 1:frame_num) {
               mapping = aes(x = x, y = y), 
               label = "theta", parse = TRUE, 
               size = 5) + # 角ラベル
-    geom_segment(mapping = aes(x = c(cos(theta), cos(theta)), y = c(sin(theta), sin(theta)), 
+    geom_segment(mapping = aes(x = cos(theta), y = sin(theta), 
                                xend = c(cos(theta), -Inf), yend = c(Inf, sin(theta))), 
                  linewidth = 0.8, linetype = "dotted") + # x・y軸の目盛線
     geom_point(data = point_df, 
@@ -1221,7 +1234,8 @@ for(i in 1:frame_num) {
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-    scale_linewidth_manual(breaks = c("major", "minor"), values = c(0.5, 0.25)) + # 主・補助目盛線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -1235,6 +1249,12 @@ for(i in 1:frame_num) {
          y = expression(y == r ~ sin~theta))
   
   ## sin関数曲線
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(sin(theta), digits = 2), "))"
+  )
   
   # 関数曲線を作図
   curve_sin_graph <- ggplot() + 
@@ -1254,6 +1274,7 @@ for(i in 1:frame_num) {
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "sine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(sin~theta))
   
@@ -1264,7 +1285,7 @@ for(i in 1:frame_num) {
     u     = seq(from = 0, to = 0.5*pi, length.out = 91), # ラジアン
     x0    = -grid_size, 
     y0    = -grid_size, 
-    arc_r = abs(cos(theta) + grid_size), 
+    arc_r = grid_size + cos(theta), 
     arc_x = x0 + arc_r * cos(u), 
     arc_y = y0 + arc_r * sin(u)
   )
@@ -1278,19 +1299,25 @@ for(i in 1:frame_num) {
               mapping = aes(x = arc_x, y = arc_y), 
               linewidth = 0.8, linetype = "dotted") + # 変換曲線
     geom_segment(mapping = aes(x = c(cos(theta), -grid_size), y = c(-grid_size, cos(theta)), 
-                               xend = c(cos(theta), -axis_size), yend = c(-axis_size, cos(theta))), 
+                               xend = c(cos(theta), -Inf), yend = c(-Inf, cos(theta))), 
                  linewidth = 0.8, linetype = "dotted") + # x・x軸の目盛線
-    geom_point(mapping = aes(x = c(cos(theta), -axis_size), y = c(-axis_size, cos(theta))), 
+    geom_point(mapping = aes(x = c(cos(theta), -grid_size), y = c(-grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
-    coord_fixed(ratio = 1, clip = "off", 
+    coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(x = expression(x), 
          y = expression(x))
   
   ## cos関数曲線
+  
+  # ラベル用の文字列を作成
+  coord_label <- paste0(
+    "(list(theta, f(theta))) == ", 
+    "(list(", round(theta, digits = 2), ", ", round(cos(theta), digits = 2), "))"
+  )
   
   # 関数曲線を作図
   curve_cos_graph <- ggplot() + 
@@ -1310,6 +1337,7 @@ for(i in 1:frame_num) {
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "cosine function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -1324,16 +1352,16 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 1000, height = 900, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 12, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/cosine/definition_curves_sin_form.gif", delay = 1/20) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/cosine/definition_curves_sin_form.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
