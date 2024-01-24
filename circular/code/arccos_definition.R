@@ -39,10 +39,10 @@ rad_tick_df <- tibble::tibble(
 # 単位円と関数の関係 ------------------------------------------------------------
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 
 # 終域内のラジアンに変換
 tau_vals <- acos(cos(theta_vals))
@@ -56,7 +56,7 @@ anim_point_df <- dplyr::bind_rows(
     frame_i = 1:frame_num, 
     x = cos(theta_vals), 
     y = sin(theta_vals), 
-    point_type = "main"
+    point_type = "main" # 入出力用
   ), 
   # 逆関数の出力
   tibble::tibble(
@@ -64,7 +64,7 @@ anim_point_df <- dplyr::bind_rows(
     frame_i = 1:frame_num, 
     x = cos(tau_vals), 
     y = sin(tau_vals), 
-    point_type = "sub" # 補助点用
+    point_type = "sub" # 入出力用
   )
 )
 
@@ -206,7 +206,7 @@ anim_fnc_label_df <- dplyr::bind_rows(
       y = median(c(y_from, y_to)), .by = c(fnc, frame_i)
     ) |> # 中点に配置
     dplyr::left_join(
-      # ラベルの設定
+      # ラベル設定を指定
       tibble::tibble(
         fnc = c("cos", "sin"), 
         fnc_label = c("cos~theta", "sin~theta"), 
@@ -286,24 +286,24 @@ anim <- ggplot() +
                      values = c("red", scales::hue_pal()(n = length(fnc_level_vec)-1)), 
                      labels = fnc_label_vec, name = "function") + # 凡例表示用
   scale_shape_manual(breaks = c("main", "sub"), 
-                     values = c("circle", "circle open")) +  # 補助線用
+                     values = c("circle", "circle open")) + # 入出力用
   scale_linetype_manual(breaks = c("main", "sub"), 
-                        values = c("solid", "dashed")) +  # 補助線用
+                        values = c("solid", "dashed")) + # 入出力用
   scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
-                         values = c(1, 0.5, 0.5, 0.25)) + # 補助線用, 主・補助目盛線用
+                         values = c(1, 0.5, 0.5, 0.25)) + # 入出力用, 主・補助目盛線用
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_size, axis_size), 
               ylim = c(-axis_size, axis_size)) + 
   labs(title = "circular functions", 
-       subtitle = "", # ラベル表示用の空行
+       subtitle = "", # (ラベル表示用の空行)
        x = expression(x == r ~ cos~theta), 
        y = expression(y == r ~ sin~theta))
 
-# gif画像を作成
-gif <- gganimate::animate(plot = anim, nframes = frame_num, fps = 25, width = 600, height = 600)
-
-# gifファイルを書き出し
-gganimate::anim_save(animation = gif, path ="circular/figure/inverse",  filename = "arccos_circle.gif")
+# 動画を作成
+gganimate::animate(
+  plot = anim, nframes = frame_num, fps = 15, width = 7, height = 6, units = "in", res = 250, 
+  renderer = gganimate::av_renderer(file = "circular/figure/inverse/arccos_circle.mp4")
+)
 
 
 # 単位円と曲線の関係 ---------------------------------------------------------------
@@ -313,15 +313,15 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 150
+frame_num <- 300
 
 # 点用のラジアンの範囲を指定
-theta_vals <- seq(from = 0*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
+theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
 
 
 # 関数曲線の座標を作成
 curve_df <- tibble::tibble(
-  z        = seq(from = -1, to = 1, length.out = 201), # 定義域内の値
+  z        = seq(from = -1, to = 1, length.out = 1001), # 定義域内の値
   arccos_z = acos(z)
 )
 
@@ -335,8 +335,10 @@ rad_label_vec <- paste(round(rad_break_vec/pi, digits = 2), "* pi")
 
 
 # グラフサイズを設定
-axis_size  <- 1.5
-axis_y_max <- pi
+axis_x_size <- 1.5
+axis_y_min  <- -1.5
+axis_y_max  <- pi
+axis_z_size <- 1.5
 
 # 関数の描画順を指定
 fnc_level_vec <- c("arccos", "cos", "sin")
@@ -361,16 +363,24 @@ for(i in 1:frame_num) {
   
   # 円周上の点の座標を作成
   point_df <- tibble::tibble(
-    t = theta, 
+    angle = c("theta", "tau"), # 角度カテゴリ
+    t = c(theta, tau), 
     x = cos(t), 
-    y = sin(t)
+    y = sin(t), 
+    point_type = c("main", "sub") # 入出力用
   )
   
   # 半径線の終点の座標を作成
-  radius_df <- tibble::tibble(
-    x = c(1, cos(theta), cos(tau)), 
-    y = c(0, sin(theta), sin(tau)), 
-    line_type = c("main", "main", "sub") # 補助線用
+  radius_df <- dplyr::bind_rows(
+    # 始線
+    tibble::tibble(
+      x = 1, 
+      y = 0, 
+      line_type = "main" # 入出力用
+    ), 
+    # 動径
+    point_df |> 
+      dplyr::select(x, y, line_type = point_type)
   )
   
   # 角マークの座標を作成
@@ -439,7 +449,12 @@ for(i in 1:frame_num) {
       tau, 
       0,          sin(theta), 
       sin(theta), sin(theta)
-    )
+    ), 
+    line_type = c(
+      "sub", 
+      "main", "main", 
+      "main", "main"
+    ) # 補助線用
   )
   
   # 関数ラベルの座標を作成
@@ -495,22 +510,20 @@ for(i in 1:frame_num) {
               mapping = aes(x = x, y = y, label = angle_label), 
               parse = TRUE, size = 5) + # 角ラベル
     geom_point(data = point_df, 
-               mapping = aes(x = x, y = y), 
-               size = 4) + # 円周上の点
+               mapping = aes(x = x, y = y, shape = point_type), 
+               size = 4, show.legend = FALSE) + # 円周上の点
     geom_point(data = fnc_point_df, 
                mapping = aes(x = 1, y = arccos_z), 
                size = 4) + # 関数点
-    geom_segment(mapping = aes(x = cos(theta), y = sin(theta), 
-                               xend = cos(tau), yend = sin(tau)), 
-                 linetype = "dotted") + # 動径間の補助線
     geom_segment(mapping = aes(x = c(cos(tau), 1), y = c(sin(tau), tau), 
                                xend = c(1, Inf), yend = c(tau, tau)), 
-                 color = "red", linewidth = 0.8, linetype = "dotted") + # y軸の目盛線
+                 linewidth = 0.8, linetype = "dotted") + # y軸の目盛線
     geom_path(data = radian_df, 
               mapping = aes(x = x, y = y), 
               color = "red", linewidth = 1) + # 関数円弧
     geom_segment(data = fnc_seg_df, 
-                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, color = fnc), 
+                 mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
+                               color = fnc, linetype = line_type), 
                  linewidth = 1) + # 関数線分
     geom_text(data = fnc_label_df,
               mapping = aes(x = x, y = y, label = fnc_label, color = fnc,
@@ -519,17 +532,20 @@ for(i in 1:frame_num) {
     scale_color_manual(breaks = fnc_level_vec, 
                        values = c("red", scales::hue_pal()(n = length(fnc_level_vec)-1)), 
                        labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用, 色の共通化用
+    scale_shape_manual(breaks = c("main", "sub"), 
+                       values = c("circle", "circle open")) + # 入出力用
     scale_linetype_manual(breaks = c("main", "sub"), 
                           values = c("solid", "dashed")) + # 補助線用
     scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
                            values = c(1, 0.5, 0.5, 0.25)) + # 補助線用, 主・補助目盛線用
+    guides(linetype = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
           legend.background = element_rect(fill = alpha("white", alpha = 0.8))) + 
     coord_fixed(ratio = 1, 
-                xlim = c(-axis_size, axis_size), 
-                ylim = c(-axis_size, axis_y_max)) + 
+                xlim = c(-axis_x_size, axis_x_size), 
+                ylim = c(axis_y_min, axis_y_max)) + 
     labs(title = "circular functions", 
          subtitle = parse(text = var_label), 
          x = expression(x == r ~ cos~theta), 
@@ -578,7 +594,7 @@ for(i in 1:frame_num) {
                size = 4) + # 関数点
     geom_segment(mapping = aes(x = c(cos(theta), cos(theta)), y = c(tau, tau), 
                                xend = c(-Inf, cos(theta)), yend = c(tau, -Inf)), 
-                 color = c("red", "black"), linewidth = 0.8, linetype = "dotted") + # x・τ軸線の目盛線
+                 linewidth = 0.8, linetype = "dotted") + # x・τ軸線の目盛線
     geom_segment(data = fnc_seg_df, 
                  mapping = aes(x = z_from, y = y_from, xend = z_to, yend = y_to, color = fnc), 
                  linewidth = 1) + # 関数線分
@@ -588,11 +604,11 @@ for(i in 1:frame_num) {
                        labels = parse(text = rad_label_vec)) + # τ軸目盛
     guides(color = "none") + 
     coord_fixed(ratio = 1, 
-                xlim = c(-axis_size, axis_size), 
-                ylim = c(-axis_size, axis_y_max)) + 
+                xlim = c(-axis_z_size, axis_z_size), 
+                ylim = c(axis_y_min, axis_y_max)) + 
     labs(title = "inverse cosine function", 
          subtitle = parse(text = coord_label), 
-         x = expression(z == cos~theta), 
+         x = expression(z == cos~tau == cos~theta), 
          y = expression(tau == arccos~z))
   
   ## グラフの書き出し
@@ -604,16 +620,16 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 900, height = 700, units = "px", dpi = 100)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 9, units = "in", dpi = 120)
   
   # 途中経過を表示
-  message("\r", i, "/", frame_num, appendLF = FALSE)
+  message("\r", i, " / ", frame_num, appendLF = FALSE)
 }
 
-# gif画像を作成
+# 動画を作成
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_gif(path = "circular/figure/inverse/arccos_curves_variable.gif", delay = 1/25) -> tmp_path # gifファイルを書出
+  magick::image_write_video(path = "circular/figure/inverse/arccos_curves.mp4", framerate = 15) -> tmp_path # mp4ファイルを書出
 
 
