@@ -130,38 +130,30 @@ anim_fnc_seg_df <- tibble::tibble(
   frame_i = 1:frame_num |> 
     rep(times = line_num), 
   fnc = c(
-    "cot", 
-    "tan", 
+    "cot", "tan", 
     "sin", "sin", 
     "cos", "cos", 
-    "exsec", 
-    "excsc"
+    "exsec", "excsc"
   ) |> 
     rep(each = frame_num) |> 
     factor(levels = fnc_level_vec), # 関数カテゴリ
   x_from = c(
-    rep(0, times = frame_num), 
-    rep(1, times = frame_num), 
+    rep(0, times = frame_num), rep(1, times = frame_num), 
     rep(0, times = frame_num), cos(theta_vals), 
     rep(0, times = frame_num), rep(0, times = frame_num), 
-    cos(theta_vals), 
-    cos(theta_vals)
+    cos(theta_vals), cos(theta_vals)
   ), 
   y_from = c(
-    rep(1, times = frame_num), 
-    rep(0, times = frame_num), 
+    rep(1, times = frame_num), rep(0, times = frame_num), 
     rep(0, times = frame_num), rep(0, times = frame_num), 
     rep(0, times = frame_num), sin(theta_vals), 
-    sin(theta_vals), 
-    sin(theta_vals)
+    sin(theta_vals), sin(theta_vals)
   ), 
   x_to = c(
-    1/tan(theta_vals), 
-    rep(1, times = frame_num), 
+    1/tan(theta_vals), rep(1, times = frame_num), 
     rep(0, times = frame_num), cos(theta_vals), 
     cos(theta_vals), cos(theta_vals), 
-    rep(1, times = frame_num), 
-    1/tan(theta_vals)
+    rep(1, times = frame_num), 1/tan(theta_vals)
   ), 
   y_to = c(
     rep(1, times = frame_num), 
@@ -172,21 +164,17 @@ anim_fnc_seg_df <- tibble::tibble(
     rep(1, times = frame_num)
   ), 
   w = c(
-    "normal", 
-    "normal", 
     "normal", "normal", 
     "normal", "normal", 
-    "bold", 
-    "thin"
+    "normal", "normal", 
+    "bold", "thin"
   ) |> 
     rep(each = frame_num), # 重なり対策用
   label_flag = c(
-    TRUE, 
-    TRUE, 
+    TRUE, TRUE, 
     TRUE, FALSE, 
     TRUE, FALSE, 
-    TRUE, 
-    TRUE
+    TRUE, TRUE
   ) |> 
     rep(each = frame_num) # 関数ラベル用
 )

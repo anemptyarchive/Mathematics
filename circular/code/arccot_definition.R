@@ -429,15 +429,6 @@ for(i in 1:frame_num) {
     point_type = c("main", "sub") # 入出力用
   )
   
-  # 半径線の座標を作成
-  radius_df <- tibble::tibble(
-    x_from = c(0, 0, 0, 1/tan(theta), 0), 
-    y_from = c(0, 0, 0, 0, 0), 
-    x_to   = c(1, cos(theta), 0, 1/tan(theta), cos(tau)), 
-    y_to   = c(0, sin(theta), 1, 1, sin(tau)), 
-    w         = c("normal", "normal", "thin", "thin", "thin"), # 線分の補助線用
-    line_type = c("main", "main", "main", "main", "sub")  # 動径の補助線用
-  )
   # 半径線の終点の座標を作成
   radius_df <- dplyr::bind_rows(
     # 始線
@@ -569,12 +560,12 @@ for(i in 1:frame_num) {
     ), 
     y = c(
       0.5 * tau, 
-      0
+      1
     ), 
     fnc_label = c("arccot~z", "cot~theta"), 
     a = c(90, 0), 
     h = c(0.5, 0.5), 
-    v = c(1.5, 1.5)
+    v = c(1.5, -0.5)
   )
   
   # ラベル用の文字列を作成
