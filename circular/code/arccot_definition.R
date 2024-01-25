@@ -44,8 +44,13 @@ frame_num <- 600
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -4*pi, to = 4*pi, length.out = frame_num+1)[1:frame_num]
 
-# 終域内のラジアンに変換
-tau_vals <- atan(tan(theta_vals))
+# 終域内のラジアンに変換:(簡易的にx = 0のときInfで処理)
+cot_theta_vals <- 1/tan(theta_vals)
+tau_vals <- ifelse(
+  test = cot_theta_vals >= 0, 
+  yes  = atan(1/cot_theta_vals), 
+  no   = atan(1/cot_theta_vals) + pi
+)
 
 
 # 円周上の点の座標を作成
@@ -96,15 +101,6 @@ anim_radius_df <- dplyr::bind_rows(
     w         = "thin", # 補助線用
     line_type = "main" # 入出力用
   )
-)
-
-# 動径間の補助線の座標を作成
-anim_auxil_df <- tibble::tibble(
-  frame_i = 1:frame_num, 
-  x_from = cos(theta_vals), 
-  y_from = sin(theta_vals), 
-  x_to   = cos(tau_vals), 
-  y_to   = sin(tau_vals)
 )
 
 
@@ -260,7 +256,7 @@ anim_fnc_label_df <- dplyr::bind_rows(
     fnc_label = "arccot(cot~theta)", 
     a = 0, 
     h = -0.1, 
-    v = 0.5
+    v = -0.5
   )
 )
 
@@ -304,9 +300,6 @@ anim <- ggplot() +
   geom_point(data = anim_point_df, 
              mapping = aes(x = x, y = y, shape = point_type), 
              size = 4, show.legend = FALSE) + # 円周上の点
-  geom_segment(data = anim_auxil_df, 
-               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to), 
-               linetype = "dotted") + # 動径間の補助線
   geom_vline(xintercept = 1, linetype = "dashed") + # 補助線
   geom_hline(yintercept = 1, linetype = "dashed") + # 補助線
   geom_path(data = anim_radian_df, 
