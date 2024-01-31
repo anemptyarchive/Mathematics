@@ -177,7 +177,7 @@ anim_radian_df <- tibble::tibble(
     y = r * sin(u)
   )
 
-# 符号反転フラグを設定
+# 符号の反転フラグを設定
 rev_flag_vals <- cos(theta_vals) < 0
 
 # 関数線分の座標を作成
@@ -217,7 +217,7 @@ anim_fnc_seg_df <- tibble::tibble(
     "main", "main", 
     "main", "sub"
   ) |> 
-    rep(each = frame_num) # 補助線用
+    rep(each = frame_num) # 符号の反転用
 )
 
 # 関数ラベルの座標を作成
@@ -402,7 +402,7 @@ for(i in 1:frame_num) {
     point_type = c("main", "sub") # 入出力用
   )
   
-  # 符号反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- cos(theta) < 0
   
   # 半径線の終点の座標を作成
@@ -472,7 +472,7 @@ for(i in 1:frame_num) {
     y = r * sin(u)
   )
   
-  # 関数線分の座標を格納
+  # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "arccsc", 
@@ -510,10 +510,10 @@ for(i in 1:frame_num) {
       "main", 
       "main", "main", 
       ifelse(test = rev_flag, yes = "sub", no = "main")
-    ) # 補助線用
+    ) # 補助線用, 符号の反転用
   )
   
-  # 関数ラベルの座標を格納
+  # 関数ラベルの座標を作成
   fnc_label_df <- tibble::tibble(
     fnc = c("arccsc", "csc") |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
@@ -609,7 +609,7 @@ for(i in 1:frame_num) {
   
   ## 関数曲線
   
-  # 関数線分の座標を格納
+  # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c("arccsc", "csc") |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ

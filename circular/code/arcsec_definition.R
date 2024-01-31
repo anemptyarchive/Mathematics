@@ -161,7 +161,7 @@ anim_radian_df <- tibble::tibble(
     y = r * sin(u)
   )
 
-# 符号反転フラグを設定
+# 符号の反転フラグを設定
 rev_flag_vals <- sin(theta_vals) < 0
 
 # 関数線分の座標を作成
@@ -171,43 +171,37 @@ anim_fnc_seg_df <- tibble::tibble(
     rep(times = line_num), 
   fnc = c(
     "sec", "sec", 
-    "sin", 
-    "cos", 
+    "sin", "cos", 
     "tan", "tan"
   ) |> 
     rep(each = frame_num) |> 
     factor(levels = fnc_level_vec), # 関数カテゴリ
   x_from = c(
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA), 
-    cos(theta_vals), 
-    rep(0, times = frame_num), 
+    cos(theta_vals), rep(0, times = frame_num), 
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA)
   ), 
   y_from = c(
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA), 
-    rep(0, times = frame_num), 
-    rep(0, times = frame_num), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA)
   ), 
   x_to = c(
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA), 
-    cos(theta_vals), 
-    cos(theta_vals), 
+    cos(theta_vals), cos(theta_vals), 
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA)
   ), 
   y_to = c(
     ifelse(test = rev_flag_vals, yes = -tan(theta_vals), no = tan(theta_vals)), ifelse(test = rev_flag_vals, yes = tan(theta_vals), no = NA), 
-    sin(theta_vals), 
-    rep(0, times = frame_num), 
+    sin(theta_vals), rep(0, times = frame_num), 
     tan(theta_vals), ifelse(test = rev_flag_vals, yes = -tan(theta_vals), no = NA)
   ), 
   line_type = c(
     "main", "sub", 
-    "main", 
-    "main", 
+    "main", "main", 
     "main", "sub"
   ) |> 
-    rep(each = frame_num) # 補助線用
+    rep(each = frame_num) # 符号の反転用
 )
 
 # 関数ラベルの座標を作成
@@ -332,7 +326,7 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[1:frame_num]
@@ -443,64 +437,57 @@ for(i in 1:frame_num) {
     y = r * sin(u)
   )
   
-  # 反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- sin(theta) < 0
   
-  # 関数線分の座標を格納
+  # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "arcsec", 
-      "sec", "sec", 
-      "sin", 
-      "cos", 
-      "tan", "tan"
+      "sec", 
+      "sin", "cos", 
+      "tan"
     ) |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
     x_from = c(
       1, 
-      0, ifelse(test = rev_flag, yes = 0, no = NA), 
-      cos(theta), 
       0, 
-      1, ifelse(test = rev_flag, yes = 1, no = NA)
+      cos(theta), 0, 
+      1
     ), 
     y_from = c(
       0, 
-      0, ifelse(test = rev_flag, yes = 0, no = NA), 
       0, 
-      0, 
-      0, ifelse(test = rev_flag, yes = 0, no = NA)
+      0, 0, 
+      0
     ), 
     x_to = c(
       1, 
-      1, ifelse(test = rev_flag, yes = 1, no = NA), 
-      cos(theta), 
-      cos(theta), 
-      1, ifelse(test = rev_flag, yes = 1, no = NA)
+      1, 
+      cos(theta), cos(theta), 
+      1
     ), 
     y_to = c(
       tau, 
-      ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), ifelse(test = rev_flag, yes = tan(theta), no = NA), 
-      sin(theta), 
-      0, 
-      tan(theta), ifelse(test = rev_flag, yes = -tan(theta), no = NA)
+      ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), 
+      sin(theta), 0, 
+      ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta))
     ), 
     w = c(
       "bold", 
+      "normal", 
       "normal", "normal", 
-      "normal", 
-      "normal", 
-      "thin", "thin"
+      "thin"
     ), # 重なり対策用
     line_type = c(
       "sub", 
-      "main", "sub", 
       "main", 
-      "main", 
-      "main", "sub"
-    ) # 符号の反転用
+      "main", "main", 
+      ifelse(test = rev_flag, yes = "sub", no = "main")
+    ) # 補助線用, 符号の反転用
   )
   
-  # 関数ラベルの座標を格納
+  # 関数ラベルの座標を作成
   fnc_label_df <- tibble::tibble(
     fnc = c("arcsec", "sec") |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
@@ -595,7 +582,7 @@ for(i in 1:frame_num) {
   
   ## 関数曲線
   
-  # 関数線分の座標を格納
+  # 関数線分の座標を作成
   fnc_seg_df <- tibble::tibble(
     fnc = c("arcsec", "sec") |> 
       factor(levels = fnc_level_vec), # 関数カテゴリ
@@ -662,7 +649,7 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 9, units = "in", dpi = 120)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 12, height = 9, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
@@ -672,6 +659,6 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_video(path = "circular/figure/inverse/arcsec_curves.mp4", framerate = 15) -> tmp_path # mp4ファイルを書出
+  magick::image_write_video(path = "circular/figure/inverse/arcsec_curves.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 

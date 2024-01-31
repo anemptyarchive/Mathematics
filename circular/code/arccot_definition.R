@@ -348,7 +348,7 @@ dir_path <- "circular/figure/tmp_folder"
 
 
 # フレーム数を指定
-frame_num <- 300
+frame_num <- 600
 
 # 点用のラジアンの範囲を指定
 theta_vals <- seq(from = -2*pi, to = 2*pi, length.out = frame_num+1)[-1]
@@ -705,7 +705,7 @@ for(i in 1:frame_num) {
   
   # 画像ファイルを書出
   file_path <- paste0(dir_path, "/", stringr::str_pad(i, width = nchar(frame_num), pad = "0"), ".png")
-  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 15, height = 8, units = "in", dpi = 120)
+  ggplot2::ggsave(filename = file_path, plot = wrap_graph, width = 15, height = 8, units = "in", dpi = 100)
   
   # 途中経過を表示
   message("\r", i, " / ", frame_num, appendLF = FALSE)
@@ -715,6 +715,6 @@ for(i in 1:frame_num) {
 paste0(dir_path, "/", stringr::str_pad(1:frame_num, width = nchar(frame_num), pad = "0"), ".png") |> # ファイルパスを作成
   magick::image_read() |> # 画像ファイルを読込
   magick::image_animate(fps = 1, dispose = "previous") |> # gif画像を作成
-  magick::image_write_video(path = "circular/figure/inverse/arccot_curves.mp4", framerate = 15) -> tmp_path # mp4ファイルを書出
+  magick::image_write_video(path = "circular/figure/inverse/arccot_curves.mp4", framerate = 30) -> tmp_path # mp4ファイルを書出
 
 
