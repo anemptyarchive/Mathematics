@@ -112,7 +112,7 @@ anim_angle_label_df <- tibble::tibble(
 # 関数の描画順を指定
 fnc_level_vec <- c("sec", "sin", "cos", "tan")
 
-# 符号反転フラグを設定
+# 符号の反転フラグを設定
 rev_flag_vals <- sin(theta_vals) < 0
 
 # 関数線分の座標を作成
@@ -122,40 +122,34 @@ anim_fnc_seg_df <- tibble::tibble(
     rep(times = line_num), 
   fnc = c(
     "sec", "sec", 
-    "sin", 
-    "cos", 
+    "sin", "cos", 
     "tan", "tan"
   ) |> 
     rep(each = frame_num) |> 
     factor(levels = fnc_level_vec), # 関数カテゴリ
   x_from = c(
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA), 
-    cos(theta_vals), 
-    rep(0, times = frame_num), 
+    cos(theta_vals), rep(0, times = frame_num), 
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA)
   ), 
   y_from = c(
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA), 
-    rep(0, times = frame_num), 
-    rep(0, times = frame_num), 
+    rep(0, times = frame_num), rep(0, times = frame_num), 
     rep(0, times = frame_num), ifelse(test = rev_flag_vals, yes = 0, no = NA)
   ), 
   x_to = c(
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA), 
-    cos(theta_vals), 
-    cos(theta_vals), 
+    cos(theta_vals), cos(theta_vals), 
     rep(1, times = frame_num), ifelse(test = rev_flag_vals, yes = 1, no = NA)
   ), 
   y_to = c(
     ifelse(test = rev_flag_vals, yes = -tan(theta_vals), no = tan(theta_vals)), ifelse(test = rev_flag_vals, yes = tan(theta_vals), no = NA), 
-    sin(theta_vals), 
-    rep(0, times = frame_num), 
+    sin(theta_vals), rep(0, times = frame_num), 
     tan(theta_vals), ifelse(test = rev_flag_vals, yes = -tan(theta_vals), no = NA)
   ), 
   line_type = c(
     "main", "sub", 
-    "main", 
-    "main", 
+    "main", "main", 
     "main", "sub"
   ) |> 
     rep(each = frame_num) # 補助線用
@@ -394,7 +388,8 @@ anim <- ggplot() +
   scale_color_hue(labels = fnc_label_vec, name = "function") + # 凡例表示用
   scale_linewidth_manual(breaks = c("bold", "normal", "thin", "major", "minor"), 
                          values = c(1.5, 1, 0.5, 0.5, 0.25)) + # 重なり対策用, 主・補助目盛線用
-  guides(linewidth = "none") + 
+  guides(color = guide_legend(override.aes = list(linewidth = 1)), 
+         linewidth = "none") + 
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_x_size, axis_x_size), 
               ylim = c(-axis_y_size, axis_y_size)) + 
@@ -503,48 +498,42 @@ for(i in 1:frame_num) {
     y = d * sin(u)
   )
   
-  # 反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- sin(theta) < 0
   
   # 関数線分の座標を格納
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "sec", "sec", 
-      "sin", 
-      "cos", 
+      "sin", "cos", 
       "tan"
     ) |> 
       factor(levels = fnc_level_vec), # 描き分け用
     x_from = c(
       0, 0, 
-      cos(theta), 
-      0, 
+      cos(theta), 0, 
       1
     ), 
     y_from = c(
       0, 0, 
-      0, 
-      0, 
+      0, 0, 
       0
     ), 
     x_to = c(
       1, 0, 
-      cos(theta), 
-      cos(theta), 
+      cos(theta), cos(theta), 
       1
     ), 
     y_to = c(
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), 1/cos(theta), 
-      sin(theta), 
-      0, 
+      sin(theta), 0, 
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta))
     ), 
     line_type = c(
       "main", "sub", 
-      "main", 
-      "main", 
+      "main", "main", 
       ifelse(test = rev_flag, yes = "sub", no = "main")
-    ) # 軸変換用, 符号反転用
+    ) # 軸の変換用, 符号の反転用
   )
   
   # sec線分の偏角を設定
@@ -569,8 +558,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sec~theta", "sin~theta", "cos~theta", "tan~theta"), 
@@ -622,7 +614,7 @@ for(i in 1:frame_num) {
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用, 符号反転用
+                          values = c("solid", "dashed")) + # 補助線用
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25)) + # 主・補助目盛線用
     guides(linetype = "none") + 
@@ -634,7 +626,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -765,48 +757,42 @@ for(i in 1:frame_num) {
     y = d * sin(u)
   )
   
-  # 反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- sin(theta) < 0
   
   # 関数線分の座標を格納
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "sec", "sec", 
-      "sin", 
-      "cos", 
+      "sin", "cos", 
       "tan"
     ) |> 
       factor(levels = fnc_level_vec), # 描き分け用
     x_from = c(
       0, 0, 
-      cos(theta), 
-      0, 
+      cos(theta), 0, 
       1
     ), 
     y_from = c(
       0, 0, 
-      0, 
-      0, 
+      0, 0, 
       0
     ), 
     x_to = c(
       1, 0, 
-      cos(theta), 
-      cos(theta), 
+      cos(theta), cos(theta), 
       1
     ), 
     y_to = c(
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), 1/cos(theta), 
-      sin(theta), 
-      0, 
+      sin(theta), 0, 
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta))
     ), 
     line_type = c(
       "main", "sub", 
-      "main", 
-      "main", 
+      "main", "main", 
       ifelse(test = rev_flag, yes = "sub", no = "main")
-    ) # 軸変換用, 符号反転用
+    ) # 軸の変換用, 符号の反転用
   )
   
   # sec線分の偏角を設定
@@ -831,8 +817,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sec~theta", "sin~theta", "cos~theta", "tan~theta"), 
@@ -881,7 +870,7 @@ for(i in 1:frame_num) {
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用, 符号反転用
+                          values = c("solid", "dashed")) + # 補助線用
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25)) + # 主・補助目盛線用
     guides(linetype = "none") + 
@@ -893,7 +882,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -1043,6 +1032,7 @@ grid_df <- tidyr::expand_grid(
     ) # 主・補助目盛の書き分け用
   )
 
+
 # 関数の描画順を指定
 fnc_level_vec <- c("sec", "sin", "cos", "tan")
 
@@ -1094,48 +1084,42 @@ for(i in 1:frame_num) {
     y = d * sin(u)
   )
   
-  # 反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- sin(theta) < 0
   
   # 関数線分の座標を格納
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "sec", "sec", 
-      "sin", 
-      "cos", 
+      "sin", "cos", 
       "tan"
     ) |> 
       factor(levels = fnc_level_vec), # 描き分け用
     x_from = c(
       0, 0, 
-      cos(theta), 
-      0, 
+      cos(theta), 0, 
       1
     ), 
     y_from = c(
       0, 0, 
-      0, 
-      0, 
+      0, 0, 
       0
     ), 
     x_to = c(
       1, 0, 
-      cos(theta), 
-      cos(theta), 
+      cos(theta), cos(theta), 
       1
     ), 
     y_to = c(
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), 1/cos(theta), 
-      sin(theta), 
-      0, 
+      sin(theta), 0, 
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta))
     ), 
     line_type = c(
       "main", "sub", 
-      "main", 
-      "main", 
+      "main", "main", 
       ifelse(test = rev_flag, yes = "sub", no = "main")
-    ) # 軸変換用, 符号反転用
+    ) # 軸の変換用, 符号の反転用
   )
   
   # sec線分の偏角を設定
@@ -1160,8 +1144,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sec~theta", "sin~theta", "cos~theta", "tan~theta"), 
@@ -1198,7 +1185,7 @@ for(i in 1:frame_num) {
               size = 5) + # 角ラベル
     geom_segment(mapping = aes(x = c(cos(theta), 0), y = c(sin(theta), 1/cos(theta)), 
                                xend = c(cos(theta), Inf), yend = c(-Inf, 1/cos(theta))), 
-                 linewidth = 0.8, linetype = "dotted") + # y軸の目盛線
+                 linewidth = 0.8, linetype = "dotted") + # x・y軸の目盛線
     geom_line(data = convert_df, 
               mapping = aes(x = arc_x, y = arc_y), 
               linewidth = 0.8, linetype = "dotted") + # 変換曲線
@@ -1214,7 +1201,7 @@ for(i in 1:frame_num) {
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用, 符号反転用
+                          values = c("solid", "dashed")) + # 補助線用
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25)) + # 主・補助目盛線用
     guides(linetype = "none") + 
@@ -1226,7 +1213,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -1291,7 +1278,8 @@ for(i in 1:frame_num) {
     geom_point(mapping = aes(x = c(cos(theta), grid_size), y = c(grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
-                           values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linewidth = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
@@ -1329,7 +1317,7 @@ for(i in 1:frame_num) {
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "cosine function", 
-         subtitle = paste0(text = coord_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -1479,48 +1467,42 @@ for(i in 1:frame_num) {
     y = d * sin(u)
   )
   
-  # 反転フラグを設定
+  # 符号の反転フラグを設定
   rev_flag <- sin(theta) < 0
   
   # 関数線分の座標を格納
   fnc_seg_df <- tibble::tibble(
     fnc = c(
       "sec", "sec", 
-      "sin", 
-      "cos", 
+      "sin", "cos", 
       "tan"
     ) |> 
       factor(levels = fnc_level_vec), # 描き分け用
     x_from = c(
       0, 0, 
-      cos(theta), 
-      0, 
+      cos(theta), 0, 
       1
     ), 
     y_from = c(
       0, 0, 
-      0, 
-      0, 
+      0, 0, 
       0
     ), 
     x_to = c(
       1, 0, 
-      cos(theta), 
-      cos(theta), 
+      cos(theta), cos(theta), 
       1
     ), 
     y_to = c(
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta)), 1/cos(theta), 
-      sin(theta), 
-      0, 
+      sin(theta), 0, 
       ifelse(test = rev_flag, yes = -tan(theta), no = tan(theta))
     ), 
     line_type = c(
       "main", "sub", 
-      "main", 
-      "main", 
+      "main", "main", 
       ifelse(test = rev_flag, yes = "sub", no = "main")
-    ) # 軸変換用, 符号反転用
+    ) # 軸の変換用, 符号の反転用
   )
   
   # sec線分の偏角を設定
@@ -1545,8 +1527,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sec~theta", "sin~theta", "cos~theta", "tan~theta"), 
@@ -1583,7 +1568,7 @@ for(i in 1:frame_num) {
               size = 5) + # 角ラベル
     geom_segment(mapping = aes(x = c(cos(theta), 0), y = c(sin(theta), 1/cos(theta)), 
                                xend = c(cos(theta), -Inf), yend = c(Inf, 1/cos(theta))), 
-                 linewidth = 0.8, linetype = "dotted") + # y軸の目盛線
+                 linewidth = 0.8, linetype = "dotted") + # x・y軸の目盛線
     geom_line(data = convert_df, 
               mapping = aes(x = arc_x, y = arc_y), 
               linewidth = 0.8, linetype = "dotted") + # 変換曲線
@@ -1599,7 +1584,7 @@ for(i in 1:frame_num) {
                  linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用, 符号反転用
+                          values = c("solid", "dashed")) + # 補助線用
     scale_linewidth_manual(breaks = c("major", "minor"), 
                            values = c(0.5, 0.25)) + # 主・補助目盛線用
     guides(linetype = "none") + 
@@ -1611,7 +1596,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -1631,7 +1616,7 @@ for(i in 1:frame_num) {
     geom_vline(xintercept = theta, 
                linewidth = 0.8, linetype = "dotted") + # θ軸の目盛線
     geom_segment(mapping = aes(x = theta, y = 1/cos(theta), xend = Inf, yend = 1/cos(theta)), 
-                 linewidth = 0.8, linetype = "dotted") + # θ・y軸の目盛線
+                 linewidth = 0.8, linetype = "dotted") + # y軸の目盛線
     geom_point(data = fnc_point_df, 
                mapping = aes(x = t, y = sec_t), 
                size = 4) + # 曲線上の点
@@ -1671,7 +1656,8 @@ for(i in 1:frame_num) {
     geom_point(mapping = aes(x = c(cos(theta), -grid_size), y = c(-grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
-                           values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linewidth = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
@@ -1704,7 +1690,7 @@ for(i in 1:frame_num) {
                 xlim = c(theta-theta_size, theta), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "cosine function", 
-         subtitle = paste0(text = coord_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   

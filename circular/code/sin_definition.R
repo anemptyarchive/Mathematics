@@ -339,8 +339,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sin~theta", "cos~theta"), 
@@ -395,7 +398,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -548,8 +551,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("sin~theta", "cos~theta"), 
@@ -601,7 +607,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   

@@ -345,7 +345,7 @@ for(i in 1:frame_num) {
     line_type = c(
       "main", "sub", 
       "main"
-    ) # 軸変換用
+    ) # 軸の変換用
   )
   
   # 軸の変換曲線の座標を作成
@@ -359,8 +359,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("cos~theta", "sin~theta"), 
@@ -408,13 +411,14 @@ for(i in 1:frame_num) {
                size = 4) + # 関数点
     geom_segment(data = fnc_seg_df, 
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                               color = fnc, linewidth = line_type, linetype = line_type)) + # 関数線分
+                               color = fnc, linetype = line_type), 
+                 linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用
-    scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
-                           values = c(1, 0.5, 0.5, 0.25)) + # 軸変換用, 主・補助目盛線用
-    guides(linetype = "none", linewidth = "none") + 
+                          values = c("solid", "dashed")) + # 補助線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linetype = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -423,7 +427,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -576,7 +580,7 @@ for(i in 1:frame_num) {
     line_type = c(
       "main", "sub", 
       "main"
-    ) # 軸変換用
+    ) # 軸の変換用
   )
   
   # 軸の変換曲線の座標を作成
@@ -590,8 +594,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("cos~theta", "sin~theta"), 
@@ -636,13 +643,14 @@ for(i in 1:frame_num) {
                size = 4) + # 関数点
     geom_segment(data = fnc_seg_df, 
                  mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                               color = fnc, linewidth = line_type, linetype = line_type)) + # 関数線分
+                               color = fnc, linetype = line_type), 
+                 linewidth = 1) + # 関数線分
     scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
     scale_linetype_manual(breaks = c("main", "sub"), 
-                          values = c("solid", "dashed")) + # 軸変換用
-    scale_linewidth_manual(breaks = c("main", "sub", "major", "minor"), 
-                           values = c(1, 0.5, 0.5, 0.25)) + # 軸変換用, 主・補助目盛線用
-    guides(linetype = "none", linewidth = "none") + 
+                          values = c("solid", "dashed")) + # 補助線用
+    scale_linewidth_manual(breaks = c("major", "minor"), 
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linetype = "none") + 
     theme(legend.text.align = 0, 
           legend.position = c(0, 1), 
           legend.justification = c(0, 1), 
@@ -651,7 +659,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -865,8 +873,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("cos~theta", "sin~theta"), 
@@ -921,7 +932,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -986,7 +997,8 @@ for(i in 1:frame_num) {
     geom_point(mapping = aes(x = c(cos(theta), grid_size), y = c(grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
-                           values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linewidth = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
@@ -1024,7 +1036,7 @@ for(i in 1:frame_num) {
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "cosine function", 
-         subtitle = paste0(text = coord_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(cos~theta))
   
@@ -1191,8 +1203,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("cos~theta", "sin~theta"), 
@@ -1244,7 +1259,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -1304,7 +1319,8 @@ for(i in 1:frame_num) {
     geom_point(mapping = aes(x = c(cos(theta), -grid_size), y = c(-grid_size, cos(theta))), 
                size = 4) + # 関数点
     scale_linewidth_manual(breaks = c("major", "minor"), 
-                           values = c(0.5, 0.25), guide = "none") + # 主・補助目盛線用
+                           values = c(0.5, 0.25)) + # 主・補助目盛線用
+    guides(linewidth = "none") + 
     coord_fixed(ratio = 1, 
                 xlim = c(-axis_size, axis_size), 
                 ylim = c(-axis_size, axis_size)) + 

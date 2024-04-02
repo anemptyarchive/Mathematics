@@ -373,7 +373,9 @@ anim <- ggplot() +
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
   scale_color_hue(labels = fnc_label_vec, name = "function") + # 凡例表示用
   scale_linewidth_manual(breaks = c("bold", "normal", "thin", "major", "minor"), 
-                         values = c(1.5, 1, 0.5, 0.5, 0.25), guide = "none") + # 重なり対策用, 主・補助目盛線用
+                         values = c(1.5, 1, 0.5, 0.5, 0.25)) + # 重なり対策用, 主・補助目盛線用
+  guides(color = guide_legend(override.aes = list(linewidth = 1)), 
+         linewidth = "none") + # 凡例の体裁
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_x_size, axis_x_size), 
               ylim = c(-axis_y_size, axis_y_size)) + 
@@ -435,7 +437,7 @@ rad_label_vec <- paste0(c("", "-")[(tick_vec < 0)+1], "frac(", abs(tick_vec), ",
 fnc_level_vec <- c("tan", "sin", "cos", "exsec")
 
 # グラフサイズを設定
-axis_x_size <- 2
+axis_x_size <- 1.5
 axis_y_size <- threshold
 
 # 変数ごとに作図
@@ -513,8 +515,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("tan~theta", "sin~theta", "cos~theta", "exsec~theta"), 
@@ -572,7 +577,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
@@ -606,6 +611,7 @@ for(i in 1:frame_num) {
     coord_fixed(ratio = 1, 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "tangent function", 
+         subtitle = parse(text = coord_label), 
          x = expression(theta), 
          y = expression(tan~theta))
   
@@ -652,7 +658,7 @@ theta_size <- 2 * pi
 threshold <- 4
 
 # グラフサイズを設定
-axis_x_size <- 2
+axis_x_size <- 1.5
 axis_y_size <- threshold
 
 # 関数の描画順を指定
@@ -733,8 +739,11 @@ for(i in 1:frame_num) {
   )
   
   # ラベル用の文字列を作成
-  var_label <- paste0(
-    "theta == ", round(theta/pi, digits = 2), " * pi"
+  coord_label <- paste0(
+    "list(", 
+    "(list(r, theta)) == (list(1, ", round(theta/pi, digits = 2), " * pi)), ", 
+    "(list(x, y)) == (list(", round(cos(theta), digits = 2), ", ", round(sin(theta), digits = 2), ")), ", 
+    ")"
   )
   fnc_label_vec <- paste(
     c("tan~theta", "sin~theta", "cos~theta", "exsec~theta"), 
@@ -789,7 +798,7 @@ for(i in 1:frame_num) {
                 xlim = c(-axis_x_size, axis_x_size), 
                 ylim = c(-axis_y_size, axis_y_size)) + 
     labs(title = "unit circle", 
-         subtitle = parse(text = var_label), 
+         subtitle = parse(text = coord_label), 
          x = expression(x == r ~ cos~theta), 
          y = expression(y == r ~ sin~theta))
   
