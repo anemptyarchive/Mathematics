@@ -1,11 +1,9 @@
 
-# 余角(π/2 - θ)の可視化 ------------------------------------------------------------------
+# π/2 - θ(余角)の可視化 ------------------------------------------------------------------
 
 # 利用パッケージ
 library(tidyverse)
 library(gganimate)
-library(patchwork)
-library(magick)
 
 # パッケージ名の省略用
 library(ggplot2)
@@ -54,209 +52,6 @@ rad_tick_df <- tibble::tibble(
 
 # 単位円と角度の関係 ------------------------------------------------------------
 
-# 点用のラジアンを指定
-theta <- 2/6 * pi
-
-# 余角を計算
-tau <- 0.5*pi - theta
-
-
-# 円周上の点の座標を作成
-point_df <- tibble::tibble(
-  t = c(theta, -theta, tau), 
-  x = cos(t), 
-  y = sin(t), 
-  type = c("main", "sub", "target") # 角度カテゴリ
-)
-
-# 半径線の終点の座標を作成
-radius_df <- dplyr::bind_rows(
-  # 始線
-  tibble::tibble(
-    x = 1, 
-    y = 0, 
-    type = "main"
-  ), 
-  # 動径
-  point_df |> 
-    dplyr::select(x, y, type)
-)
-
-
-# 角マークの座標を作成
-ds <- 0.005
-angle_mark_df <- tibble::tibble(
-  t    = c(theta, -theta, tau), 
-  type = c("main", "sub", "target"), # 角度カテゴリ
-  d    = c(0.15, 0.25, 0.35) # マークサイズを指定
-) |> 
-  dplyr::reframe(
-    u = seq(from = 0, to = t, length.out = 600), .by = dplyr::everything()
-  ) |> # 円弧用のラジアンを作成
-  dplyr::mutate(
-    x = (d + ds*u) * cos(u), 
-    y = (d + ds*u) * sin(u)
-  )
-
-# 角ラベルの座標を作成
-angle_label_df <- tibble::tibble(
-  d = c(0.1, 0.3, 0.4), # ラベル位置を指定
-  u = 0.5 * c(theta, -theta, tau), 
-  x = d * cos(u), 
-  y = d * sin(u), 
-  angle_label = c("theta", "-theta", "tau")
-)
-
-# 直角マークの座標を作成
-d <- 0.1
-rightangle_mark_df <- tibble::tibble(
-  u = c(-theta, 0.25*pi-theta, tau), 
-  x = c(d, sqrt(2)*d, d) * cos(u), 
-  y = c(d, sqrt(2)*d, d) * sin(u)
-)
-
-
-# 関数の描画順を指定
-fnc_level_vec <- c("sin", "cos")
-
-# 関数線分の座標を作成
-fnc_seg_df <- tibble::tibble(
-  fnc = c(
-    "sin", "cos", "sin", "cos", 
-    "sin", "cos"
-  ) |> 
-    factor(levels = fnc_level_vec), # 関数カテゴリ
-  type = c(
-    "main", "main", "main", "main", 
-    "target", "target"
-  ), # 角度カテゴリ
-  x_from = c(
-    cos(theta), 0, 0, 0, 
-    0, cos(tau)
-  ), 
-  y_from = c(
-    0, 0, 0, sin(theta), 
-    0, 0
-  ), 
-  x_to = c(
-    cos(theta), cos(theta), 0, cos(theta), 
-    cos(tau), cos(tau)
-  ), 
-  y_to = c(
-    sin(theta), 0, sin(theta), sin(theta), 
-    0, sin(tau)
-  )
-)
-
-# 関数ラベルの座標を作成
-fnc_label_df <- tibble::tibble(
-  fnc = c(
-    "sin", "cos", 
-    "sin", "cos"
-  ), 
-  x = c(
-    cos(theta), 0.5*cos(theta), 
-    0.5*cos(tau), cos(tau)
-  ), 
-  y = c(
-    0.5*sin(theta), 0, 
-    0, 0.5*sin(tau)
-  ), 
-  fnc_label = c(
-    "sin~theta", "cos~theta", 
-    "cos~tau", "sin~tau"
-  ), 
-  a = c(
-    90, 0, 
-    0, 90
-  ), 
-  h = 0.5, 
-  v = c(
-    -0.5, -0.5, 
-    1.5, 1.5
-  )
-)
-
-# グラフサイズを設定
-axis_size <- 1.5
-
-# ラベル用の文字列を作成
-def_label <- "tau == frac(pi, 2) - theta"
-angle_label_vec <- paste(
-  c("theta", "-theta", "tau"), 
-  c(theta/pi, -theta/pi, tau/pi) |> 
-    round(digits = 2), 
-  sep = " == "
-) |> 
-  paste("* pi")
-fnc_label_vec <- paste(
-  c("sin~theta", "cos~theta"), 
-  c(sin(theta), cos(theta)) |> 
-    round(digits = 2), 
-  sep = " == "
-)
-
-# 単位円における偏角と関数線分を作図
-ggplot() + 
-  geom_segment(data = rad_tick_df, 
-               mapping = aes(x = 0, y = 0, xend = x, yend = y, linewidth = grid), 
-               color = "white", show.legend = FALSE) + # θ軸目盛線
-  geom_text(data = rad_tick_df, 
-            mapping = aes(x = x, y = y, angle = a, label = tick_mark), 
-            size = 2) + # θ軸目盛指示線
-  geom_text(data = rad_tick_df, 
-            mapping = aes(x = label_x, y = label_y, label = rad_label, hjust = h, vjust = v), 
-            parse = TRUE) + # θ軸目盛ラベル
-  geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
-                             xend = c(Inf, 0), yend = c(0, Inf)), 
-               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
-  geom_path(data = circle_df, 
-            mapping = aes(x = x, y = y), 
-            linewidth = 1) + # 円周
-  geom_segment(data = radius_df, 
-               mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = type), 
-               linewidth = 1, show.legend = FALSE) + # 半径線
-  geom_path(data = rightangle_mark_df, 
-            mapping = aes(x = x, y = y)) + # 直角マーク
-  geom_path(data = angle_mark_df, 
-            mapping = aes(x = x, y = y, linetype = type), 
-            show.legend = FALSE) + # 角マーク
-  geom_text(data = angle_label_df, 
-            mapping = aes(x = x, y = y, label = angle_label), 
-            size = 5, parse = TRUE) + # 角ラベル
-  geom_point(data = point_df, 
-             mapping = aes(x = x, y = y, shape = type), 
-             size = 4, show.legend = FALSE) + # 円周上の点
-  geom_segment(data = fnc_seg_df, 
-               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                             color = fnc, linetype = type), 
-               linewidth = 1) + # 関数線分
-  geom_text(data = fnc_label_df, 
-            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
-                          hjust = h, vjust = v, angle = a), 
-            parse = TRUE, show.legend = FALSE) + # 関数ラベル
-  scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
-  scale_shape_manual(breaks = c("main", "sub", "target"), 
-                     values = c("circle", "circle open", "circle open")) + # 補助点用
-  scale_linetype_manual(breaks = c("main", "sub", "target"), 
-                        values = c("solid", "dashed", "twodash"), 
-                        labels = parse(text = angle_label_vec), 
-                        name = "angle") + # 補助線用, 凡例表示用
-  scale_linewidth_manual(breaks = c("major", "minor"), 
-                         values = c(0.5, 0.25)) + # 主・補助目盛線用
-  guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + 
-  theme(legend.text.align = 0) + 
-  coord_fixed(ratio = 1, 
-              xlim = c(-axis_size, axis_size), 
-              ylim = c(-axis_size, axis_size)) + 
-  labs(title = "complementary angle", 
-       subtitle = parse(text = def_label), 
-       x = expression(x == r ~ cos~theta), 
-       y = expression(y == r ~ sin~theta))
-
-
-# 単位円と角度の関係 ------------------------------------------------------------
-
 # フレーム数を指定
 frame_num <- 300
 
@@ -274,26 +69,13 @@ anim_point_df <- tidyr::expand_grid(
 ) |> # フレームごとに複製
   dplyr::bind_cols(
     t = c(theta_vals, -theta_vals, tau_vals)
-  ) |> 
+  ) |> # ラジアンを結合
   dplyr::mutate(
     x = cos(t), 
     y = sin(t)
   )
-
-# 半径線の終点の座標を作成
-anim_radius_df <- dplyr::bind_rows(
-  # 始線
-  tibble::tibble(
-    frame_i = 1:frame_num, 
-    x = 1, 
-    y = 0, 
-    type = "main"
-  ), 
-  # 動径
-  anim_point_df |> 
-    dplyr::select(frame_i, x, y, type)
-)
-
+anim_point_symmetry_df <- anim_point_df |> 
+  dplyr::filter(type %in% c("main", "target")) # 対称な点を抽出
 
 # 角マークの座標を作成
 ds <- 0.005
@@ -306,10 +88,10 @@ anim_angle_mark_df <- tidyr::expand_grid(
 ) |> # フレームごとに複製
   dplyr::bind_cols(
     t = c(theta_vals, -theta_vals, tau_vals)
-  ) |> 
+  ) |> # ラジアンを結合
   dplyr::reframe(
     u = seq(from = 0, to = t, length.out = 600), .by = dplyr::everything()
-  ) |> # フレームごとにラジアンを作成
+  ) |> # 中間値のラジアンを作成
   dplyr::mutate(
     x = (d + ds*u) * cos(u), 
     y = (d + ds*u) * sin(u)
@@ -325,7 +107,7 @@ anim_angle_label_df <- tidyr::expand_grid(
 ) |> # フレームごとに複製
   dplyr::bind_cols(
     u = 0.5 * c(theta_vals, -theta_vals, tau_vals)
-  ) |> 
+  ) |> # ラジアンを結合
   dplyr::mutate(
     x = d * cos(u), 
     y = d * sin(u)
@@ -339,7 +121,7 @@ anim_rightangle_mark_df <- tidyr::expand_grid(
 ) |> # フレームごとに複製
   dplyr::bind_cols(
     u = c(-theta_vals, 0.25*pi-theta_vals, tau_vals)
-  ) |> 
+  ) |> # ラジアンを結合
   dplyr::mutate(
     x = d * cos(u), 
     y = d * sin(u)
@@ -394,7 +176,8 @@ setting_df <- tibble::tibble(
   fnc = c(
     "sin", "cos", 
     "sin", "cos"
-  ), 
+  ) |> 
+    factor(levels = fnc_level_vec), 
   type = c(
     "main", "main", 
     "target", "target"
@@ -422,10 +205,7 @@ anim_fnc_label_df <- anim_fnc_seg_df |>
     y = median(c(y_from, y_to)), .by = c(frame_i, fnc, type)
   ) |> # 中点に配置
   dplyr::left_join(setting_df, by = c("fnc", "type")) # ラベル設定を追加
-  
 
-# グラフサイズを設定
-axis_size <- 1.5
 
 # ラベル用の文字列を作成
 anim_label_df <- tibble::tibble(
@@ -440,6 +220,9 @@ anim_label_df <- tibble::tibble(
 angle_label_vec <- c("theta", "-theta", "tau == frac(pi, 2) - theta")
 fnc_label_vec   <- c(sin = "sine", cos = "cosine")
 
+# グラフサイズを設定
+axis_size <- 1.5
+
 # 単位円における偏角と関数線分を作図
 anim <- ggplot() + 
   geom_segment(data = rad_tick_df, 
@@ -451,15 +234,18 @@ anim <- ggplot() +
   geom_text(data = rad_tick_df, 
             mapping = aes(x = label_x, y = label_y, label = rad_label, hjust = h, vjust = v), 
             parse = TRUE) + # θ軸目盛ラベル
-  geom_segment(mapping = aes(x = c(-Inf, 0), y = c(0, -Inf), 
-                             xend = c(Inf, 0), yend = c(0, Inf)), 
-               arrow = arrow(length = unit(10, units = "pt"), ends = "last")) + # x・y軸線
+  # geom_abline(slope = 1, intercept = 0, linetype = "dashed") + # 対象の軸
+  # geom_line(data = anim_point_symmetry_df,
+  #           mapping = aes(x = x, y = y),
+  #           linetype = "dotted") + # 対称な点間
   geom_path(data = circle_df, 
             mapping = aes(x = x, y = y), 
             linewidth = 1) + # 円周
-  geom_segment(data = anim_radius_df, 
+  geom_segment(mapping = aes(x = 0, y = 0, xend = 1, yend = 0), 
+               linewidth = 1) + # 始線
+  geom_segment(data = anim_point_df, 
                mapping = aes(x = 0, y = 0, xend = x, yend = y, linetype = type), 
-               linewidth = 1, show.legend = FALSE) + # 半径線
+               linewidth = 1, show.legend = TRUE) + # 動径線
   geom_path(data = anim_rightangle_mark_df, 
             mapping = aes(x = x, y = y)) + # 直角マーク
   geom_path(data = anim_angle_mark_df, 
@@ -471,28 +257,29 @@ anim <- ggplot() +
   geom_point(data = anim_point_df, 
              mapping = aes(x = x, y = y, shape = type), 
              size = 4, show.legend = FALSE) + # 円周上の点
-  geom_segment(data = anim_fnc_seg_df, 
-               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to, 
-                             color = fnc, linetype = type), 
+  geom_segment(data = anim_fnc_seg_df,
+               mapping = aes(x = x_from, y = y_from, xend = x_to, yend = y_to,
+                             color = fnc, linetype = type),
                linewidth = 1) + # 関数線分
-  geom_text(data = anim_fnc_label_df, 
-            mapping = aes(x = x, y = y, label = fnc_label, color = fnc, 
-                          hjust = h, vjust = v, angle = a), 
+  geom_text(data = anim_fnc_label_df,
+            mapping = aes(x = x, y = y, label = fnc_label, color = fnc,
+                          hjust = h, vjust = v, angle = a),
             parse = TRUE, show.legend = FALSE) + # 関数ラベル
   geom_text(data = anim_label_df, 
             mapping = aes(x = -Inf, y = Inf, label = var_label), 
-            parse = TRUE, hjust = 0, vjust = -0.5) + # 変数ラベル:(subtitleの代用)
+            parse = TRUE, hjust = 0, vjust = -0.5) + # 角度ラベル:(subtitleの代用)
   gganimate::transition_manual(frames = frame_i) + # フレーム切替
   scale_color_hue(labels = parse(text = fnc_label_vec), name = "function") + # 凡例表示用
   scale_shape_manual(breaks = c("main", "sub", "target"), 
-                     values = c("circle", "circle open", "circle open")) + # 補助点用
+                     values = c("circle", "diamond open", "circle open")) + # 補助点用
   scale_linetype_manual(breaks = c("main", "sub", "target"), 
                         values = c("solid", "dashed", "twodash"), 
                         labels = parse(text = angle_label_vec), 
                         name = "angle") + # 補助線用, 凡例表示用
   scale_linewidth_manual(breaks = c("major", "minor"), 
                          values = c(0.5, 0.25)) + # 主・補助目盛線用
-  guides(linetype = guide_legend(override.aes = list(linewidth = 0.5))) + 
+  guides(linetype = guide_legend(override.aes = list(linewidth = 0.5)), 
+         linewidth = "none", shape = "none") + 
   theme(legend.text.align = 0) + 
   coord_fixed(ratio = 1, clip = "off", 
               xlim = c(-axis_size, axis_size), 
@@ -505,7 +292,7 @@ anim <- ggplot() +
 # 動画を作成
 gganimate::animate(
   plot = anim, nframes = frame_num, fps = 15, width = 8, height = 8, units = "in", res = 250, 
-  renderer = gganimate::av_renderer(file = "circle/figure/angle/diff_halfpi_circle.mp4")
+  renderer = gganimate::av_renderer(file = "circle/figure/declination/diff_right_angle.mp4")
 )
 
 
