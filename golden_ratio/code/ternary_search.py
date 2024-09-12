@@ -11,9 +11,9 @@ from matplotlib.animation import FuncAnimation
 
 # %%
 
-### 評価関数の設定 --------------------------------------------------------------
+### 関数の設定 ------------------------------------------------------------------
 
-# 評価関数を作成
+# 関数を作成
 def eval_fnc(x):
 
     # 計算式を指定
@@ -71,11 +71,11 @@ while True:
     # 更新値を記録
     trace_lt.append(((x_l, x_u), (x_lower, x_upper)))
     
-    # 評価関数を計算
+    # 関数値を計算
     f_u = eval_fnc(x_u)
     f_l = eval_fnc(x_l)
     
-    # 評価値の差を計算
+    # 関数値の差を計算
     diff = abs(f_u - f_l)
     
     # 収束を判定
@@ -91,58 +91,6 @@ while True:
 
     # 途中経過を表示
     print(f'count: {cnt}, x1 = {x_l:.3f}, x2 = {x_u:.3f}, diff: {diff}')# 分割比を指定
-ratio_l = 1.0 / 3.0
-ratio_u = 2.0 / 3.0
-
-# 収束判定の閾値を指定
-threshold = 1e-5
-
-# 収束判定の値を初期化
-diff = np.inf
-
-# 探索範囲の初期値を設定
-x_lower = x_min
-x_upper = x_max
-
-# 分割回数を初期化
-cnt = 0
-
-# 記録用のオブジェクトを初期化
-trace_lt = []
-
-# 三分探索
-while True:
-
-    # 分割回数をカウント
-    cnt += 2
-    
-    # 分割点を計算
-    x_l = x_lower + ratio_l * (x_upper - x_lower)
-    x_u = x_lower + ratio_u * (x_upper - x_lower)
-
-    # 更新値を記録
-    trace_lt.append(((x_l, x_u), (x_lower, x_upper)))
-    
-    # 評価関数を計算
-    f_u = eval_fnc(x_u)
-    f_l = eval_fnc(x_l)
-    
-    # 評価値の差を計算
-    diff = abs(f_u - f_l)
-    
-    # 収束を判定
-    if diff <= threshold:
-        break
-
-    if f_u > f_l:
-        # 上限を更新
-        x_upper = x_u
-    else:
-        # 下限を更新
-        x_lower = x_l
-
-    # 途中経過を表示
-    print(f'count: {cnt}, x1 = {x_l:.3f}, x2 = {x_u:.3f}, diff: {diff}')
 
 # %%
 
@@ -185,7 +133,7 @@ def update(frame_i):
         min_label = f'$(x, f(x)) = ({x_u:.5f}, {f_u:.5f})$'
     
     # 関数曲線を描画
-    ax.plot(x_vec, f_x_vec, color='black') # 評価関数
+    ax.plot(x_vec, f_x_vec, color='black') # 関数
     ax.vlines(x=[x_lower, x_upper], ymin=f_min, ymax=f_max, 
               color='black', linestyle='dashed') # 探索範囲
     ax.vlines(x=[x_l, x_u], ymin=f_min, ymax=f_max, 
@@ -209,7 +157,7 @@ ani = FuncAnimation(fig=fig, func=update, frames=frame_num, interval=500)
 
 # 動画を書出
 ani.save(
-    filename='../figure/ternary_search/trace.mp4', 
+    filename='../figure/ternary_search/TernarySearch_trace.mp4', 
     progress_callback = lambda i, n: print(f'frame: {i} / {n}')
 )
 
